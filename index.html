@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NewsApp | Home</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+
+    <header class="main-header">
+        <div class="header-content">
+            <button id="menu-btn" class="menu-button">
+                <i class="fas fa-bars"></i>
+            </button>
+            <h1 class="app-title">NewsApp</h1>
+            <div class="search-bar-container">
+                <input type="text" id="search-input" placeholder="Search users...">
+                <button id="search-btn"><i class="fas fa-search"></i></button>
+            </div>
+        </div>
+    </header>
+
+    <nav id="side-menu" class="side-menu">
+        <div class="menu-header">
+            <div class="profile-summary">
+                <img id="user-profile-pic" src="https://via.placeholder.com/50" alt="Profile Picture">
+                <span id="user-name">Guest</span>
+            </div>
+            <button id="close-menu-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <ul class="menu-list">
+            <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="#"><i class="fas fa-user-circle"></i> Profile</a></li>
+            <li><a href="#"><i class="fas fa-upload"></i> Upload Post</a></li>
+            <li><a href="#"><i class="fas fa-chart-line"></i> Statistics</a></li>
+            <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+        </ul>
+        <div class="menu-settings">
+            <label for="dark-mode-toggle">Dark Mode</label>
+            <input type="checkbox" id="dark-mode-toggle">
+        </div>
+    </nav>
+    
+    <main class="main-content">
+        <div id="posts-container" class="posts-container">
+            </div>
+    </main>
+
+    <footer class="bottom-nav">
+        <a href="index.html" class="nav-item active"><i class="fas fa-home"></i><span class="nav-text">Home</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-search"></i><span class="nav-text">Search</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-bullhorn"></i><span class="nav-text">Feed</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-user-circle"></i><span class="nav-text">Profile</span></a>
+        <a href="#" class="nav-item"><i class="fas fa-plus-square"></i><span class="nav-text">Upload</span></a>
+    </footer>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
