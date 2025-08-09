@@ -1,5 +1,5 @@
 // आपका Apps Script API URL
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwFEiLFWBB0lRG_2gVTn9oKeYEz0N8ErqbZL4LS7WGBgEPMzBZJO02G3j2IxX9ZGBUr/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby2NHjVwZHSEcb-OQlO55RU-LibwuQb--48gSfrdzmCfHfrpKMSjsSGmbb2AlU9orW6/exec";
 
 document.addEventListener("DOMContentLoaded", () => {
     // --- Authentication and Redirection Logic ---
