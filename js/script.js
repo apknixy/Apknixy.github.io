@@ -1,7 +1,7 @@
 // आपका Apps Script API URL
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzU2uTJW_cBAZJKwsT7FkjEYR-OyYw_x8lPryKtW034J5RKutJA2zROcatB9AxJYOHY/exec";
 
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => { {
     // --- Authentication and Redirection Logic ---
     const userId = localStorage.getItem("userId");
     // Only run on index.html
@@ -185,6 +185,56 @@ document.addEventListener("DOMContentLoaded", () => {
 }); 
 // -----------------------------------------------------------------------
 
+// यह कोड `DOMContentLoaded` के अंदर होना चाहिए
+
+// Posts Fetching and Display Logic
+const postsContainer = document.getElementById("posts-container");
+
+async function fetchAndDisplayPosts() {
+    if (!postsContainer) return; // Stop if not on the index page
+
+    postsContainer.innerHTML = "<h2>Loading posts...</h2>";
+    
+    try {
+        const response = await fetch(APPS_SCRIPT_URL + "?action=getPosts");
+        const posts = await response.json();
+        postsContainer.innerHTML = ""; // Clear loading message
+
+        if (posts && posts.length > 0) {
+            posts.reverse().forEach(post => { // Displaying latest posts first
+                const postElement = document.createElement("div");
+                postElement.className = "post";
+                postElement.innerHTML = `
+                    <div class="post-header">
+                        <img src="https://via.placeholder.com/40" alt="User Profile">
+                        <span class="post-username">User ${post.user_id}</span>
+                    </div>
+                    <div class="post-content">
+                        <h3>${post.title}</h3>
+                        <img src="${post.main_image_url}" alt="Post Image">
+                        <p>${post.content_html}</p>
+                    </div>
+                    <div class="post-actions">
+                        <button><i class="fas fa-thumbs-up"></i> Likes: ${post.likes_count}</button>
+                        <button><i class="fas fa-comment"></i> Comments: ${post.comments_count}</button>
+                    </div>
+                `;
+                postsContainer.appendChild(postElement);
+            });
+        } else {
+            postsContainer.innerHTML = "<h2>No posts to display.</h2>";
+        }
+    } catch (error) {
+        console.error("Failed to fetch posts:", error);
+        postsContainer.innerHTML = "<h2>Failed to load posts. Please try again later.</h2>";
+    }
+}
+
+// Call the function on index.html
+if (window.location.pathname.endsWith("index.html")) {
+    fetchAndDisplayPosts();
+}
+// `DOMContentLoaded` के अंदर, इस ब्लॉक को जोड़ें
 const postUploadForm = document.getElementById("postUploadForm");
 if (postUploadForm) {
     postUploadForm.addEventListener("submit", async (e) => {
@@ -222,4 +272,6 @@ if (postUploadForm) {
             messageElement.textContent = "An error occurred. Please try again.";
         }
     });
+}
+
 }
