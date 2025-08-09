@@ -184,3 +184,42 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 }); 
 // -----------------------------------------------------------------------
+
+const postUploadForm = document.getElementById("postUploadForm");
+if (postUploadForm) {
+    postUploadForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const userId = localStorage.getItem("userId"); // logged in user's ID
+        const title = document.getElementById("postTitle").value;
+        const content = document.getElementById("postContent").value;
+        const imageUrl = document.getElementById("postImageUrl").value;
+        const messageElement = document.getElementById("message");
+
+        if (!userId) {
+            messageElement.textContent = "Please log in to upload posts.";
+            return;
+        }
+
+        const formData = new FormData();
+        formData.append("action", "uploadPost");
+        formData.append("userId", userId);
+        formData.append("title", title);
+        formData.append("content", content);
+        formData.append("imageUrl", imageUrl);
+        
+        try {
+            const response = await fetch(APPS_SCRIPT_URL, {
+                method: "POST",
+                body: formData
+            });
+            const result = await response.json();
+            messageElement.textContent = result.message;
+            if (result.status === "success") {
+                // Clear the form after successful upload
+                postUploadForm.reset();
+            }
+        } catch (error) {
+            messageElement.textContent = "An error occurred. Please try again.";
+        }
+    });
+}
