@@ -3,58 +3,644 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NewsApp | Home</title>
-    <link rel="stylesheet" href="css/style.css">
+    <title>NewsApp</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        body {
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        .dark-mode {
+            background-color: #121212;
+            color: #f0f2f5;
+        }
+
+        .auth-container {
+            background-color: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+            margin: 50px auto;
+        }
+
+        .dark-mode .auth-container {
+            background-color: #1e1e1e;
+            color: #f0f2f5;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        .dark-mode h1 {
+            color: #f0f2f5;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        input[type="email"],
+        input[type="password"],
+        input[type="text"],
+        input[type="url"],
+        textarea {
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fff;
+            color: #333;
+        }
+
+        .dark-mode input[type="email"],
+        .dark-mode input[type="password"],
+        .dark-mode input[type="text"],
+        .dark-mode input[type="url"],
+        .dark-mode textarea {
+            background-color: #333;
+            color: #f0f2f5;
+            border: 1px solid #555;
+        }
+
+        button {
+            padding: 10px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        #message {
+            color: red;
+            font-weight: bold;
+        }
+        
+        .main-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fff;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            padding: 10px;
+            box-sizing: border-box;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .dark-mode .main-header {
+            background-color: #333;
+            color: #fff;
+        }
+
+        .menu-button, .search-btn {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #333;
+        }
+
+        .dark-mode .menu-button, .dark-mode .search-btn {
+            color: #fff;
+        }
+
+        .app-title {
+            margin: 0;
+            font-size: 24px;
+        }
+        
+        .search-bar-container {
+            display: flex;
+            align-items: center;
+        }
+        
+        #search-input {
+            border: 1px solid #ccc;
+            border-radius: 20px;
+            padding: 5px 15px;
+        }
+
+        .side-menu {
+            position: fixed;
+            top: 0;
+            left: -300px;
+            width: 250px;
+            height: 100vh;
+            background-color: #f8f8f8;
+            box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+            transition: left 0.3s ease;
+            z-index: 1001;
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .dark-mode .side-menu {
+            background-color: #222;
+            color: #fff;
+        }
+
+        .side-menu.open {
+            left: 0;
+        }
+
+        .menu-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .profile-summary img {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .menu-list {
+            list-style: none;
+            padding: 0;
+            flex-grow: 1;
+        }
+
+        .menu-list li a {
+            display: block;
+            padding: 15px;
+            text-decoration: none;
+            color: #333;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+
+        .dark-mode .menu-list li a {
+            color: #fff;
+        }
+
+        .menu-list li a:hover {
+            background-color: #e9e9e9;
+        }
+
+        .dark-mode .menu-list li a:hover {
+            background-color: #444;
+        }
+
+        .menu-settings {
+            margin-top: auto;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .main-content {
+            padding-top: 70px;
+            padding-bottom: 60px;
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+        
+        .posts-container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .post {
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            padding: 15px;
+        }
+
+        .dark-mode .post {
+            background-color: #444;
+        }
+        
+        .post-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .post-header img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+        
+        .post-content img {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-top: 10px;
+        }
+        
+        .post-actions button {
+            background: none;
+            border: none;
+            color: #555;
+            cursor: pointer;
+            margin-right: 15px;
+        }
+
+        .dark-mode .post-actions button {
+            color: #ccc;
+        }
+        
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: #fff;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            z-index: 1000;
+            display: flex;
+            justify-content: space-around;
+            padding: 10px 0;
+        }
+
+        .dark-mode .bottom-nav {
+            background-color: #333;
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-decoration: none;
+            color: #555;
+            font-size: 12px;
+        }
+
+        .dark-mode .nav-item {
+            color: #ccc;
+        }
+        
+        .nav-item i {
+            font-size: 20px;
+            margin-bottom: 3px;
+        }
+    </style>
 </head>
 <body>
-    <header class="main-header">
-        <div class="header-content">
-            <button id="menu-btn" class="menu-button">
-                <i class="fas fa-bars"></i>
-            </button>
-            <h1 class="app-title">NewsApp</h1>
-            <div class="search-bar-container">
-                <input type="text" id="search-input" placeholder="Search users...">
-                <button id="search-btn"><i class="fas fa-search"></i></button>
+
+    <div id="app-container">
+        <header class="main-header">
+            <div class="header-content">
+                <button id="menu-btn" class="menu-button">
+                    <i class="fas fa-bars"></i>
+                </button>
+                <h1 class="app-title">NewsApp</h1>
+                <div class="search-bar-container">
+                    <input type="text" id="search-input" placeholder="Search users...">
+                    <button id="search-btn"><i class="fas fa-search"></i></button>
+                </div>
             </div>
-        </div>
-    </header>
+        </header>
 
-    <nav id="side-menu" class="side-menu">
-        <div class="menu-header">
-            <div class="profile-summary">
-                <img id="user-profile-pic" src="https://via.placeholder.com/50" alt="Profile Picture">
-                <span id="user-name">Guest</span>
+        <nav id="side-menu" class="side-menu">
+            <div class="menu-header">
+                <div class="profile-summary">
+                    <img id="user-profile-pic" src="https://via.placeholder.com/50" alt="Profile Picture">
+                    <span id="user-name">Guest</span>
+                </div>
+                <button id="close-menu-btn"><i class="fas fa-times"></i></button>
             </div>
-            <button id="close-menu-btn"><i class="fas fa-times"></i></button>
-        </div>
-        <ul class="menu-list">
-            <li><a href="index.html"><i class="fas fa-home"></i> Home</a></li>
-            <li><a href="#"><i class="fas fa-user-circle"></i> Profile</a></li>
-            <li><a href="post_upload.html"><i class="fas fa-upload"></i> Upload Post</a></li>
-            <li><a href="#"><i class="fas fa-chart-line"></i> Statistics</a></li>
-            <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
-        </ul>
-        <div class="menu-settings">
-            <label for="dark-mode-toggle">Dark Mode</label>
-            <input type="checkbox" id="dark-mode-toggle">
-        </div>
-    </nav>
-
-    <main class="main-content">
-        <div id="posts-container" class="posts-container">
+            <ul class="menu-list">
+                <li><a href="#home"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#profile"><i class="fas fa-user-circle"></i> Profile</a></li>
+                <li><a href="#upload-post"><i class="fas fa-upload"></i> Upload Post</a></li>
+                <li><a href="#statistics"><i class="fas fa-chart-line"></i> Statistics</a></li>
+                <li><a href="#" id="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+            <div class="menu-settings">
+                <label for="dark-mode-toggle">Dark Mode</label>
+                <input type="checkbox" id="dark-mode-toggle">
             </div>
-    </main>
+        </nav>
 
-    <footer class="bottom-nav">
-        <a href="index.html" class="nav-item active"><i class="fas fa-home"></i><span class="nav-text">Home</span></a>
-        <a href="#" class="nav-item"><i class="fas fa-search"></i><span class="nav-text">Search</span></a>
-        <a href="#" class="nav-item"><i class="fas fa-bullhorn"></i><span class="nav-text">Feed</span></a>
-        <a href="#" class="nav-item"><i class="fas fa-user-circle"></i><span class="nav-text">Profile</span></a>
-        <a href="post_upload.html" class="nav-item"><i class="fas fa-plus-square"></i><span class="nav-text">Upload</span></a>
-    </footer>
+        <main id="home-page" class="main-content">
+            <div id="posts-container" class="posts-container">
+                </div>
+        </main>
 
-    <script src="js/script.js"></script>
+        <footer class="bottom-nav">
+            <a href="#home" class="nav-item active"><i class="fas fa-home"></i><span class="nav-text">Home</span></a>
+            <a href="#search" class="nav-item"><i class="fas fa-search"></i><span class="nav-text">Search</span></a>
+            <a href="#feed" class="nav-item"><i class="fas fa-bullhorn"></i><span class="nav-text">Feed</span></a>
+            <a href="#profile" class="nav-item"><i class="fas fa-user-circle"></i><span class="nav-text">Profile</span></a>
+            <a href="#upload-post" class="nav-item"><i class="fas fa-plus-square"></i><span class="nav-text">Upload</span></a>
+        </footer>
+    </div>
+    
+    <div id="auth-container" style="display: none;">
+        </div>
+
+    <script>
+        // आपका Apps Script API URL
+        const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyuX7ue-RoYuzwRjLxjdQndnUBioLMhomBos6zverqU1ZOKx9muJNbvw5hc5Jd72AdJ/exec";
+
+        document.addEventListener("DOMContentLoaded", () => {
+            const appContainer = document.getElementById("app-container");
+            const authContainer = document.getElementById("auth-container");
+
+            // --- Dark Mode Logic ---
+            const darkModeToggle = document.getElementById("dark-mode-toggle");
+            if (darkModeToggle) {
+                darkModeToggle.addEventListener("change", () => {
+                    document.body.classList.toggle("dark-mode", darkModeToggle.checked);
+                });
+            }
+
+            const renderAuthForm = (formType) => {
+                appContainer.style.display = "none";
+                authContainer.style.display = "block";
+                authContainer.innerHTML = "";
+                let formHtml;
+
+                if (formType === "signup") {
+                    formHtml = `
+                        <div class="auth-container">
+                            <h1>Sign Up</h1>
+                            <form id="signupForm">
+                                <input type="email" id="signupEmail" placeholder="Email" required>
+                                <input type="password" id="signupPassword" placeholder="Password" required>
+                                <input type="password" id="confirmPassword" placeholder="Confirm Password" required>
+                                <button type="submit">Sign Up</button>
+                                <p id="message"></p>
+                            </form>
+                            <p>Already have an account? <a href="#login">Login here</a></p>
+                        </div>
+                    `;
+                } else if (formType === "login") {
+                    formHtml = `
+                        <div class="auth-container">
+                            <h1>Login</h1>
+                            <form id="loginForm">
+                                <input type="email" id="loginEmail" placeholder="Email" required>
+                                <input type="password" id="loginPassword" placeholder="Password" required>
+                                <button type="submit">Login</button>
+                                <p><a href="#forgot-password">Forgot Password?</a></p>
+                                <p id="message"></p>
+                            </form>
+                            <p>Don't have an account? <a href="#signup">Sign Up here</a></p>
+                        </div>
+                    `;
+                } else if (formType === "forgot-password") {
+                    formHtml = `
+                        <div class="auth-container">
+                            <h1>Forgot Password</h1>
+                            <p>Enter your email address to receive a password reset link.</p>
+                            <form id="forgotPasswordForm">
+                                <input type="email" id="forgotEmail" placeholder="Email" required>
+                                <button type="submit">Send Reset Link</button>
+                                <p id="message"></p>
+                            </form>
+                            <p><a href="#login">Back to Login</a></p>
+                        </div>
+                    `;
+                } else if (formType === "upload-post") {
+                     formHtml = `
+                        <div class="auth-container">
+                            <h1>Upload New Post</h1>
+                            <form id="postUploadForm">
+                                <input type="text" id="postTitle" placeholder="Post Title" required>
+                                <textarea id="postContent" placeholder="Write your content here..." rows="10" required></textarea>
+                                <input type="url" id="postImageUrl" placeholder="Image URL (e.g., from imgbb.com)">
+                                <button type="submit">Publish Post</button>
+                                <p id="message"></p>
+                            </form>
+                        </div>
+                    `;
+                }
+                authContainer.innerHTML = formHtml;
+            };
+
+            const handleRouting = () => {
+                const hash = window.location.hash.substring(1);
+                const userId = localStorage.getItem("userId");
+
+                if (!userId && hash !== "signup" && hash !== "login" && hash !== "forgot-password") {
+                    window.location.hash = "#login";
+                    return;
+                }
+
+                if (hash === "signup" || hash === "login" || hash === "forgot-password" || hash === "upload-post") {
+                    renderAuthForm(hash);
+                } else {
+                    appContainer.style.display = "block";
+                    authContainer.style.display = "none";
+                }
+            };
+            
+            // Initial render based on URL hash
+            window.addEventListener("hashchange", handleRouting);
+            handleRouting();
+
+            // --- Logout Logic ---
+            const logoutBtn = document.getElementById("logout-btn");
+            if (logoutBtn) {
+                logoutBtn.addEventListener("click", () => {
+                    localStorage.removeItem("userId");
+                    window.location.hash = "#login";
+                });
+            }
+
+            // --- Menu Toggle Logic ---
+            const menuBtn = document.getElementById("menu-btn");
+            const closeMenuBtn = document.getElementById("close-menu-btn");
+            const sideMenu = document.getElementById("side-menu");
+            if (menuBtn && closeMenuBtn && sideMenu) {
+                menuBtn.addEventListener("click", () => {
+                    sideMenu.classList.add("open");
+                });
+                closeMenuBtn.addEventListener("click", () => {
+                    sideMenu.classList.remove("open");
+                });
+            }
+
+            // --- Dynamic Form Event Delegation ---
+            document.addEventListener("submit", async (e) => {
+                e.preventDefault();
+                const formId = e.target.id;
+                const messageElement = document.getElementById("message");
+
+                if (formId === "signupForm") {
+                    const email = document.getElementById("signupEmail").value;
+                    const password = document.getElementById("signupPassword").value;
+                    const confirmPassword = document.getElementById("confirmPassword").value;
+
+                    if (password !== confirmPassword) {
+                        messageElement.textContent = "Passwords do not match.";
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append("action", "signup");
+                    formData.append("email", email);
+                    formData.append("password", password);
+
+                    try {
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: "POST",
+                            body: formData
+                        });
+                        const result = await response.json();
+                        messageElement.textContent = result.message;
+                    } catch (error) {
+                        messageElement.textContent = "An error occurred. Please try again.";
+                    }
+                } else if (formId === "loginForm") {
+                    const email = document.getElementById("loginEmail").value;
+                    const password = document.getElementById("loginPassword").value;
+
+                    const formData = new FormData();
+                    formData.append("action", "login");
+                    formData.append("email", email);
+                    formData.append("password", password);
+
+                    try {
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: "POST",
+                            body: formData
+                        });
+                        const result = await response.json();
+                        messageElement.textContent = result.message;
+
+                        if (result.status === "success") {
+                            localStorage.setItem("userId", result.userId);
+                            window.location.hash = "#home";
+                        }
+                    } catch (error) {
+                        messageElement.textContent = "An error occurred. Please try again.";
+                    }
+                } else if (formId === "forgotPasswordForm") {
+                    const email = document.getElementById("forgotEmail").value;
+
+                    const formData = new FormData();
+                    formData.append("action", "forgotPassword");
+                    formData.append("email", email);
+
+                    try {
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: "POST",
+                            body: formData
+                        });
+                        const result = await response.json();
+                        messageElement.textContent = result.message;
+                    } catch (error) {
+                        messageElement.textContent = "An error occurred. Please try again.";
+                    }
+                } else if (formId === "postUploadForm") {
+                    const userId = localStorage.getItem("userId");
+                    const title = document.getElementById("postTitle").value;
+                    const content = document.getElementById("postContent").value;
+                    const imageUrl = document.getElementById("postImageUrl").value;
+
+                    if (!userId) {
+                        messageElement.textContent = "Please log in to upload posts.";
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append("action", "uploadPost");
+                    formData.append("userId", userId);
+                    formData.append("title", title);
+                    formData.append("content", content);
+                    formData.append("imageUrl", imageUrl);
+
+                    try {
+                        const response = await fetch(APPS_SCRIPT_URL, {
+                            method: "POST",
+                            body: formData
+                        });
+                        const result = await response.json();
+                        messageElement.textContent = result.message;
+                        if (result.status === "success") {
+                            e.target.reset();
+                        }
+                    } catch (error) {
+                        messageElement.textContent = "An error occurred. Please try again.";
+                    }
+                }
+            });
+
+            // --- Posts Fetching and Display Logic ---
+            const postsContainer = document.getElementById("posts-container");
+
+            async function fetchAndDisplayPosts() {
+                if (!postsContainer) return;
+                
+                postsContainer.innerHTML = "<h2>Loading posts...</h2>";
+                try {
+                    const response = await fetch(APPS_SCRIPT_URL + "?action=getPosts");
+                    const posts = await response.json();
+                    postsContainer.innerHTML = "";
+
+                    if (posts && posts.length > 0) {
+                        posts.reverse().forEach(post => {
+                            const postElement = document.createElement("div");
+                            postElement.className = "post";
+                            postElement.innerHTML = `
+                                <div class="post-header">
+                                    <img src="https://via.placeholder.com/40" alt="User Profile">
+                                    <span class="post-username">User ${post.user_id}</span>
+                                </div>
+                                <div class="post-content">
+                                    <h3>${post.title}</h3>
+                                    <img src="${post.main_image_url}" alt="Post Image">
+                                    <p>${post.content_html}</p>
+                                </div>
+                                <div class="post-actions">
+                                    <button><i class="fas fa-thumbs-up"></i> Likes: ${post.likes_count}</button>
+                                    <button><i class="fas fa-comment"></i> Comments: ${post.comments_count}</button>
+                                </div>
+                            `;
+                            postsContainer.appendChild(postElement);
+                        });
+                    } else {
+                        postsContainer.innerHTML = "<h2>No posts to display.</h2>";
+                    }
+                } catch (error) {
+                    console.error("Failed to fetch posts:", error);
+                    postsContainer.innerHTML = "<h2>Failed to load posts. Please try again later.</h2>";
+                }
+            }
+            
+            // Fetch posts only when on the home page view
+            window.addEventListener("hashchange", () => {
+                if (window.location.hash === "#home") {
+                    fetchAndDisplayPosts();
+                }
+            });
+            
+            if (window.location.hash === "#home" || !window.location.hash) {
+                fetchAndDisplayPosts();
+            }
+        });
+    </script>
 </body>
 </html>
