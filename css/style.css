@@ -1,11 +1,12 @@
-/* body {
+body {
     font-family: sans-serif;
     background-color: #f0f2f5;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
     margin: 0;
+}
+
+.dark-mode {
+    background-color: #121212;
+    color: #f0f2f5;
 }
 
 .auth-container {
@@ -16,10 +17,20 @@
     text-align: center;
     max-width: 400px;
     width: 90%;
+    margin: 100px auto;
+}
+
+.dark-mode .auth-container {
+    background-color: #1e1e1e;
+    color: #f0f2f5;
 }
 
 h1 {
     color: #333;
+}
+
+.dark-mode h1 {
+    color: #f0f2f5;
 }
 
 form {
@@ -29,10 +40,25 @@ form {
 }
 
 input[type="email"],
-input[type="password"] {
+input[type="password"],
+input[type="text"],
+input[type="url"],
+textarea {
     padding: 10px;
     border: 1px solid #ccc;
     border-radius: 4px;
+    background-color: #fff;
+    color: #333;
+}
+
+.dark-mode input[type="email"],
+.dark-mode input[type="password"],
+.dark-mode input[type="text"],
+.dark-mode input[type="url"],
+.dark-mode textarea {
+    background-color: #333;
+    color: #f0f2f5;
+    border: 1px solid #555;
 }
 
 button {
@@ -58,9 +84,6 @@ p {
     margin-top: 20px;
 }
 
- */
-
-/* Header Styles */
 .main-header {
     position: fixed;
     top: 0;
@@ -109,11 +132,10 @@ p {
     padding: 5px 15px;
 }
 
-/* Side Menu Styles */
 .side-menu {
     position: fixed;
     top: 0;
-    left: -300px; /* Initially hidden */
+    left: -300px;
     width: 250px;
     height: 100vh;
     background-color: #f8f8f8;
@@ -185,10 +207,9 @@ p {
     align-items: center;
 }
 
-/* Main Content Styles */
 .main-content {
-    padding-top: 70px; /* To prevent content from being hidden by header */
-    padding-bottom: 60px; /* To prevent content from being hidden by bottom nav */
+    padding-top: 70px;
+    padding-bottom: 60px;
     padding-left: 20px;
     padding-right: 20px;
 }
@@ -239,7 +260,10 @@ p {
     margin-right: 15px;
 }
 
-/* Bottom Nav Styles */
+.dark-mode .post-actions button {
+    color: #ccc;
+}
+
 .bottom-nav {
     position: fixed;
     bottom: 0;
@@ -264,6 +288,10 @@ p {
     text-decoration: none;
     color: #555;
     font-size: 12px;
+}
+
+.dark-mode .nav-item {
+    color: #ccc;
 }
 
 .nav-item i {
