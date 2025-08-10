@@ -316,19 +316,17 @@ applyLogoStyles(); // Call once on script load
 
 // --- Firebase Authentication Flow ---
 let splashScreenTimeout; // Variable to hold splash screen timeout ID
-let authCheckCompleted = false; // Flag to ensure initial auth check runs once
-let splashScreenMinTimePromise; // New: Promise for minimum splash screen time
-
+let authInitialCheckComplete = false; // Flag to ensure initial auth check runs once after splash is managed
+let splashScreenMinTimePromise; // Promise for minimum splash screen time
 
 // Function to safely hide the splash screen regardless of auth state
-function hideSplashScreenImmediately() {
+function hideSplashScreenProperly() {
     splashScreen.style.opacity = '0';
     setTimeout(() => {
         splashScreen.classList.add('hidden');
         splashScreen.style.display = 'none'; // Ensure it's fully gone
     }, 500); // Wait for fade out
 }
-
 
 // Show authentication container (Login/Signup)
 function showAuthContainerUI() {
@@ -347,14 +345,17 @@ function showAppContainerUI() {
 
 // Central function to check user status and direct to appropriate screen
 async function checkUserAndRedirect(user) {
-    // Prevent re-running if already handled and user state is unchanged
-    if (authCheckCompleted && user === auth.currentUser) {
+    // This listener can fire multiple times. We only want initial setup once Firebase has settled.
+    // Also ensures we don't process old user state if user logs out then back in quickly.
+    if (authInitialCheckComplete && user === auth.currentUser) {
         return;
     }
+    // Set flag before processing to prevent re-entry.
+    authInitialCheckComplete = true;
 
-    // Wait for the minimum splash screen display time before potentially showing UI
+    // Ensure splash screen minimum time has passed before UI transition
     await splashScreenMinTimePromise;
-    clearTimeout(splashScreenTimeout); // Clear any auto-hide fallback timeout
+    clearTimeout(splashScreenTimeout); // Clear any splash screen auto-hide fallback timeout
 
     if (user && user.emailVerified) {
         currentUser = user;
@@ -364,15 +365,16 @@ async function checkUserAndRedirect(user) {
             const userData = userDoc.data();
 
             if (!userDoc.exists || !userData.username || !userData.name || userData.username === "" || userData.name === "") {
+                // User document missing or crucial profile fields are empty.
                 console.log("User profile incomplete or new user. Directing to profile setup.");
-                showAppContainerUI(); // Show the main app structure
+                showAppContainerUI(); // Show the main app structure (even with profile incomplete, user gets access to some UI)
                 showScreen('profile-screen'); // Navigate to profile screen
-                editProfileModal.classList.remove('hidden'); // Display the edit profile modal
+                editProfileModal.classList.remove('hidden'); // Display the edit profile modal forcefully
                 profileModalInstruction.textContent = "Welcome! Please complete your profile to use the app.";
-                myProfileUsername.textContent = "@NewUser"; // Set temporary display names
+                myProfileUsername.textContent = "@NewUser"; // Temporary placeholders
                 sidebarUsername.textContent = "New User";
                 sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
-                showToast("Welcome! Please complete your profile.", 'info', 5000);
+                showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 5000);
             } else {
                 console.log("Existing user profile complete. Loading main app.");
                 loadUserProfile(currentUser.uid); // Load user specific data and update sidebar/header
@@ -382,31 +384,32 @@ async function checkUserAndRedirect(user) {
                 showToast("Logged in successfully!", 'success');
             }
         } catch (error) {
-            console.error("Error during initial Firestore profile check:", error);
-            showToast("Failed to load user data. Please try again or refresh.", 'error', 5000);
-            auth.signOut(); // Force sign out on critical profile data load error
+            console.error("Error during initial Firestore profile check for an authenticated user:", error);
+            showToast("Failed to load your profile data. Please try logging in again.", 'error', 5000);
+            auth.signOut(); // Critical error, force logout
             showAuthContainerUI(); // Fallback to authentication UI
         }
     } else { // User is null OR user is logged in but email is NOT verified
         currentUser = null;
-        console.log("No authenticated user, or email not verified. Showing authentication screen.");
+        console.log("No authenticated user, or user's email is not verified. Showing authentication screen.");
         showAuthContainerUI(); // Display the authentication UI (Login/Register)
 
-        // If user object exists but email not verified, inform them.
+        // Provide specific messages for unverified users if `user` object exists.
         if(user && !user.emailVerified) {
              updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
-             auth.signOut(); // Sign out until email is verified, cleaner user experience
+             auth.signOut(); // Sign out unverified user to ensure they go through verification flow explicitly
         } else {
-             updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous auth messages on first load
+             // For genuinely no user logged in or anonymous login issue (if re-enabled).
+             updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous messages
         }
     }
-    authCheckCompleted = true; // Mark that initial check has run
-    hideSplashScreenImmediately(); // Finally, hide splash screen
+    hideSplashScreenProperly(); // Once all redirection logic is processed, hide splash.
 }
 
 
 auth.onAuthStateChanged(user => {
-    console.log("onAuthStateChanged triggered. User:", user ? user.uid : "None", "Verified:", user ? user.emailVerified : "N/A");
+    // This ensures `checkUserAndRedirect` is called immediately on auth state change.
+    console.log("onAuthStateChanged event fired. Current User:", user ? user.uid : "None");
     checkUserAndRedirect(user);
 });
 
@@ -599,8 +602,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         editUsernameInput.value = ''; // Also clear profile edit fields.
         editNameInput.value = '';
 
-        // No need to explicitly hide/show here, as auth.onAuthStateChanged will be triggered
-        // and handle redirecting to the authentication screens.
+        // `onAuthStateChanged` listener will handle redirecting to the authentication screens.
     } catch (error) {
         console.error("Error logging out:", error);
         showToast("Failed to log out.", 'error');
@@ -608,7 +610,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 
-// --- Initial App Load Logic ---
+// --- Initial App Load Logic (Triggered on DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', () => {
     // 1. Initially hide main app and auth UI elements.
     appContainer.classList.add('hidden');
@@ -616,24 +618,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 2. Ensure splash screen is visible immediately.
     splashScreen.classList.remove('hidden');
+    splashScreen.style.display = 'flex'; // Ensure flexbox is active for centering
 
     // 3. Set a minimum display time for the splash screen (e.g., 3 seconds).
-    // This creates a Promise that resolves after 3 seconds.
+    // This promise will resolve after the desired splash time.
     splashScreenMinTimePromise = new Promise(resolve => {
         setTimeout(() => {
-            console.log("Splash screen minimum time elapsed.");
-            resolve(); // Resolve the promise
-        }, 3000); // 3 seconds
+            console.log("Splash screen minimum display time elapsed (3s).");
+            resolve();
+        }, 3000); // 3 seconds minimum display
     });
 
-    // 4. Set a fallback timeout for cases where `onAuthStateChanged` might not fire (rare, but good for robustness).
+    // 4. Set a fallback timeout for onAuthStateChanged, in case it takes too long or fails to fire initially.
+    // This ensures the splash screen doesn't get stuck indefinitely.
     splashScreenTimeout = setTimeout(() => {
-        if (!authCheckCompleted) {
-            console.warn("Splash screen hard timeout triggered. Forcing initial auth check and redirect.");
-            // If Firebase auth state hasn't been processed by this point, explicitly check it.
+        if (!authInitialCheckComplete) { // Only force if the primary check hasn't finished yet
+            console.warn("Splash screen force-hide timeout (5s) triggered. Forcing initial auth check and redirect.");
+            // Explicitly call the check to unblock the UI if something got stuck.
             checkUserAndRedirect(auth.currentUser);
         }
-    }, 5000); // Failsafe after 5 seconds if primary 3s timeout wasn't enough (rare scenarios).
+    }, 5000); // Max 5 seconds for Firebase auth check before fallback acts
 });
 
 
@@ -660,8 +664,7 @@ darkModeCheckbox.addEventListener('change', (e) => {
     showToast(`Dark Mode ${e.target.checked ? 'Enabled' : 'Disabled'}`, 'info');
 });
 
-// Set initial theme based on local storage or default
-// This runs on DOMContentLoaded
+// Set initial theme based on local storage or default on DOMContentLoaded
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
     if (savedTheme === 'light') {
@@ -962,7 +965,7 @@ async function loadImmersiveFeedPosts() {
         });
 
         // Clear existing immersive feed if we looped or starting fresh
-        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (snapshot.size < postsToLoadPerScroll) && immersiveFeed.children.length > 0) {
+        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (snapshot.size < postsToLoadPerScroll) && immersiveFeed.children.length > 0) { // If current fetch is less than limit, assume end and refresh for loop
              immersiveFeed.innerHTML = '';
         } else if (!lastVisibleImmersivePost && immersiveFeed.innerHTML.trim() !== '') {
             immersiveFeed.innerHTML = ''; // Initial load but had some prior content
@@ -3172,4 +3175,3 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
 cancelWithdrawalBtn.addEventListener('click', () => {
     withdrawalModal.classList.add('hidden');
 });
-
