@@ -18,6 +18,64 @@
         </div>
     </div>
 
+    <!-- Login/Register/Main App will be dynamically shown -->
+    <div id="auth-container" class="auth-container hidden">
+        <div class="auth-content">
+            <div class="app-logo-splash auth-logo"></div> <h1>AddMint</h1>
+            <section id="login-screen" class="auth-screen active">
+                <h2>Login</h2>
+                <div class="form-group">
+                    <label for="login-email">Email:</label>
+                    <input type="email" id="login-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="login-password">Password:</label>
+                    <input type="password" id="login-password" placeholder="Enter your password">
+                </div>
+                <button class="btn primary-btn" id="login-btn">Login</button>
+                <p class="auth-text">
+                    <a href="#" id="forgot-password-link">Forgot Password?</a>
+                </p>
+                <p class="auth-text">Don't have an account? <a href="#" id="show-signup">Register</a></p>
+                <p id="login-status" class="status-message"></p>
+            </section>
+
+            <section id="signup-screen" class="auth-screen hidden">
+                <h2>Register</h2>
+                <div class="form-group">
+                    <label for="signup-email">Email:</label>
+                    <input type="email" id="signup-email" placeholder="Enter your email">
+                </div>
+                <div class="form-group">
+                    <label for="signup-password">Password:</label>
+                    <input type="password" id="signup-password" placeholder="Choose a password (min 6 characters)">
+                </div>
+                <div class="form-group">
+                    <label for="signup-confirm-password">Confirm Password:</label>
+                    <input type="password" id="signup-confirm-password" placeholder="Re-enter your password">
+                </div>
+                <button class="btn primary-btn" id="signup-btn">Register</button>
+                <p class="auth-text">Already have an account? <a href="#" id="show-login">Login</a></p>
+                <p id="signup-status" class="status-message"></p>
+            </section>
+        </div>
+    </div>
+
+    <div id="forgot-password-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Reset Password</h3>
+            <p>Enter your email address to receive a password reset link.</p>
+            <div class="form-group">
+                <label for="reset-email">Email:</label>
+                <input type="email" id="reset-email" placeholder="Your email address">
+            </div>
+            <button class="btn primary-btn" id="send-reset-email-btn">Send Reset Link</button>
+            <p id="reset-status" class="status-message"></p>
+            <button class="btn secondary-btn" id="close-reset-modal">Cancel</button>
+        </div>
+    </div>
+
+
     <div id="app-container" class="app-container hidden">
 
         <header class="app-header">
@@ -30,26 +88,20 @@
                 <div class="app-title">AddMint</div>
             </div>
             <div class="header-center">
-                <div class="status-display">
-                    <span id="header-coins">0 C</span> |
-                    <span id="header-credits">0 Cr</span> |
-                    <span id="header-limit">0 L</span>
-                </div>
+                <!-- Coins, Credits, Limit Removed from Header -->
             </div>
             <div class="header-right">
                 <div class="icon-button" id="refresh-posts-btn" title="Refresh Feed">
                     <i class="fas fa-sync-alt"></i>
                 </div>
-                <div class="icon-button" id="gift-claim-btn" title="Claim Daily Reward">
-                    <i class="fas fa-gift"></i>
-                </div>
-                </div>
+                <!-- Gift Claim Button Removed -->
+            </div>
         </header>
 
         <nav id="sidebar" class="sidebar">
             <div class="sidebar-header">
                 <div class="profile-avatar-small" id="sidebar-profile-avatar"></div>
-                <h3 id="sidebar-username">My Name</h3>
+                <h3 id="sidebar-username">My User</h3> <!-- Updated to placeholder -->
                 <div class="close-sidebar" id="close-sidebar">&times;</div>
             </div>
             <ul>
@@ -158,6 +210,7 @@
                     <div id="edit-profile-modal" class="modal hidden">
                         <div class="modal-content">
                             <h3>Edit Profile</h3>
+                            <p id="profile-modal-instruction">Please complete your profile to continue using the app.</p>
                             <div class="form-group">
                                 <label for="edit-username">Username:</label>
                                 <input type="text" id="edit-username" placeholder="Enter new username">
@@ -180,7 +233,12 @@
                                 <input type="text" id="edit-instagram" placeholder="e.g., my_insta_id">
                             </div>
                             <div class="form-group">
-                                <label>Profile Logo:</label>
+                                <label for="profile-pic-url-input">Direct Profile Picture URL (Optional):</label>
+                                <input type="text" id="profile-pic-url-input" placeholder="e.g., https://example.com/mypic.jpg">
+                                <small>Enter a direct image link (like from imgbb.com).</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Or Choose a Profile Logo:</label>
                                 <div id="profile-logo-options" class="logo-options-grid">
                                     </div>
                             </div>
@@ -283,7 +341,7 @@
                     <small>Min 60, Max 10000 characters.</small>
                 </div>
                 <div class="form-group">
-                    <label for="post-boost">Post Boost Hours (All posts are 24 hours now):</label>
+                    <label for="post-boost">Post will be active for:</label>
                     <select id="post-boost" disabled>
                         <option value="24">24 Hours (Free)</option>
                     </select>
@@ -371,7 +429,7 @@
                 <h3>Information We Collect:</h3>
                 <ul>
                     <li><strong>Account Information:</strong> Username, email, password (hashed).</li>
-                    <li><strong>Profile Information:</strong> Optional WhatsApp number, Instagram ID, chosen profile logo, display name, bio, account privacy.</li>
+                    <li><strong>Profile Information:</strong> Optional WhatsApp number, Instagram ID, chosen profile logo or direct URL, display name, bio, account privacy.</li>
                     <li><strong>Content Data:</strong> Posts, messages, likes, reactions, views.</li>
                     <li><strong>Usage Data:</strong> Interactions with the app, features used, and technical data (e.g., device type).</li>
                 </ul>
@@ -423,7 +481,7 @@
         <div id="ad-modal" class="modal hidden">
             <div class="modal-content">
                 <h3>Watch Ad to Earn Reward</h3>
-                <p>Please watch a short ad to claim your reward (e.g., coins, credit, limit).</p>
+                <p>Please watch a short ad to gain access to features.</p>
                 <div id="ad-placeholder">
                     <p>Simulating Ad (5 seconds)...</p>
                 </div>
@@ -433,7 +491,7 @@
 
         <div id="reward-popup" class="modal hidden">
             <div class="modal-content reward-content">
-                <h3>Reward Claimed! <i class="fas fa-trophy"></i></h3>
+                <h3>Success! <i class="fas fa-trophy"></i></h3>
                 <p id="reward-message"></p>
                 <button class="btn primary-btn" id="close-reward-popup">Great!</button>
             </div>
