@@ -102,8 +102,20 @@ body.light-mode {
     transition: opacity 0.5s ease-out;
 }
 
-.splash-content {
+/* Centering the content within splash and auth containers */
+.splash-content, .auth-content { /* Applied to both to center them */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center; /* This is key for vertical centering */
     animation: fadeIn 1s ease-out forwards;
+    width: 100%; /* Ensure it takes full width for alignment */
+    height: 100%; /* Ensure it takes full height for centering */
+    text-align: center; /* Re-center text explicitly */
+}
+.splash-content { /* Specific padding/margin adjustments */
+    padding: 20px; /* Add some padding around content */
+    box-sizing: border-box;
 }
 
 .app-logo-splash {
@@ -158,7 +170,7 @@ body.light-mode {
     height: 100vh;
     display: flex;
     justify-content: center;
-    align-items: center;
+    align-items: center; /* Vertically centers the .auth-content */
     background-color: var(--bg-color-lighter);
     box-shadow: 0 0 30px var(--shadow-color-main);
     border-radius: 12px;
@@ -169,10 +181,10 @@ body.light-mode {
     flex-direction: column;
     text-align: center;
 }
-.auth-content {
+.auth-content { /* Adjust padding for better look on small screens */
     width: 100%;
     background-color: var(--bg-color-main);
-    padding: 30px 20px;
+    padding: 30px 20px; /* Reduced side padding slightly */
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
     border: 1px solid var(--border-color-main);
@@ -357,6 +369,9 @@ body.light-mode {
     left: 50%;
     transform: translate(-50%, -50%);
     color: var(--button-primary-text);
+}
+.profile-avatar-small[style*="background-image"]::before {
+    content: none; /* Hide default emoji if image is loaded */
 }
 
 
@@ -586,7 +601,7 @@ h2 {
     padding: 10px 15px;
     cursor: pointer;
     color: var(--text-color-main);
-    transition: background-color 0.2s ease, color 0.2s ease;
+    transition: background-color 0.2s ease;
 }
 
 .options-dropdown span:hover {
@@ -1005,6 +1020,7 @@ input[type="file"] {
 }
 .logo-option-item::before {
     content: '👤'; /* Default placeholder emoji */
+    font-family: 'Montserrat', sans-serif;
     font-size: 28px;
     position: absolute;
     top: 50%; left: 50%;
