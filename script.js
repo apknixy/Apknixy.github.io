@@ -1,4 +1,3 @@
-
 // Firebase Configuration (from your input)
 const firebaseConfig = {
     apiKey: "AIzaSyDlZA4grzF3fx95-11E4s7ASXwkIij1k1w",
@@ -19,26 +18,45 @@ const storage = firebase.storage();
 
 // --- DOM Elements ---
 const splashScreen = document.getElementById('splash-screen');
+const authContainer = document.getElementById('auth-container'); // New
 const appContainer = document.getElementById('app-container');
+
+// Auth Screens
+const loginScreen = document.getElementById('login-screen');
+const signupScreen = document.getElementById('signup-screen');
+const loginEmailInput = document.getElementById('login-email');
+const loginPasswordInput = document.getElementById('login-password');
+const loginBtn = document.getElementById('login-btn');
+const loginStatus = document.getElementById('login-status');
+const showSignupLink = document.getElementById('show-signup');
+
+const signupEmailInput = document.getElementById('signup-email');
+const signupPasswordInput = document.getElementById('signup-password');
+const signupConfirmPasswordInput = document.getElementById('signup-confirm-password');
+const signupBtn = document.getElementById('signup-btn');
+const signupStatus = document.getElementById('signup-status');
+const showLoginLink = document.getElementById('show-login');
+
+const forgotPasswordLink = document.getElementById('forgot-password-link');
+const forgotPasswordModal = document.getElementById('forgot-password-modal');
+const resetEmailInput = document.getElementById('reset-email');
+const sendResetEmailBtn = document.getElementById('send-reset-email-btn');
+const resetStatus = document.getElementById('reset-status');
+const closeResetModalBtn = document.getElementById('close-reset-modal');
+
+
 const menuToggle = document.getElementById('menu-toggle');
 const sidebar = document.getElementById('sidebar');
 const closeSidebarBtn = document.getElementById('close-sidebar');
 const mainContent = document.querySelector('.main-content');
 const bottomNavItems = document.querySelectorAll('.app-bottom-nav .nav-item');
 const screenSections = document.querySelectorAll('.app-screen');
-const headerCoins = document.getElementById('header-coins');
-const headerCredits = document.getElementById('header-credits');
-const headerLimit = document.getElementById('header-limit');
-const giftClaimBtn = document.getElementById('gift-claim-btn');
-const adModal = document.getElementById('ad-modal');
-const closeAdModalBtn = document.getElementById('close-ad-modal');
-const rewardPopup = document.getElementById('reward-popup');
-const rewardMessage = document.getElementById('reward-message');
-const closeRewardPopupBtn = document.getElementById('close-reward-popup');
-const toastNotification = document.getElementById('toast-notification');
+// Coins, Credits, Limits removed from header elements
 const refreshPostsBtn = document.getElementById('refresh-posts-btn');
 const postsFeed = document.getElementById('posts-feed');
 const loadingSpinner = document.getElementById('loading-spinner');
+// Gift Claim Button removed
+
 
 // Post Upload Screen
 const uploadScreen = document.getElementById('upload-screen');
@@ -70,14 +88,15 @@ const profilePostsFeed = document.getElementById('profile-posts-feed');
 const profileRepostsFeed = document.getElementById('profile-reposts-feed');
 const profilePostTabs = document.querySelectorAll('.profile-post-tabs .tab-btn');
 
-
 const editProfileModal = document.getElementById('edit-profile-modal');
+const profileModalInstruction = document.getElementById('profile-modal-instruction'); // New instruction element
 const editUsernameInput = document.getElementById('edit-username');
 const usernameAvailability = document.getElementById('username-availability');
 const editNameInput = document.getElementById('edit-name');
 const editBioInput = document.getElementById('edit-bio');
 const editWhatsappInput = document.getElementById('edit-whatsapp');
 const editInstagramInput = document.getElementById('edit-instagram');
+const profilePicUrlInput = document.getElementById('profile-pic-url-input'); // New direct URL input
 const profileLogoOptions = document.getElementById('profile-logo-options');
 const accountPrivacyToggle = document.getElementById('account-privacy-toggle');
 const accountPrivacyStatus = document.getElementById('account-privacy-status');
@@ -233,6 +252,14 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
+// Function to update status messages on auth screens
+function updateAuthStatus(element, message, type) {
+    element.textContent = message;
+    element.className = `status-message ${type}`;
+    element.classList.remove('hidden'); // Ensure it's visible
+}
+
+
 function formatNumber(num) {
     if (num === undefined || num === null) return 0;
     if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -270,15 +297,15 @@ function getLogoCssClass(logoName) {
     return logo ? `user-${logo.class}` : 'user-logo-1'; // Default to logo-1 if not found
 }
 
-// Function to dynamically apply logo styles
+// Function to dynamically apply logo styles (for emoji based logos)
 function applyLogoStyles() {
     PROFILE_LOGOS.forEach(logo => {
         if (!document.head.querySelector(`style[data-logo-class="${logo.class}"]`)) {
             const style = document.createElement('style');
             style.setAttribute('data-logo-class', logo.class);
             style.innerHTML = `
-                .profile-avatar.user-${logo.class}, .profile-avatar-large.user-${logo.class}, .profile-avatar-small.user-${logo.class} { background-color: ${logo.color}; }
-                .profile-avatar.user-${logo.class}::before, .profile-avatar-large.user-${logo.class}::before, .profile-avatar-small.user-${logo.class}::before { content: '${logo.emoji}'; font-size: ${logo.class.includes('large') ? '60px' : logo.class.includes('small') ? '30px' : '24px'}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--button-primary-text); }
+                .profile-avatar.user-${logo.class}, .profile-avatar-large.user-${logo.class}, .profile-avatar-small.user-${logo.class}, .logo-option-item.user-${logo.class} { background-color: ${logo.color}; }
+                .profile-avatar.user-${logo.class}::before, .profile-avatar-large.user-${logo.class}::before, .profile-avatar-small.user-${logo.class}::before, .logo-option-item.user-${logo.class}::before { content: '${logo.emoji}'; font-size: ${logo.class.includes('large') ? '60px' : logo.class.includes('small') ? '30px' : '24px'}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--button-primary-text); }
             `;
             document.head.appendChild(style);
         }
@@ -287,159 +314,285 @@ function applyLogoStyles() {
 applyLogoStyles(); // Call once on script load
 
 
-// --- Firebase Authentication ---
-let splashScreenTimeout; // Declare a variable to hold the splash screen timeout
+// --- Firebase Authentication Flow ---
+let splashScreenTimeout; // Variable to hold splash screen timeout ID
 
-// Set a fallback timeout for the splash screen in case auth fails or is slow
-// This ensures the splash screen will eventually hide even if there's a problem with Firebase.
-splashScreenTimeout = setTimeout(() => {
-    console.warn("Splash screen fallback triggered: Hiding splash screen after 10 seconds.");
-    hideSplashScreen();
-}, 10000); // 10 seconds
+// Hide splash screen and show auth container
+function showAuthContainer() {
+    clearTimeout(splashScreenTimeout); // Clear any pending splash screen timeout
+    splashScreen.style.opacity = '0';
+    setTimeout(() => {
+        splashScreen.classList.add('hidden');
+        authContainer.classList.remove('hidden');
+    }, 500); // Wait for fade out
+}
 
-auth.onAuthStateChanged(async (user) => {
-    // Clear the fallback timeout if authentication proceeds normally
-    clearTimeout(splashScreenTimeout);
+// Hide auth container and show app container
+function showAppContainer() {
+    authContainer.classList.add('hidden');
+    appContainer.classList.remove('hidden');
+}
 
-    if (user) {
+// Check user status and direct to appropriate screen
+async function checkUserAndRedirect(user) {
+    if (user && user.emailVerified) {
         currentUser = user;
-        console.log("User authenticated:", currentUser.uid);
-
         try {
-            // Check if user's profile exists in Firestore
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
 
-            if (!userDoc.exists || !userDoc.data().username) {
-                console.log("New user or incomplete profile. Redirecting to profile setup.");
-                // New user or incomplete profile, redirect to profile setup
+            if (!userDoc.exists || !userDoc.data().username || !userDoc.data().name) { // Ensure name also exists
+                // New user or incomplete profile, show edit profile modal
+                console.log("User profile incomplete. Directing to profile setup.");
+                showAppContainer();
                 showScreen('profile-screen');
-                editProfileModal.classList.remove('hidden'); // Automatically open edit profile
-                showToast("Welcome! Please complete your profile.", 'info', 5000);
-                myProfileUsername.textContent = "@NewUser"; // Placeholder
+                editProfileModal.classList.remove('hidden');
+                profileModalInstruction.textContent = "Welcome! Please complete your profile to use the app.";
+                myProfileUsername.textContent = "@NewUser";
                 sidebarUsername.textContent = "New User";
-                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`; // Default for new users
+                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
+                // Pre-fill email in edit profile if desired:
+                // editEmailInput.value = user.email; // If you add an email input
+                showToast("Welcome! Please complete your profile.", 'info', 5000);
             } else {
-                console.log("Existing user. Loading profile and home feed.");
-                // Existing user, load profile and show home feed
-                loadUserProfile(currentUser.uid); // Also updates header and sidebar info
-                loadUserCoinsCreditsLimits(currentUser.uid);
+                console.log("User profile complete. Loading app.");
+                loadUserProfile(currentUser.uid); // Also updates sidebar
+                showAppContainer();
                 showScreen('home-screen');
-                loadPosts(); // Start loading posts for the home screen
+                loadPosts(); // Load initial posts
+                showToast("Logged in successfully!", 'success');
             }
-            hideSplashScreen(); // Always hide splash screen after auth/profile logic succeeds
-        } catch (firestoreError) {
-            console.error("Error during Firestore profile check:", firestoreError);
-            showToast("Error loading user profile. Please try again.", 'error', 5000);
-            hideSplashScreen(); // Ensure splash screen hides even on Firestore error
-            // Optionally, prompt for re-login or show a limited UI
+        } catch (error) {
+            console.error("Error fetching user document:", error);
+            showToast("Failed to load user data. Please try again.", 'error');
+            auth.signOut(); // Force sign out on critical error
+            showAuthContainer(); // Show auth screen on error
         }
+    } else if (user && !user.emailVerified) {
+        currentUser = user;
+        console.log("User logged in but email not verified. Showing auth container.");
+        showAuthContainer();
+        loginScreen.classList.add('active'); // Keep on login screen
+        signupScreen.classList.add('hidden');
+        updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
+        auth.signOut(); // Sign out user until they verify, makes the flow cleaner
     } else {
         currentUser = null;
-        console.log("No user authenticated. Attempting anonymous sign-in (for demo).");
-        // This is a placeholder for login/signup. In a real app, you'd show a dedicated login UI.
-        showToast("Please log in or sign up to use the app.", 'info', 5000);
-        auth.signInAnonymously().catch(error => {
-            console.error("Error signing in anonymously:", error);
-            showToast("Error logging in. Please refresh.", 'error');
-            hideSplashScreen(); // Hide splash screen even if anonymous sign-in fails
-        });
+        console.log("No user or email not verified. Showing auth container.");
+        showAuthContainer();
+        loginScreen.classList.add('active'); // Show login screen by default
+        signupScreen.classList.add('hidden');
     }
+}
+
+
+auth.onAuthStateChanged(checkUserAndRedirect); // Call the redirect logic on auth state change
+
+
+// Login/Signup/Forgot Password UI handlers
+showSignupLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginScreen.classList.remove('active');
+    signupScreen.classList.add('active');
+    loginStatus.classList.add('hidden');
 });
 
-// --- Splash Screen Transition ---
-function hideSplashScreen() {
-    setTimeout(() => {
-        splashScreen.style.opacity = '0';
-        setTimeout(() => {
-            splashScreen.classList.add('hidden');
-            appContainer.classList.remove('hidden');
-        }, 500); // Wait for fade out to complete
-    }, 1000); // Show splash for at least 1-3 seconds
-}
+showLoginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    signupScreen.classList.remove('active');
+    loginScreen.classList.add('active');
+    signupStatus.classList.add('hidden');
+});
 
-// --- Header Coins/Credits/Limits Display ---
-async function loadUserCoinsCreditsLimits(userId) {
-    if (!userId) return;
-    try {
-        const userDocRef = db.collection('users').doc(userId);
-        userDocRef.onSnapshot(doc => {
-            if (doc.exists) {
-                const data = doc.data();
-                headerCoins.textContent = `${formatNumber(data.coins || 0)} C`;
-                headerCredits.textContent = `${formatNumber(data.credits || 0)} Cr`;
-                headerLimit.textContent = `${formatNumber(data.postLimit || 0)} L`;
-                checkDailyRewardStatus(data.lastRewardClaim || 0);
-                // Update sidebar username and avatar
-                sidebarUsername.textContent = data.name || data.username || "My Name";
-                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass(data.profileLogo || 'logo-1')}`;
-            }
-        });
-    } catch (error) {
-        console.error("Error fetching user stats:", error);
-        showToast("Error loading user stats.", 'error');
-    }
-}
+forgotPasswordLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    forgotPasswordModal.classList.remove('hidden');
+    resetStatus.classList.add('hidden'); // Clear previous status
+    resetEmailInput.value = '';
+});
 
-// --- Daily Reward Logic ---
-const DAILY_REWARD_INTERVAL = 24 * 60 * 60 * 1000; // 24 hours in milliseconds
-const DAILY_REWARD = { limit: 1, coins: 50, credits: 20 }; // Adjusted values
+closeResetModalBtn.addEventListener('click', () => {
+    forgotPasswordModal.classList.add('hidden');
+});
 
-async function checkDailyRewardStatus(lastClaimTimestamp) {
-    if (!currentUser) return;
-    const now = Date.now();
-    const lastClaimTime = lastClaimTimestamp; // Firestore timestamp to milliseconds
+loginBtn.addEventListener('click', signInUser);
+signupBtn.addEventListener('click', registerUser);
+sendResetEmailBtn.addEventListener('click', sendPasswordReset);
 
-    if (now - lastClaimTime >= DAILY_REWARD_INTERVAL) {
-        giftClaimBtn.classList.add('neon-glow'); // Visually indicate available reward
-    } else {
-        giftClaimBtn.classList.remove('neon-glow');
-        const timeRemaining = DAILY_REWARD_INTERVAL - (now - lastClaimTime);
-        console.log(`Next reward in: ${new Date(timeRemaining).toISOString().substr(11, 8)}`);
-    }
-}
 
-giftClaimBtn.addEventListener('click', async () => {
-    if (!currentUser) {
-        showToast("Please log in to claim rewards.", 'info');
+// Login User
+async function signInUser() {
+    const email = loginEmailInput.value.trim();
+    const password = loginPasswordInput.value.trim();
+
+    if (!email || !password) {
+        updateAuthStatus(loginStatus, "Please enter both email and password.", 'error');
         return;
     }
 
     try {
-        const userDocRef = db.collection('users').doc(currentUser.uid);
-        const userDoc = await userDocRef.get();
-        const userData = userDoc.data();
-        const lastClaimTime = userData.lastRewardClaim || 0;
-        const now = Date.now();
-
-        if (now - lastClaimTime >= DAILY_REWARD_INTERVAL) {
-            // Claim reward
-            await userDocRef.update({
-                coins: firebase.firestore.FieldValue.increment(DAILY_REWARD.coins),
-                credits: firebase.firestore.FieldValue.increment(DAILY_REWARD.credits),
-                postLimit: firebase.firestore.FieldValue.increment(DAILY_REWARD.limit),
-                lastRewardClaim: now // Update last claim time
-            });
-            showRewardPopup(`You claimed your daily reward!\n+${DAILY_REWARD.coins} Coins, +${DAILY_REWARD.credits} Credits, +${DAILY_REWARD.limit} Limits.`);
-            showToast("Daily reward claimed!", 'success');
-        } else {
-            const timeRemaining = DAILY_REWARD_INTERVAL - (now - lastClaimTime);
-            showToast(`Next reward available in: ${new Date(timeRemaining).toISOString().substr(11, 8)}`, 'info', 5000);
-        }
+        await auth.signInWithEmailAndPassword(email, password);
+        // auth.onAuthStateChanged will handle the redirect
+        updateAuthStatus(loginStatus, "Logging in...", 'info');
+        loginEmailInput.value = ''; // Clear inputs
+        loginPasswordInput.value = '';
     } catch (error) {
-        console.error("Error claiming daily reward:", error);
-        showToast("Failed to claim reward. Please try again.", 'error');
+        console.error("Login error:", error);
+        let errorMessage = "Login failed. Please check your email and password.";
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
+            errorMessage = "Invalid email or password.";
+        } else if (error.code === 'auth/too-many-requests') {
+            errorMessage = "Too many login attempts. Try again later.";
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = "Network error. Check your internet connection.";
+        } else if (error.code === 'auth/user-disabled') {
+            errorMessage = "Your account has been disabled.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email format.";
+        }
+        updateAuthStatus(loginStatus, errorMessage, 'error');
+    }
+}
+
+// Register User
+async function registerUser() {
+    const email = signupEmailInput.value.trim();
+    const password = signupPasswordInput.value.trim();
+    const confirmPassword = signupConfirmPasswordInput.value.trim();
+
+    if (!email || !password || !confirmPassword) {
+        updateAuthStatus(signupStatus, "All fields are required.", 'error');
+        return;
+    }
+    if (password.length < 6) {
+        updateAuthStatus(signupStatus, "Password must be at least 6 characters long.", 'error');
+        return;
+    }
+    if (password !== confirmPassword) {
+        updateAuthStatus(signupStatus, "Passwords do not match.", 'error');
+        return;
+    }
+
+    try {
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        await sendEmailVerification(userCredential.user);
+
+        // Create initial user document in Firestore
+        await db.collection('users').doc(userCredential.user.uid).set({
+            uid: userCredential.user.uid,
+            email: userCredential.user.email,
+            username: "", // User will set in edit profile
+            name: "",     // User will set in edit profile
+            bio: "",
+            whatsapp: "",
+            instagram: "",
+            profileLogo: getRandomLogoClass(), // Default random logo
+            profilePicUrl: "", // Default empty direct pic URL
+            isPrivate: false,
+            followers: [],
+            following: [],
+            followersCount: 0,
+            followingCount: 0,
+            postCount: 0,
+            monetizedViewsCount: 0,
+            unmonetizedViewsCount: 0,
+            earnedAmount: 0.00,
+            reposts: [],
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        updateAuthStatus(signupStatus, "Registration successful! Please verify your email.", 'success');
+        signupEmailInput.value = '';
+        signupPasswordInput.value = '';
+        signupConfirmPasswordInput.value = '';
+        // After successful registration, send them to login screen for verification check
+        loginScreen.classList.add('active');
+        signupScreen.classList.remove('active');
+        updateAuthStatus(loginStatus, "Registered! Check your email to verify and login.", 'info');
+
+    } catch (error) {
+        console.error("Registration error:", error);
+        let errorMessage = "Registration failed.";
+        if (error.code === 'auth/email-already-in-use') {
+            errorMessage = "This email is already in use.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email format.";
+        }
+        updateAuthStatus(signupStatus, errorMessage, 'error');
+    }
+}
+
+// Send Email Verification
+async function sendEmailVerification(user) {
+    try {
+        await user.sendEmailVerification();
+        console.log("Verification email sent.");
+    } catch (error) {
+        console.error("Error sending verification email:", error);
+        showToast("Failed to send verification email. Try again later.", 'error');
+    }
+}
+
+// Send Password Reset
+async function sendPasswordReset() {
+    const email = resetEmailInput.value.trim();
+    if (!email) {
+        updateAuthStatus(resetStatus, "Please enter your email.", 'error');
+        return;
+    }
+
+    try {
+        await auth.sendPasswordResetEmail(email);
+        updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
+    } catch (error) {
+        console.error("Forgot password error:", error);
+        let errorMessage = "Failed to send reset link.";
+        if (error.code === 'auth/user-not-found') {
+            errorMessage = "No account found with that email.";
+        }
+        updateAuthStatus(resetStatus, errorMessage, 'error');
+    }
+}
+
+// Logout Button
+document.getElementById('logout-btn').addEventListener('click', async () => {
+    try {
+        await auth.signOut();
+        showToast("Logged out successfully.", 'info');
+        // `onAuthStateChanged` will handle showing the login screen
+        loginEmailInput.value = ''; // Clear fields for new login
+        loginPasswordInput.value = '';
+        // Hide app container elements that require logged in user
+        appContainer.classList.add('hidden');
+        showAuthContainer(); // Show auth screens
+    } catch (error) {
+        console.error("Error logging out:", error);
+        showToast("Failed to log out.", 'error');
     }
 });
 
-function showRewardPopup(message) {
-    rewardMessage.textContent = message;
-    rewardPopup.classList.remove('hidden');
-}
 
-closeRewardPopupBtn.addEventListener('click', () => {
-    rewardPopup.classList.add('hidden');
+// --- Splash Screen and Initial Load ---
+document.addEventListener('DOMContentLoaded', () => {
+    // Hide everything initially
+    appContainer.classList.add('hidden');
+    authContainer.classList.add('hidden');
+
+    // Show splash screen, then Firebase `onAuthStateChanged` will direct the flow
+    splashScreen.classList.remove('hidden');
+
+    // Fallback: If Firebase auth state doesn't resolve in 10 seconds, hide splash
+    splashScreenTimeout = setTimeout(() => {
+        console.warn("Splash screen fallback: Firebase authentication might be stuck or slow.");
+        if (appContainer.classList.contains('hidden') && authContainer.classList.contains('hidden')) {
+            showAuthContainer(); // Fallback to showing login if nothing happened
+        }
+    }, 10000); // 10 seconds
 });
+
+// Remove Gift Claim Btn
+// (Code related to Daily Rewards is completely removed from this version)
+// (Code related to Coins, Credits, Limits from headers is completely removed)
 
 
 // --- Data Saver Toggle ---
@@ -520,18 +673,6 @@ sidebar.querySelectorAll('ul li a').forEach(link => {
     });
 });
 
-// Logout Button
-document.getElementById('logout-btn').addEventListener('click', async () => {
-    try {
-        await auth.signOut();
-        showToast("Logged out successfully.", 'info');
-        // Redirect to login page or show login UI (for this demo, it'll try to sign in anonymously again)
-        location.reload(); // Simple reload to trigger onAuthStateChanged again
-    } catch (error) {
-        console.error("Error logging out:", error);
-        showToast("Failed to log out.", 'error');
-    }
-});
 
 // --- Bottom Navigation ---
 bottomNavItems.forEach(item => {
@@ -576,14 +717,14 @@ postCategoryFilter.addEventListener('change', () => {
 });
 
 async function loadPosts() {
-    if (fetchingPosts || !currentUser) return;
+    if (fetchingPosts || !currentUser) return; // Must be logged in
 
     fetchingPosts = true;
     loadingSpinner.classList.remove('hidden');
 
     try {
         let postsRef = db.collection('posts')
-                         .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active posts
+                         .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active (not expired) posts
                          .orderBy('expiryTime', 'desc') // Order by expiry to show newer relevant posts first
                          .orderBy('timestamp', 'desc'); // Secondary order by original timestamp for consistency
 
@@ -592,31 +733,79 @@ async function loadPosts() {
             postsRef = postsRef.where('category', '==', selectedCategory);
         }
 
-        if (lastVisiblePost) {
-            postsRef = postsRef.startAfter(lastVisiblePost);
+        // Apply follower-based filtering for home feed (display only posts from followed users)
+        const userDoc = await db.collection('users').doc(currentUser.uid).get();
+        const followedUsers = userDoc.data().following || [];
+
+        let snapshot;
+        let fetchedPosts = [];
+
+        if (followedUsers.length > 0) {
+            // Fetch posts by followed users (Firestore `in` query is limited to 10 UIDs)
+            const chunkedFollowedUsers = [];
+            for (let i = 0; i < followedUsers.length; i += 10) {
+                chunkedFollowedUsers.push(followedUsers.slice(i, i + 10));
+            }
+
+            for (const chunk of chunkedFollowedUsers) {
+                const followedPostsSnapshot = await db.collection('posts')
+                                                        .where('userId', 'in', chunk)
+                                                        .where('expiryTime', '>', firebase.firestore.Timestamp.now())
+                                                        .orderBy('timestamp', 'desc')
+                                                        .limit(postsToLoadPerScroll)
+                                                        .get();
+                followedPostsSnapshot.forEach(doc => {
+                    // Avoid duplicates if a user follows multiple people who repost the same post (unlikely but possible)
+                    if (!fetchedPosts.some(p => p.id === doc.id)) {
+                         fetchedPosts.push({ id: doc.id, ...doc.data() });
+                    }
+                });
+            }
+        }
+        // If not enough posts from followed users or no followed users, fetch general public posts.
+        if (fetchedPosts.length < postsToLoadPerScroll || followedUsers.length === 0) {
+             const generalPostsRef = db.collection('posts')
+                                        .where('isPrivate', '==', false) // Only public posts for general feed
+                                        .where('expiryTime', '>', firebase.firestore.Timestamp.now())
+                                        .orderBy('expiryTime', 'desc')
+                                        .orderBy('timestamp', 'desc');
+             if (lastVisiblePost) {
+                 snapshot = await generalPostsRef.startAfter(lastVisiblePost).limit(postsToLoadPerScroll - fetchedPosts.length).get();
+             } else {
+                 snapshot = await generalPostsRef.limit(postsToLoadPerScroll - fetchedPosts.length).get();
+             }
+             snapshot.forEach(doc => {
+                 if (!fetchedPosts.some(p => p.id === doc.id)) {
+                    fetchedPosts.push({ id: doc.id, ...doc.data() });
+                 }
+             });
+             // Update lastVisiblePost if we fetched new general posts
+             if (snapshot.docs.length > 0) {
+                lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
+             }
         }
 
-        const snapshot = await postsRef.limit(postsToLoadPerScroll).get();
-        if (snapshot.empty) {
-            showToast("No more posts to load. Looping back to beginning.", 'info', 3000);
-            lastVisiblePost = null; // Reset to loop from the beginning
+        // If no new posts are found from both followed and general, reset for looping.
+        if (fetchedPosts.length === 0) {
+            if (lastVisiblePost !== null) { // Only show toast if we were scrolling before
+                showToast("No more new posts. Looping feed...", 'info', 3000);
+            }
+            lastVisiblePost = null; // Reset to loop from the beginning on next load
             fetchingPosts = false;
             loadingSpinner.classList.add('hidden');
-            if (postsFeed.innerHTML === '') { // If no posts loaded initially, show message
-                postsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No posts available in this category.</p>';
+            if (postsFeed.innerHTML === '') {
+                 postsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No posts available.</p>';
             }
             return;
         }
 
-        lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
 
-        let currentBatch = [];
-        snapshot.docs.forEach(doc => {
-            currentBatch.push({ id: doc.id, ...doc.data() });
-        });
+        // Remove posts already rendered in this feed session, and then append.
+        const existingPostIds = Array.from(postsFeed.children).map(el => el.dataset.postId);
+        const newPostsToRender = fetchedPosts.filter(post => !existingPostIds.includes(post.id));
 
-        // Apply random layout logic
-        let tempPosts = [...currentBatch];
+        // Randomize the layout of new posts
+        let tempPosts = [...newPostsToRender];
         while (tempPosts.length > 0) {
             const randomLayout = Math.floor(Math.random() * 3); // 0: vertical, 1: horizontal, 2: table
 
@@ -646,6 +835,7 @@ async function loadPosts() {
                 renderPost(post, postsFeed, 'vertical-post');
             }
         }
+
     } catch (error) {
         console.error("Error loading posts:", error);
         showToast("Error loading posts. Please refresh.", 'error');
@@ -655,9 +845,10 @@ async function loadPosts() {
     }
 }
 
+
 // Immersive Feed (Snap Scrolling)
 async function loadImmersiveFeedPosts() {
-    if (fetchingImmersivePosts || !currentUser) return;
+    if (fetchingImmersivePosts || !currentUser) return; // Must be logged in
 
     fetchingImmersivePosts = true;
     feedLoadingSpinner.classList.remove('hidden');
@@ -665,30 +856,18 @@ async function loadImmersiveFeedPosts() {
     try {
         let postsRef = db.collection('posts')
                          .where('expiryTime', '>', firebase.firestore.Timestamp.now())
+                         .where('isPrivate', '==', false) // Only public posts in immersive feed (can be modified)
                          .orderBy('expiryTime', 'desc')
-                         .orderBy('timestamp', 'desc'); // For consistent ordering
+                         .orderBy('timestamp', 'desc');
 
-        // If user follows people, prioritize their posts first
-        const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        const followedUsers = userDoc.data().following || [];
-
-        let snapshot;
-        let posts = [];
-
-        if (followedUsers.length > 0) {
-            // Attempt to get posts from followed users (this can be complex with Firestore limits)
-            // For simplicity, we'll fetch general posts and check if they are from followed users.
-            // A more scalable solution for "following feed" involves denormalization or backend processing.
-        }
-
-        // Fetch general posts, mixing with followed if possible
         if (lastVisibleImmersivePost) {
             postsRef = postsRef.startAfter(lastVisibleImmersivePost);
         }
-        snapshot = await postsRef.limit(postsToLoadPerScroll).get();
+
+        const snapshot = await postsRef.limit(postsToLoadPerScroll).get();
 
         if (snapshot.empty) {
-            showToast("No more immersive posts. Looping back.", 'info', 3000);
+            showToast("No more immersive posts. Looping back...", 'info', 3000);
             lastVisibleImmersivePost = null; // Reset to loop from the beginning
             fetchingImmersivePosts = false;
             feedLoadingSpinner.classList.add('hidden');
@@ -700,12 +879,17 @@ async function loadImmersiveFeedPosts() {
 
         lastVisibleImmersivePost = snapshot.docs[snapshot.docs.length - 1];
 
+        const fetchedPosts = [];
         snapshot.docs.forEach(doc => {
-            posts.push({ id: doc.id, ...doc.data() });
+            fetchedPosts.push({ id: doc.id, ...doc.data() });
         });
 
-        // Mix in followed users' posts if possible, or just add all fetched posts
-        posts.forEach(post => {
+        // Clear only if starting a fresh load, otherwise append
+        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || !lastVisibleImmersivePost) {
+             immersiveFeed.innerHTML = '';
+        }
+
+        fetchedPosts.forEach(post => {
             renderPost(post, immersiveFeed, 'immersive-post'); // Use immersive-post class
         });
 
@@ -725,13 +909,22 @@ function createPostElement(postData, layoutClass = 'vertical-post') {
     postCard.dataset.postId = postData.id;
     postCard.dataset.userId = postData.userId; // Store userId on the card
 
-    const userProfileClass = getLogoCssClass(postData.userProfileLogo || getRandomLogoClass());
-
     const isOwner = currentUser && postData.userId === currentUser.uid;
+
+    let userAvatarHtml;
+    if (postData.profilePicUrl) {
+        // If direct picture URL is provided
+        userAvatarHtml = `<div class="profile-avatar" style="background-image: url('${postData.profilePicUrl}');" data-user-id="${postData.userId}"></div>`;
+    } else {
+        // Fallback to emoji logo
+        const userProfileClass = getLogoCssClass(postData.userProfileLogo || getRandomLogoClass());
+        userAvatarHtml = `<div class="profile-avatar ${userProfileClass}" data-user-id="${postData.userId}"></div>`;
+    }
+
 
     postCard.innerHTML = `
         <div class="post-header">
-            <div class="profile-avatar ${userProfileClass}" data-user-id="${postData.userId}"></div>
+            ${userAvatarHtml}
             <span class="username" data-user-id="${postData.userId}">@${postData.username || 'Unknown'}</span>
             <div class="post-options">
                 <i class="fas fa-ellipsis-v"></i>
@@ -1190,7 +1383,8 @@ async function incrementViewCount(postId, isMonetized) {
 
                 // Update owner's unmonetized views if not monetized
                 if (!isMonetized) {
-                    const postOwnerId = postRef.data().userId; // Get owner from post data
+                    const postDocData = (await transaction.get(postRef)).data(); // Get latest post data within transaction
+                    const postOwnerId = postDocData.userId;
                     const postOwnerRef = db.collection('users').doc(postOwnerId);
                     transaction.update(postOwnerRef, {
                         unmonetizedViewsCount: firebase.firestore.FieldValue.increment(1)
@@ -1350,46 +1544,23 @@ publishPostBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Check coins and limits
-    const userDocRef = db.collection('users').doc(currentUser.uid);
-    const userDoc = await userDocRef.get();
-    const userData = userDoc.data();
-
-    const currentCoins = userData.coins || 0;
-    const currentLimit = userData.postLimit || 0;
-
-    const requiredCoins = 5;
-    const requiredLimit = 1;
-
-    if (currentCoins < requiredCoins || currentLimit < requiredLimit) {
-        showToast(`You need ${requiredCoins} coins and ${requiredLimit} post limit to upload. Watch an ad to earn.`, 'error', 5000);
-        showAdModal('post-upload', { coins: requiredCoins - currentCoins, limit: requiredLimit - currentLimit });
-        return;
-    }
-
-    // Deduct coins and limit
-    try {
-        await userDocRef.update({
-            coins: firebase.firestore.FieldValue.increment(-requiredCoins),
-            postLimit: firebase.firestore.FieldValue.increment(-requiredLimit)
-        });
-    } catch (error) {
-        console.error("Error deducting coins/limit:", error);
-        showToast("Failed to deduct coins/limit. Please try again.", 'error');
-        return;
-    }
-
     uploadStatus.textContent = "Uploading post...";
     publishPostBtn.disabled = true;
 
     try {
+        const userDocRef = db.collection('users').doc(currentUser.uid);
+        const userDoc = await userDocRef.get();
+        const userData = userDoc.data(); // Get fresh user data for username/logo
+
+
         const newPostRef = db.collection('posts').doc(); // Auto-generated ID
         const boostHours = 24; // All posts are 24 hours now
 
         await newPostRef.set({
             userId: currentUser.uid,
             username: userData.username, // Use user's current username
-            userProfileLogo: userData.profileLogo || getRandomLogoClass(), // User's chosen logo
+            profilePicUrl: userData.profilePicUrl || "", // User's chosen direct pic URL
+            userProfileLogo: userData.profilePicUrl ? "" : (userData.profileLogo || getRandomLogoClass()), // User's chosen logo (only if no direct URL)
             content: content,
             category: category,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
@@ -1399,6 +1570,7 @@ publishPostBtn.addEventListener('click', async () => {
             reactions: {},
             userReactions: {},
             isMonetized: isMonetized,
+            isPrivate: userData.isPrivate || false, // Post inherits user's privacy setting
             expiryTime: firebase.firestore.Timestamp.fromMillis(Date.now() + (boostHours * 60 * 60 * 1000))
         });
 
@@ -1427,24 +1599,22 @@ publishPostBtn.addEventListener('click', async () => {
             uploadStatus.textContent = `Error: ${error.message}`;
             showToast("Failed to upload post. Try again.", 'error');
         }
-        // Revert coins/limit if upload failed after deduction
-        await userDocRef.update({
-            coins: firebase.firestore.FieldValue.increment(requiredCoins),
-            postLimit: firebase.firestore.FieldValue.increment(requiredLimit)
-        });
     } finally {
         publishPostBtn.disabled = false;
     }
 });
 
-// Ad Modal Logic
-let currentAdPurpose = ''; // 'post-upload', 'message-credit', 'limit', 'coins'
+// Ad Modal Logic - Still for a cost system to implement later, now gives "rewards"
+let currentAdPurpose = ''; // 'message-credit', 'withdrawal-credit', 'other-benefit'
 let adRewardDetails = {};
 
 function showAdModal(purpose, details = {}) {
     currentAdPurpose = purpose;
     adRewardDetails = details;
     adModal.classList.remove('hidden');
+    // For ads that provide 'costs' (which are removed from UI) these would simulate that resource.
+    // For now, it will just show success.
+    showToast("This app has no real 'cost' currently. Simulating benefit...", 'info', 3000);
     closeAdModalBtn.disabled = true; // Disable close until ad "finishes"
 
     // Simulate ad playback
@@ -1454,59 +1624,26 @@ function showAdModal(purpose, details = {}) {
     setTimeout(() => {
         adPlaceholder.innerHTML = '<p>Ad Complete!</p>';
         closeAdModalBtn.disabled = false;
-        showToast("Ad completed! You can now claim your reward.", 'success');
+        showToast("Ad completed! No action required now.", 'success');
     }, 5000); // Simulate 5-second ad
 }
 
-closeAdModalBtn.addEventListener('click', async () => {
+closeAdModalBtn.addEventListener('click', () => {
     adModal.classList.add('hidden');
-    // Reward logic based on currentAdPurpose and adRewardDetails
-    await processAdReward();
+    // Reward logic, currently no "rewards" are given as per new request.
+    // But keeping structure in case a future reward/cost system is implemented.
+    showRewardPopup("Ad finished. Thank you for supporting!"); // Simplified for no current reward system
 });
 
-async function processAdReward() {
-    if (!currentUser) return;
-
-    try {
-        const userDocRef = db.collection('users').doc(currentUser.uid);
-        let rewardMessageText = "Reward:";
-
-        if (currentAdPurpose === 'post-upload') {
-            await userDocRef.update({
-                coins: firebase.firestore.FieldValue.increment(50),
-                postLimit: firebase.firestore.FieldValue.increment(1)
-            });
-            rewardMessageText += "+50 Coins, +1 Limit";
-            showToast("Post upload resources gained!", 'success');
-        } else if (currentAdPurpose === 'message-credit') {
-            await userDocRef.update({
-                credits: firebase.firestore.FieldValue.increment(10)
-            });
-            rewardMessageText += "+10 Credits";
-            showToast("Messaging credits gained!", 'success');
-        } else if (currentAdPurpose === 'limit') {
-            await userDocRef.update({
-                postLimit: firebase.firestore.FieldValue.increment(1)
-            });
-            rewardMessageText += "+1 Post Limit";
-            showToast("Post limit gained!", 'success');
-        } else if (currentAdPurpose === 'coins') {
-            await userDocRef.update({
-                coins: firebase.firestore.FieldValue.increment(50)
-            });
-            rewardMessageText += "+50 Coins";
-            showToast("Coins gained!", 'success');
-        }
-
-        showRewardPopup(rewardMessageText);
-
-    } catch (error) {
-        console.error("Error processing ad reward:", error);
-        showToast("Failed to process ad reward. Try again.", 'error');
-    } finally {
-        currentAdPurpose = ''; // Reset
-        adRewardDetails = {}; // Reset
-    }
+function showRewardPopup(message) {
+    // Reward Popup logic can be reused for any success messages now
+    const rewardPopupEl = document.getElementById('reward-popup');
+    const rewardMessageEl = document.getElementById('reward-message');
+    rewardMessageEl.textContent = message;
+    rewardPopupEl.classList.remove('hidden');
+    document.getElementById('close-reward-popup').addEventListener('click', () => {
+        rewardPopupEl.classList.add('hidden');
+    }, {once: true});
 }
 
 
@@ -1521,6 +1658,17 @@ async function loadUserProfile(userId) {
             const userData = userDoc.data();
             updateProfileDisplay(userData);
             loadProfilePosts(userId); // Load 'My Posts' by default
+
+            // Update sidebar username and avatar
+            sidebarUsername.textContent = userData.name || userData.username || "My User"; // Sidebar uses name if available
+            if (userData.profilePicUrl) {
+                sidebarProfileAvatar.style.backgroundImage = `url('${userData.profilePicUrl}')`;
+                sidebarProfileAvatar.classList.remove('user-logo-1', 'user-logo-2'); // Clear any default emoji classes
+                sidebarProfileAvatar.className = 'profile-avatar-small'; // Reset class and add direct URL style if exists
+            } else {
+                sidebarProfileAvatar.style.backgroundImage = 'none';
+                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass(userData.profileLogo || 'logo-1')}`;
+            }
 
             // Show/hide follow/message buttons based on whose profile it is
             if (userId === currentUser.uid) {
@@ -1583,8 +1731,15 @@ function updateProfileDisplay(userData) {
     myProfileBio.textContent = userData.bio || '';
     currentProfileUsernamePosts.textContent = userData.username || 'Me';
 
-    const profileLogoClass = getLogoCssClass(userData.profileLogo || getRandomLogoClass());
-    myProfileAvatar.className = `profile-avatar-large ${profileLogoClass}`;
+    // Handle direct picture URL or emoji logo for large avatar
+    if (userData.profilePicUrl) {
+        myProfileAvatar.style.backgroundImage = `url('${userData.profilePicUrl}')`;
+        myProfileAvatar.classList.remove('user-logo-1', 'user-logo-2'); // Clear any default emoji classes
+        myProfileAvatar.className = 'profile-avatar-large'; // Ensure only core class
+    } else {
+        myProfileAvatar.style.backgroundImage = 'none'; // Clear previous image
+        myProfileAvatar.className = `profile-avatar-large ${getLogoCssClass(userData.profileLogo || 'logo-1')}`;
+    }
 
     myPostsCount.textContent = formatNumber(userData.postCount || 0);
     myFollowersCount.textContent = formatNumber(userData.followersCount || 0);
@@ -1609,9 +1764,10 @@ function updateProfileDisplay(userData) {
         editBioInput.value = userData.bio || '';
         editWhatsappInput.value = userData.whatsapp || '';
         editInstagramInput.value = userData.instagram || '';
+        profilePicUrlInput.value = userData.profilePicUrl || ''; // Populate direct pic URL
         accountPrivacyToggle.checked = userData.isPrivate || false;
         accountPrivacyStatus.textContent = userData.isPrivate ? 'Private' : 'Public';
-        populateProfileLogoOptions(userData.profileLogo);
+        populateProfileLogoOptions(userData.profileLogo, userData.profilePicUrl);
     }
 }
 
@@ -1675,12 +1831,13 @@ async function loadProfileReposts(userId) {
         profileRepostsFeed.innerHTML = ''; // Clear loader
         // Fetch posts by their IDs (Firestore `in` query limit is 10)
         // For more than 10, you'd need multiple queries or a Cloud Function
+        // Using Promise.allSettled to handle potential missing posts gracefully
         const postPromises = repostedPostIds.slice(0, 10).map(id => db.collection('posts').doc(id).get());
-        const postDocs = await Promise.all(postPromises);
+        const postResults = await Promise.allSettled(postPromises);
 
-        postDocs.forEach(doc => {
-            if (doc.exists && doc.data().expiryTime.toMillis() > Date.now()) { // Check if not expired
-                profileRepostsFeed.appendChild(createPostElement({ id: doc.id, ...doc.data() }));
+        postResults.forEach(result => {
+            if (result.status === 'fulfilled' && result.value.exists && result.value.data().expiryTime.toMillis() > Date.now()) { // Check if not expired
+                profileRepostsFeed.appendChild(createPostElement({ id: result.value.id, ...result.value.data() }));
             }
         });
         if (profileRepostsFeed.innerHTML === '') {
@@ -1697,6 +1854,7 @@ async function loadProfileReposts(userId) {
 // Edit Profile Modal
 editProfileBtn.addEventListener('click', () => {
     editProfileModal.classList.remove('hidden');
+    profileModalInstruction.textContent = "Edit your profile details:"; // Change instruction if already logged in
 });
 
 cancelEditProfileBtn.addEventListener('click', () => {
@@ -1717,10 +1875,13 @@ editUsernameInput.addEventListener('input', () => {
         return;
     }
 
-    // Get current username from sidebar, which reflects logged-in user
-    const currentUsernameFromSidebar = sidebarUsername.textContent.replace('@', '');
+    // Get current username from logged-in user's data, not sidebar directly for accuracy
+    let currentAuthUsername = currentUser.email.split('@')[0]; // Fallback
+    if(myProfileUsername && myProfileUsername.textContent) {
+        currentAuthUsername = myProfileUsername.textContent.replace('@', '');
+    }
 
-    if (newUsername === currentUsernameFromSidebar) {
+    if (newUsername === currentAuthUsername) {
         usernameAvailability.textContent = 'Username is available.';
         usernameAvailability.classList.add('success-text');
         return;
@@ -1751,17 +1912,30 @@ accountPrivacyToggle.addEventListener('change', () => {
     accountPrivacyStatus.textContent = accountPrivacyToggle.checked ? 'Private' : 'Public';
 });
 
-// Populate Profile Logo Options
-function populateProfileLogoOptions(currentLogoClass) {
+// Populate Profile Logo Options (Now includes direct URL for selection display)
+function populateProfileLogoOptions(currentLogoClass, currentProfilePicUrl) {
     profileLogoOptions.innerHTML = '';
+
+    // Add current direct URL option if it exists
+    if (currentProfilePicUrl) {
+        const directUrlItem = document.createElement('div');
+        directUrlItem.className = `logo-option-item selected`; // Select it by default
+        directUrlItem.style.backgroundImage = `url('${currentProfilePicUrl}')`;
+        directUrlItem.dataset.type = 'url';
+        directUrlItem.dataset.value = currentProfilePicUrl;
+        profileLogoOptions.appendChild(directUrlItem);
+    }
+
     PROFILE_LOGOS.forEach(logo => {
         const logoItem = document.createElement('div');
-        logoItem.className = `logo-option-item profile-avatar user-${logo.class}`;
-        logoItem.dataset.logoClass = logo.class;
-
-        if (currentLogoClass === logo.class) {
+        // If profile pic url exists and selected, then emoji is not selected
+        if (!currentProfilePicUrl && currentLogoClass === logo.class) {
             logoItem.classList.add('selected');
         }
+        logoItem.className = `logo-option-item user-${logo.class}`;
+        logoItem.dataset.type = 'emoji';
+        logoItem.dataset.value = logo.class;
+
 
         logoItem.addEventListener('click', () => {
             profileLogoOptions.querySelectorAll('.logo-option-item').forEach(item => item.classList.remove('selected'));
@@ -1780,8 +1954,26 @@ saveProfileBtn.addEventListener('click', async () => {
     const newBio = editBioInput.value.trim();
     const newWhatsapp = editWhatsappInput.value.trim();
     const newInstagram = editInstagramInput.value.trim();
+    const newProfilePicUrl = profilePicUrlInput.value.trim(); // Get direct URL
+
     const selectedLogoElement = profileLogoOptions.querySelector('.logo-option-item.selected');
-    const newProfileLogo = selectedLogoElement ? selectedLogoElement.dataset.logoClass : null;
+    let newProfileLogo = ''; // Initialize to empty string
+    let finalProfilePicUrl = ''; // This will store the URL for saving if applicable
+
+    if (newProfilePicUrl) {
+        // If a direct URL is provided in the input field, prioritize it
+        finalProfilePicUrl = newProfilePicUrl;
+        newProfileLogo = ""; // Ensure emoji logo is cleared
+    } else if (selectedLogoElement && selectedLogoElement.dataset.type === 'emoji') {
+        // If an emoji logo is selected
+        newProfileLogo = selectedLogoElement.dataset.value;
+        finalProfilePicUrl = ""; // Ensure direct URL is cleared
+    } else {
+        // Default to first emoji logo if neither is explicitly chosen or provided
+        newProfileLogo = 'logo-1';
+        finalProfilePicUrl = "";
+    }
+
     const isPrivate = accountPrivacyToggle.checked;
 
     if (newUsername === '') {
@@ -1789,11 +1981,16 @@ saveProfileBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Ensure at least one contact method is provided if profile is public
-    if (!isPrivate && newWhatsapp === '' && newInstagram === '') {
-        showToast("For a public profile, please provide at least a WhatsApp number or Instagram ID.", 'error');
+    if (newUsername.includes(" ") || newUsername.includes("@") || newUsername.includes("#")) {
+        showToast("Username cannot contain spaces or special characters like @ or #.", "error");
         return;
     }
+
+    if (!finalProfilePicUrl && !(newWhatsapp || newInstagram)) {
+        showToast("Please provide either a Profile Picture URL, select a Profile Logo, or provide WhatsApp/Instagram ID.", 'error', 6000);
+        return;
+    }
+
 
     try {
         const userDocRef = db.collection('users').doc(currentUser.uid);
@@ -1816,27 +2013,30 @@ saveProfileBtn.addEventListener('click', async () => {
             whatsapp: newWhatsapp,
             instagram: newInstagram,
             profileLogo: newProfileLogo,
+            profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
-            // Initialize follower/following counts if they don't exist
-            followersCount: currentData.followersCount || 0,
-            followingCount: currentData.followingCount || 0,
-            postCount: currentData.postCount || 0,
-            monetizedViewsCount: currentData.monetizedViewsCount || 0,
-            unmonetizedViewsCount: currentData.unmonetizedViewsCount || 0,
-            earnedAmount: currentData.earnedAmount || 0.00,
-            coins: currentData.coins || 100, // Starting bonus for new users
-            credits: currentData.credits || 50,
-            postLimit: currentData.postLimit || 5,
-            lastRewardClaim: currentData.lastRewardClaim || 0
+            // Initialize earning/follower counts if they don't exist (only if it's the first profile save)
+            followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
+            followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
+            postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
+            monetizedViewsCount: currentData.monetizedViewsCount !== undefined ? currentData.monetizedViewsCount : 0,
+            unmonetizedViewsCount: currentData.unmonetizedViewsCount !== undefined ? currentData.unmonetizedViewsCount : 0,
+            earnedAmount: currentData.earnedAmount !== undefined ? currentData.earnedAmount : 0.00,
+            reposts: currentData.reposts !== undefined ? currentData.reposts : []
+            // No coins, credits, postLimit, lastRewardClaim anymore as per new request
         });
 
-        // Update username in existing posts if it changed
-        if (newUsername !== currentData.username) {
+        // Update username and profile info in existing posts if changed
+        if (newUsername !== currentData.username || finalProfilePicUrl !== currentData.profilePicUrl || newProfileLogo !== currentData.profileLogo) {
             const postsSnapshot = await db.collection('posts').where('userId', '==', currentUser.uid).get();
             const batch = db.batch();
             postsSnapshot.docs.forEach(doc => {
                 const postRef = db.collection('posts').doc(doc.id);
-                batch.update(postRef, { username: newUsername });
+                batch.update(postRef, {
+                    username: newUsername,
+                    profilePicUrl: finalProfilePicUrl,
+                    userProfileLogo: finalProfilePicUrl ? "" : newProfileLogo // Only use emoji if no direct pic URL
+                });
             });
             await batch.commit();
         }
@@ -1846,7 +2046,7 @@ saveProfileBtn.addEventListener('click', async () => {
         loadUserProfile(currentUser.uid); // Reload profile display
     } catch (error) {
         console.error("Error saving profile:", error);
-        showToast("Failed to save profile. Please try again.", 'error');
+        showToast("Failed to save profile. Please try again. " + (error.message || ''), 'error');
     }
 });
 
@@ -1880,6 +2080,13 @@ async function handleFollow(targetUserId) {
                 return; // Already following, no action needed
             }
 
+            // If target user is private, cannot follow directly. Need a request system.
+            if (targetUserData.isPrivate) {
+                showToast("This account is private. Cannot follow directly.", 'info', 4000);
+                throw "Private account."; // Stop transaction
+            }
+
+
             // Update current user's following list and count
             transaction.update(currentUserRef, {
                 following: firebase.firestore.FieldValue.arrayUnion(targetUserId),
@@ -1899,7 +2106,11 @@ async function handleFollow(targetUserId) {
         loadUserProfile(currentProfileViewingId); // Refresh counts
     } catch (error) {
         console.error("Error following user:", error);
-        showToast(`Failed to follow: ${error.message || error}`, 'error');
+        if (error === "Private account.") {
+             // Toast already handled above.
+        } else {
+            showToast(`Failed to follow: ${error.message || error}`, 'error');
+        }
     }
 }
 
@@ -2041,10 +2252,16 @@ async function showFollowList(userId, type) {
             userItem.className = 'search-user-item';
             userItem.dataset.userId = user.id; // Store user ID
 
-            const userLogoClass = getLogoCssClass(user.profileLogo || getRandomLogoClass());
+            let userAvatarHtml;
+            if (user.profilePicUrl) {
+                userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${user.profilePicUrl}');"></div>`;
+            } else {
+                const userLogoClass = getLogoCssClass(user.profileLogo || getRandomLogoClass());
+                userAvatarHtml = `<div class="profile-avatar small ${userLogoClass}"></div>`;
+            }
 
             userItem.innerHTML = `
-                <div class="profile-avatar small ${userLogoClass}"></div>
+                ${userAvatarHtml}
                 <span class="search-username">@${user.username || 'Unknown'}</span>
                 <button class="btn small primary-btn follow-btn" data-target-id="${user.id}"></button>
             `;
@@ -2121,7 +2338,10 @@ function openUserProfile(userId) {
 
 // --- Messaging ---
 messageUserBtn.addEventListener('click', () => {
-    if (!currentProfileViewingId) return;
+    if (!currentUser || !currentProfileViewingId) { // Check both logged in and a target profile
+        showToast("Select a user to message or log in first.", 'info');
+        return;
+    }
     openChatWindow(currentProfileViewingId);
 });
 
@@ -2130,8 +2350,6 @@ async function loadRecentChats() {
     recentChatsList.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>';
 
     try {
-        const chats = {};
-
         // Listen for messages involving the current user
         db.collection('messages')
             .where('participants', 'array-contains', currentUser.uid)
@@ -2172,10 +2390,16 @@ async function loadRecentChats() {
                         chatItem.className = 'chat-item';
                         chatItem.dataset.userId = partnerData.uid;
 
-                        const partnerLogoClass = getLogoCssClass(partnerData.profileLogo || getRandomLogoClass());
+                        let partnerAvatarHtml;
+                        if (partnerData.profilePicUrl) {
+                            partnerAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${partnerData.profilePicUrl}');"></div>`;
+                        } else {
+                            const partnerLogoClass = getLogoCssClass(partnerData.profileLogo || getRandomLogoClass());
+                            partnerAvatarHtml = `<div class="profile-avatar small ${partnerLogoClass}"></div>`;
+                        }
 
                         chatItem.innerHTML = `
-                            <div class="profile-avatar small ${partnerLogoClass}"></div>
+                            ${partnerAvatarHtml}
                             <div class="chat-info">
                                 <span class="chat-username">@${partnerData.username}</span>
                                 <span class="last-message">${chat.lastMessage}</span>
@@ -2208,22 +2432,30 @@ async function openChatWindow(partnerId) {
         const partnerDoc = await db.collection('users').doc(partnerId).get();
         if (partnerDoc.exists) {
             chatPartnerUsername.textContent = `@${partnerDoc.data().username}`;
-            const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || getRandomLogoClass());
-            chatPartnerAvatar.className = `profile-avatar small ${partnerLogoClass}`;
+
+            if (partnerDoc.data().profilePicUrl) {
+                chatPartnerAvatar.style.backgroundImage = `url('${partnerDoc.data().profilePicUrl}')`;
+                chatPartnerAvatar.className = 'profile-avatar small';
+            } else {
+                chatPartnerAvatar.style.backgroundImage = 'none';
+                const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || getRandomLogoClass());
+                chatPartnerAvatar.className = `profile-avatar small ${partnerLogoClass}`;
+            }
         } else {
             chatPartnerUsername.textContent = "@UnknownUser";
+            chatPartnerAvatar.style.backgroundImage = 'none';
             chatPartnerAvatar.className = `profile-avatar small ${getLogoCssClass('logo-1')}`;
         }
 
         // Real-time listener for messages between these two users
         db.collection('messages')
-            .where('participants', 'array-contains-any', [currentUser.uid, partnerId]) // Ensure either party is a participant
+            .where('participants', 'array-contains', currentUser.uid) // Filter to messages involving current user
             .orderBy('timestamp', 'asc')
             .onSnapshot(snapshot => {
                 chatMessages.innerHTML = ''; // Clear existing messages
                 snapshot.docs.forEach(doc => {
                     const message = doc.data();
-                    // Filter messages relevant to the current chat partner and within 12 hours
+                    // Filter messages relevant *only* to the current chat partner in the UI
                     const isRelevant = (message.senderId === currentUser.uid && message.receiverId === partnerId) ||
                                        (message.senderId === partnerId && message.receiverId === currentUser.uid);
                     // Client-side expiry check for display only (Firestore rules handle backend expiry)
@@ -2263,7 +2495,8 @@ async function openChatWindow(partnerId) {
             }
         };
         document.addEventListener('click', hideEmojiPickerChat);
-        chatWindowContainer.removeEventListener('click', hideEmojiPickerChat); // Prevent double listeners
+        // Important: Detach previous click listener when opening a new chat window to prevent duplicates
+        // (This would need a proper cleanup mechanism in a production app for each listener)
 
 
         emojiPickerChat.querySelectorAll('.emoji-option').forEach(emojiOption => {
@@ -2290,28 +2523,15 @@ backToChatsBtn.addEventListener('click', () => {
 });
 
 sendMessageBtn.addEventListener('click', async () => {
-    if (!currentUser || !currentChatPartnerId) return;
+    if (!currentUser || !currentChatPartnerId) {
+        showToast("You need to be logged in and select a recipient.", 'error');
+        return;
+    }
 
     const messageContent = messageInput.value.trim();
     if (messageContent === '') return;
 
-    // Check credits
-    const userDocRef = db.collection('users').doc(currentUser.uid);
-    const userDoc = await userDocRef.get();
-    const userData = userDoc.data();
-    const currentCredits = userData.credits || 0;
-
-    if (currentCredits < 1) {
-        showToast("You need 1 credit to send a message. Watch an ad to earn.", 'error', 5000);
-        showAdModal('message-credit', { requiredCredits: 1 });
-        return;
-    }
-
     try {
-        await userDocRef.update({
-            credits: firebase.firestore.FieldValue.increment(-1)
-        });
-
         await db.collection('messages').add({
             senderId: currentUser.uid,
             receiverId: currentChatPartnerId,
@@ -2332,10 +2552,6 @@ sendMessageBtn.addEventListener('click', async () => {
         } else {
             showToast("Failed to send message. Try again.", 'error');
         }
-        // Revert credit if failed
-        await userDocRef.update({
-            credits: firebase.firestore.FieldValue.increment(1)
-        });
     }
 });
 
@@ -2364,8 +2580,8 @@ function openCommentsModal(postId) {
 
             for (const doc of snapshot.docs) {
                 const commentData = doc.data();
-                const commentUser = await db.collection('users').doc(commentData.userId).get();
-                const username = commentUser.exists ? commentUser.data().username : 'Deleted User';
+                const commentUserDoc = await db.collection('users').doc(commentData.userId).get();
+                const username = commentUserDoc.exists ? commentUserDoc.data().username : 'Deleted User';
 
                 const commentItem = document.createElement('div');
                 commentItem.className = 'comment-item';
@@ -2456,10 +2672,16 @@ async function performSearch() {
                 userItem.className = 'search-user-item';
                 userItem.dataset.userId = userData.id;
 
-                const userLogoClass = getLogoCssClass(userData.profileLogo || getRandomLogoClass());
+                let userAvatarHtml;
+                if (userData.profilePicUrl) {
+                    userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${userData.profilePicUrl}');"></div>`;
+                } else {
+                    const userLogoClass = getLogoCssClass(userData.profileLogo || getRandomLogoClass());
+                    userAvatarHtml = `<div class="profile-avatar small ${userLogoClass}"></div>`;
+                }
 
                 userItem.innerHTML = `
-                    <div class="profile-avatar small ${userLogoClass}"></div>
+                    ${userAvatarHtml}
                     <span class="search-username">@${userData.username}</span>
                     <button class="btn small primary-btn follow-btn" data-target-id="${userData.id}"></button>
                 `;
@@ -2516,7 +2738,9 @@ async function performSearch() {
 
         postSnapshot.docs.forEach(doc => {
             const postData = { id: doc.id, ...doc.data() };
-            if (postData.content && postData.content.toLowerCase().includes(query)) {
+            // Ensure public posts can be found, and private posts only by followers/owner if desired (more complex rule)
+            if ((!postData.isPrivate || (currentUser && postData.isPrivate && (postData.userId === currentUser.uid || (doc.ref.parent.parent.collection('users').doc(currentUser.uid).data().following || []).includes(postData.userId)))) // Simplified logic; security rules handle ultimate access
+                 && postData.content && postData.content.toLowerCase().includes(query)) {
                 foundResults = true;
                 searchPostList.appendChild(createPostElement(postData));
             }
@@ -2604,12 +2828,9 @@ async function handleDeletePost(postId, postElement, isMonetized) {
                     const userRef = db.collection('users').doc(currentUser.uid);
                     const userDoc = await transaction.get(userRef);
                     if (userDoc.exists) {
-                        const userData = userDoc.data();
                         let updates = {
                             postCount: firebase.firestore.FieldValue.increment(-1)
                         };
-                        // No direct decrement of monetized views on post deletion, as earnings are recorded at time of view
-                        // If you need to "undo" earnings, it's a more complex admin-side task.
                         transaction.update(userRef, updates);
                     }
                 });
@@ -2834,12 +3055,3 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
 cancelWithdrawalBtn.addEventListener('click', () => {
     withdrawalModal.classList.add('hidden');
 });
-
-// --- Initial Loads ---
-document.addEventListener('DOMContentLoaded', () => {
-    // Initial screen setup if user is already authenticated (handled by onAuthStateChanged)
-    // If not authenticated, login/signup flow will handle initial screen.
-    splashScreen.classList.remove('hidden');
-    appContainer.classList.add('hidden'); // Hide app container initially
-});
-
