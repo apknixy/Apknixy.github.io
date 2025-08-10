@@ -340,8 +340,9 @@ async function checkUserAndRedirect(user) {
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
+            const userData = userDoc.data();
 
-            if (!userDoc.exists || !userDoc.data().username || !userDoc.data().name) { // Ensure name also exists
+            if (!userDoc.exists || !userData.username || !userData.name || userData.username === "" || userData.name === "") { // Check for empty username/name too
                 // New user or incomplete profile, show edit profile modal
                 console.log("User profile incomplete. Directing to profile setup.");
                 showAppContainer();
@@ -351,8 +352,6 @@ async function checkUserAndRedirect(user) {
                 myProfileUsername.textContent = "@NewUser";
                 sidebarUsername.textContent = "New User";
                 sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
-                // Pre-fill email in edit profile if desired:
-                // editEmailInput.value = user.email; // If you add an email input
                 showToast("Welcome! Please complete your profile.", 'info', 5000);
             } else {
                 console.log("User profile complete. Loading app.");
@@ -364,7 +363,7 @@ async function checkUserAndRedirect(user) {
             }
         } catch (error) {
             console.error("Error fetching user document:", error);
-            showToast("Failed to load user data. Please try again.", 'error');
+            showToast("Failed to load user data. Please try again.", 'error', 5000);
             auth.signOut(); // Force sign out on critical error
             showAuthContainer(); // Show auth screen on error
         }
@@ -477,12 +476,12 @@ async function registerUser() {
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         await sendEmailVerification(userCredential.user);
 
-        // Create initial user document in Firestore
+        // Create initial user document in Firestore with placeholder username/name
         await db.collection('users').doc(userCredential.user.uid).set({
             uid: userCredential.user.uid,
             email: userCredential.user.email,
-            username: "", // User will set in edit profile
-            name: "",     // User will set in edit profile
+            username: "", // Will be set during first profile edit
+            name: "",     // Will be set during first profile edit
             bio: "",
             whatsapp: "",
             instagram: "",
@@ -544,11 +543,14 @@ async function sendPasswordReset() {
     try {
         await auth.sendPasswordResetEmail(email);
         updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
-    } catch (error) {
+    }
+     catch (error) {
         console.error("Forgot password error:", error);
         let errorMessage = "Failed to send reset link.";
         if (error.code === 'auth/user-not-found') {
             errorMessage = "No account found with that email.";
+        } else if (error.code === 'auth/invalid-email') {
+            errorMessage = "Invalid email format.";
         }
         updateAuthStatus(resetStatus, errorMessage, 'error');
     }
@@ -583,7 +585,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fallback: If Firebase auth state doesn't resolve in 10 seconds, hide splash
     splashScreenTimeout = setTimeout(() => {
-        console.warn("Splash screen fallback: Firebase authentication might be stuck or slow.");
+        console.warn("Splash screen fallback: Firebase authentication might be stuck or slow. Displaying auth screen.");
         if (appContainer.classList.contains('hidden') && authContainer.classList.contains('hidden')) {
             showAuthContainer(); // Fallback to showing login if nothing happened
         }
@@ -733,79 +735,91 @@ async function loadPosts() {
             postsRef = postsRef.where('category', '==', selectedCategory);
         }
 
-        // Apply follower-based filtering for home feed (display only posts from followed users)
+        // Apply follower-based filtering for home feed (display only posts from followed users or public posts)
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         const followedUsers = userDoc.data().following || [];
 
         let snapshot;
         let fetchedPosts = [];
 
+        // Attempt to get posts from followed users (Firestore `in` query is limited to 10 UIDs)
+        const followedPostsQuery = db.collection('posts')
+                                    .where('expiryTime', '>', firebase.firestore.Timestamp.now())
+                                    .orderBy('expiryTime', 'desc')
+                                    .orderBy('timestamp', 'desc');
+
         if (followedUsers.length > 0) {
-            // Fetch posts by followed users (Firestore `in` query is limited to 10 UIDs)
             const chunkedFollowedUsers = [];
             for (let i = 0; i < followedUsers.length; i += 10) {
                 chunkedFollowedUsers.push(followedUsers.slice(i, i + 10));
             }
 
             for (const chunk of chunkedFollowedUsers) {
-                const followedPostsSnapshot = await db.collection('posts')
-                                                        .where('userId', 'in', chunk)
-                                                        .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                                                        .orderBy('timestamp', 'desc')
-                                                        .limit(postsToLoadPerScroll)
-                                                        .get();
+                let currentChunkQuery = followedPostsQuery.where('userId', 'in', chunk);
+                if (lastVisiblePost) { // Attempt to continue pagination from previous state
+                     currentChunkQuery = currentChunkQuery.startAfter(lastVisiblePost);
+                }
+                const followedPostsSnapshot = await currentChunkQuery.limit(postsToLoadPerScroll).get();
                 followedPostsSnapshot.forEach(doc => {
-                    // Avoid duplicates if a user follows multiple people who repost the same post (unlikely but possible)
-                    if (!fetchedPosts.some(p => p.id === doc.id)) {
+                    if (!fetchedPosts.some(p => p.id === doc.id)) { // Prevent duplicates if already fetched
                          fetchedPosts.push({ id: doc.id, ...doc.data() });
                     }
                 });
+                if (!followedPostsSnapshot.empty) {
+                    lastVisiblePost = followedPostsSnapshot.docs[followedPostsSnapshot.docs.length - 1]; // Update for next query
+                }
+                if (fetchedPosts.length >= postsToLoadPerScroll) break; // If we have enough posts
             }
         }
-        // If not enough posts from followed users or no followed users, fetch general public posts.
-        if (fetchedPosts.length < postsToLoadPerScroll || followedUsers.length === 0) {
-             const generalPostsRef = db.collection('posts')
+
+        // Fill up remaining slots with general public posts if not enough from followed users
+        if (fetchedPosts.length < postsToLoadPerScroll) {
+             let generalPostsRef = db.collection('posts')
                                         .where('isPrivate', '==', false) // Only public posts for general feed
                                         .where('expiryTime', '>', firebase.firestore.Timestamp.now())
                                         .orderBy('expiryTime', 'desc')
                                         .orderBy('timestamp', 'desc');
-             if (lastVisiblePost) {
-                 snapshot = await generalPostsRef.startAfter(lastVisiblePost).limit(postsToLoadPerScroll - fetchedPosts.length).get();
-             } else {
-                 snapshot = await generalPostsRef.limit(postsToLoadPerScroll - fetchedPosts.length).get();
+
+             if (lastVisiblePost && followedUsers.length === 0) { // Only use general posts for pagination if no followed users
+                 generalPostsRef = generalPostsRef.startAfter(lastVisiblePost);
+             } else if (lastVisiblePost && fetchedPosts.length > 0) { // If some followed posts, general posts start from beginning
+                 // No need to adjust, fresh query will add on
              }
-             snapshot.forEach(doc => {
+
+             const generalPostsSnapshot = await generalPostsRef.limit(postsToLoadPerScroll - fetchedPosts.length).get();
+             generalPostsSnapshot.forEach(doc => {
                  if (!fetchedPosts.some(p => p.id === doc.id)) {
                     fetchedPosts.push({ id: doc.id, ...doc.data() });
                  }
              });
-             // Update lastVisiblePost if we fetched new general posts
-             if (snapshot.docs.length > 0) {
-                lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
+             if (!generalPostsSnapshot.empty) {
+                lastVisiblePost = generalPostsSnapshot.docs[generalPostsSnapshot.docs.length - 1]; // Update for next query
              }
         }
 
-        // If no new posts are found from both followed and general, reset for looping.
+
+        // If no new posts are found from both followed and general after trying, reset for looping.
         if (fetchedPosts.length === 0) {
-            if (lastVisiblePost !== null) { // Only show toast if we were scrolling before
+            if (postsFeed.children.length > 0) { // Only show toast if feed isn't completely empty already
                 showToast("No more new posts. Looping feed...", 'info', 3000);
             }
             lastVisiblePost = null; // Reset to loop from the beginning on next load
             fetchingPosts = false;
             loadingSpinner.classList.add('hidden');
-            if (postsFeed.innerHTML === '') {
+            if (postsFeed.innerHTML === '') { // If feed is completely empty
                  postsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No posts available.</p>';
             }
             return;
         }
 
-
-        // Remove posts already rendered in this feed session, and then append.
-        const existingPostIds = Array.from(postsFeed.children).map(el => el.dataset.postId);
-        const newPostsToRender = fetchedPosts.filter(post => !existingPostIds.includes(post.id));
-
         // Randomize the layout of new posts
-        let tempPosts = [...newPostsToRender];
+        let tempPosts = [...fetchedPosts];
+        // Clear old content only if it's the very first load or explicit refresh.
+        // Otherwise, append to current content for continuous feed.
+        if (!lastVisiblePost && postsFeed.innerHTML.trim() !== '') {
+            postsFeed.innerHTML = ''; // Clear for initial load or full refresh.
+        }
+
         while (tempPosts.length > 0) {
             const randomLayout = Math.floor(Math.random() * 3); // 0: vertical, 1: horizontal, 2: table
 
@@ -856,7 +870,7 @@ async function loadImmersiveFeedPosts() {
     try {
         let postsRef = db.collection('posts')
                          .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                         .where('isPrivate', '==', false) // Only public posts in immersive feed (can be modified)
+                         .where('isPrivate', '==', false) // Only public posts in immersive feed
                          .orderBy('expiryTime', 'desc')
                          .orderBy('timestamp', 'desc');
 
@@ -885,9 +899,14 @@ async function loadImmersiveFeedPosts() {
         });
 
         // Clear only if starting a fresh load, otherwise append
-        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || !lastVisibleImmersivePost) {
+        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (lastVisibleImmersivePost === snapshot.docs[snapshot.docs.length -1] && snapshot.size < postsToLoadPerScroll)) { // Check if we are at the very end of content before refreshing
              immersiveFeed.innerHTML = '';
+             if (snapshot.size === 0) { // If initial fetch is empty
+                immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available.</p>';
+                return;
+             }
         }
+
 
         fetchedPosts.forEach(post => {
             renderPost(post, immersiveFeed, 'immersive-post'); // Use immersive-post class
@@ -917,7 +936,7 @@ function createPostElement(postData, layoutClass = 'vertical-post') {
         userAvatarHtml = `<div class="profile-avatar" style="background-image: url('${postData.profilePicUrl}');" data-user-id="${postData.userId}"></div>`;
     } else {
         // Fallback to emoji logo
-        const userProfileClass = getLogoCssClass(postData.userProfileLogo || getRandomLogoClass());
+        const userProfileClass = getLogoCssClass(postData.userProfileLogo || 'logo-1'); // Default to logo-1 if nothing defined
         userAvatarHtml = `<div class="profile-avatar ${userProfileClass}" data-user-id="${postData.userId}"></div>`;
     }
 
@@ -1876,7 +1895,7 @@ editUsernameInput.addEventListener('input', () => {
     }
 
     // Get current username from logged-in user's data, not sidebar directly for accuracy
-    let currentAuthUsername = currentUser.email.split('@')[0]; // Fallback
+    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@')[0] : ""; // Fallback
     if(myProfileUsername && myProfileUsername.textContent) {
         currentAuthUsername = myProfileUsername.textContent.replace('@', '');
     }
@@ -1886,6 +1905,12 @@ editUsernameInput.addEventListener('input', () => {
         usernameAvailability.classList.add('success-text');
         return;
     }
+     if (newUsername.includes(" ") || newUsername.includes("@") || newUsername.includes("#")) {
+        usernameAvailability.textContent = "Username cannot contain spaces or special characters.";
+        usernameAvailability.classList.add('error-text');
+        return;
+    }
+
 
     usernameCheckTimeout = setTimeout(async () => {
         try {
@@ -1916,33 +1941,49 @@ accountPrivacyToggle.addEventListener('change', () => {
 function populateProfileLogoOptions(currentLogoClass, currentProfilePicUrl) {
     profileLogoOptions.innerHTML = '';
 
-    // Add current direct URL option if it exists
+    // If a direct URL is in the input, that should be the active one to be saved/displayed.
+    // However, the selected option in the grid should reflect the one CURRENTLY saved.
+    // If a currentProfilePicUrl exists, then the emoji picker defaults should be deselected.
+
+    // If current user has a direct URL pic
     if (currentProfilePicUrl) {
-        const directUrlItem = document.createElement('div');
-        directUrlItem.className = `logo-option-item selected`; // Select it by default
-        directUrlItem.style.backgroundImage = `url('${currentProfilePicUrl}')`;
-        directUrlItem.dataset.type = 'url';
-        directUrlItem.dataset.value = currentProfilePicUrl;
-        profileLogoOptions.appendChild(directUrlItem);
+        const directUrlOptionDiv = document.createElement('div');
+        directUrlOptionDiv.className = `logo-option-item selected`; // Default selected
+        directUrlOptionDiv.style.backgroundImage = `url('${currentProfilePicUrl}')`;
+        directUrlOptionDiv.dataset.type = 'url';
+        directUrlOptionDiv.dataset.value = currentProfilePicUrl;
+        profileLogoOptions.appendChild(directUrlOptionDiv);
     }
+
 
     PROFILE_LOGOS.forEach(logo => {
         const logoItem = document.createElement('div');
-        // If profile pic url exists and selected, then emoji is not selected
-        if (!currentProfilePicUrl && currentLogoClass === logo.class) {
-            logoItem.classList.add('selected');
-        }
         logoItem.className = `logo-option-item user-${logo.class}`;
         logoItem.dataset.type = 'emoji';
         logoItem.dataset.value = logo.class;
 
+        // Select the emoji if it matches the currentLogoClass AND there is NO profilePicUrl
+        if (!currentProfilePicUrl && currentLogoClass === logo.class) {
+            logoItem.classList.add('selected');
+        }
+        // If currentProfilePicUrl exists, no emoji will be selected initially.
+
 
         logoItem.addEventListener('click', () => {
             profileLogoOptions.querySelectorAll('.logo-option-item').forEach(item => item.classList.remove('selected'));
+            profilePicUrlInput.value = ''; // Clear direct URL input if an emoji is chosen
             logoItem.classList.add('selected');
         });
         profileLogoOptions.appendChild(logoItem);
     });
+
+    // Handle clearing selection if user inputs direct URL after selecting an emoji
+    profilePicUrlInput.addEventListener('input', () => {
+        if (profilePicUrlInput.value.trim() !== '') {
+            profileLogoOptions.querySelectorAll('.logo-option-item').forEach(item => item.classList.remove('selected'));
+        }
+    });
+
 }
 
 // Save Profile Changes
@@ -1956,23 +1997,24 @@ saveProfileBtn.addEventListener('click', async () => {
     const newInstagram = editInstagramInput.value.trim();
     const newProfilePicUrl = profilePicUrlInput.value.trim(); // Get direct URL
 
-    const selectedLogoElement = profileLogoOptions.querySelector('.logo-option-item.selected');
-    let newProfileLogo = ''; // Initialize to empty string
-    let finalProfilePicUrl = ''; // This will store the URL for saving if applicable
+    let finalProfilePicUrl = newProfilePicUrl; // Start with user-inputted URL
+    let newProfileLogo = ''; // Initialize emoji logo to empty
 
-    if (newProfilePicUrl) {
-        // If a direct URL is provided in the input field, prioritize it
-        finalProfilePicUrl = newProfilePicUrl;
-        newProfileLogo = ""; // Ensure emoji logo is cleared
+    const selectedLogoElement = profileLogoOptions.querySelector('.logo-option-item.selected');
+
+    if (finalProfilePicUrl) {
+        // User entered a URL in the text field, this takes precedence
+        newProfileLogo = ""; // Ensure emoji logo is empty if direct URL is present
     } else if (selectedLogoElement && selectedLogoElement.dataset.type === 'emoji') {
-        // If an emoji logo is selected
+        // No direct URL, but an emoji logo is selected
+        finalProfilePicUrl = ""; // Ensure direct URL is empty
         newProfileLogo = selectedLogoElement.dataset.value;
-        finalProfilePicUrl = ""; // Ensure direct URL is cleared
     } else {
-        // Default to first emoji logo if neither is explicitly chosen or provided
+        // Neither direct URL nor explicit emoji selected, use default 'logo-1'
         newProfileLogo = 'logo-1';
         finalProfilePicUrl = "";
     }
+
 
     const isPrivate = accountPrivacyToggle.checked;
 
@@ -1980,14 +2022,8 @@ saveProfileBtn.addEventListener('click', async () => {
         showToast("Username cannot be empty.", 'error');
         return;
     }
-
-    if (newUsername.includes(" ") || newUsername.includes("@") || newUsername.includes("#")) {
+     if (newUsername.includes(" ") || newUsername.includes("@") || newUsername.includes("#")) {
         showToast("Username cannot contain spaces or special characters like @ or #.", "error");
-        return;
-    }
-
-    if (!finalProfilePicUrl && !(newWhatsapp || newInstagram)) {
-        showToast("Please provide either a Profile Picture URL, select a Profile Logo, or provide WhatsApp/Instagram ID.", 'error', 6000);
         return;
     }
 
@@ -2016,6 +2052,8 @@ saveProfileBtn.addEventListener('click', async () => {
             profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
             // Initialize earning/follower counts if they don't exist (only if it's the first profile save)
+            // If they already exist, Firebase update will merge and use existing values.
+            // These lines ensure values are set for NEWLY CREATED documents through initial registration flow.
             followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
             followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
             postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
@@ -2027,7 +2065,7 @@ saveProfileBtn.addEventListener('click', async () => {
         });
 
         // Update username and profile info in existing posts if changed
-        if (newUsername !== currentData.username || finalProfilePicUrl !== currentData.profilePicUrl || newProfileLogo !== currentData.profileLogo) {
+        if (newUsername !== currentData.username || finalProfilePicUrl !== currentData.profilePicUrl || newProfileLogo !== currentData.profileLogo || isPrivate !== currentData.isPrivate) {
             const postsSnapshot = await db.collection('posts').where('userId', '==', currentUser.uid).get();
             const batch = db.batch();
             postsSnapshot.docs.forEach(doc => {
@@ -2035,13 +2073,14 @@ saveProfileBtn.addEventListener('click', async () => {
                 batch.update(postRef, {
                     username: newUsername,
                     profilePicUrl: finalProfilePicUrl,
-                    userProfileLogo: finalProfilePicUrl ? "" : newProfileLogo // Only use emoji if no direct pic URL
+                    userProfileLogo: finalProfilePicUrl ? "" : newProfileLogo, // Only use emoji if no direct pic URL
+                    isPrivate: isPrivate // Update post's privacy if user's privacy changed
                 });
             });
             await batch.commit();
         }
 
-        editProfileModal.classList.add('hidden');
+        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal
         showToast("Profile updated successfully!", 'success');
         loadUserProfile(currentUser.uid); // Reload profile display
     } catch (error) {
@@ -2246,8 +2285,11 @@ async function showFollowList(userId, type) {
             }
         }
 
+        usersData.sort((a,b) => (a.username || '').localeCompare(b.username || '')); // Sort by username
+
+
         followListContent.innerHTML = '';
-        usersData.forEach(user => {
+        for (const user of usersData) {
             const userItem = document.createElement('li');
             userItem.className = 'search-user-item';
             userItem.dataset.userId = user.id; // Store user ID
@@ -2256,7 +2298,7 @@ async function showFollowList(userId, type) {
             if (user.profilePicUrl) {
                 userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${user.profilePicUrl}');"></div>`;
             } else {
-                const userLogoClass = getLogoCssClass(user.profileLogo || getRandomLogoClass());
+                const userLogoClass = getLogoCssClass(user.profileLogo || 'logo-1');
                 userAvatarHtml = `<div class="profile-avatar small ${userLogoClass}"></div>`;
             }
 
@@ -2279,18 +2321,17 @@ async function showFollowList(userId, type) {
                     await removeFollower(user.id);
                 });
             } else { // Standard follow/unfollow for other users in the list
-                db.collection('users').doc(currentUser.uid).get().then(doc => {
-                    const followingList = doc.data().following || [];
-                    if (followingList.includes(user.id)) {
-                        actionBtn.textContent = 'Following';
-                        actionBtn.classList.add('secondary-btn');
-                        actionBtn.classList.remove('primary-btn');
-                    } else {
-                        actionBtn.textContent = 'Follow';
-                        actionBtn.classList.add('primary-btn');
-                        actionBtn.classList.remove('secondary-btn');
-                    }
-                });
+                const currentUserFollowingDoc = await db.collection('users').doc(currentUser.uid).get();
+                const followingList = currentUserFollowingDoc.data().following || [];
+                if (followingList.includes(user.id)) {
+                    actionBtn.textContent = 'Following';
+                    actionBtn.classList.add('secondary-btn');
+                    actionBtn.classList.remove('primary-btn');
+                } else {
+                    actionBtn.textContent = 'Follow';
+                    actionBtn.classList.add('primary-btn');
+                    actionBtn.classList.remove('secondary-btn');
+                }
                 actionBtn.addEventListener('click', async (e) => {
                     e.stopPropagation();
                     const targetId = e.target.dataset.targetId;
@@ -2313,7 +2354,7 @@ async function showFollowList(userId, type) {
                 followListModal.classList.add('hidden'); // Close modal
                 openUserProfile(user.id); // Open clicked user's profile
             });
-        });
+        }
     } catch (error) {
         console.error("Error loading follow list:", error);
         followListContent.innerHTML = '<p style="text-align: center; color: red;">Error loading list.</p>';
@@ -2394,7 +2435,7 @@ async function loadRecentChats() {
                         if (partnerData.profilePicUrl) {
                             partnerAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${partnerData.profilePicUrl}');"></div>`;
                         } else {
-                            const partnerLogoClass = getLogoCssClass(partnerData.profileLogo || getRandomLogoClass());
+                            const partnerLogoClass = getLogoCssClass(partnerData.profileLogo || 'logo-1');
                             partnerAvatarHtml = `<div class="profile-avatar small ${partnerLogoClass}"></div>`;
                         }
 
@@ -2438,7 +2479,7 @@ async function openChatWindow(partnerId) {
                 chatPartnerAvatar.className = 'profile-avatar small';
             } else {
                 chatPartnerAvatar.style.backgroundImage = 'none';
-                const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || getRandomLogoClass());
+                const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || 'logo-1');
                 chatPartnerAvatar.className = `profile-avatar small ${partnerLogoClass}`;
             }
         } else {
@@ -2676,7 +2717,7 @@ async function performSearch() {
                 if (userData.profilePicUrl) {
                     userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${userData.profilePicUrl}');"></div>`;
                 } else {
-                    const userLogoClass = getLogoCssClass(userData.profileLogo || getRandomLogoClass());
+                    const userLogoClass = getLogoCssClass(userData.profileLogo || 'logo-1');
                     userAvatarHtml = `<div class="profile-avatar small ${userLogoClass}"></div>`;
                 }
 
@@ -2822,9 +2863,13 @@ async function handleDeletePost(postId, postElement, isMonetized) {
                     });
 
                     // Delete post views record
-                    transaction.delete(db.collection('postViews').doc(postId));
+                    const postViewsRef = db.collection('postViews').doc(postId);
+                    const postViewsDoc = await transaction.get(postViewsRef);
+                    if (postViewsDoc.exists) { // Only attempt delete if it exists
+                         transaction.delete(postViewsRef);
+                    }
 
-                    // Decrement user's post count (if needed, this could also be a cloud function trigger)
+                    // Decrement user's post count
                     const userRef = db.collection('users').doc(currentUser.uid);
                     const userDoc = await transaction.get(userRef);
                     if (userDoc.exists) {
@@ -2948,7 +2993,7 @@ withdrawBtn.addEventListener('click', () => {
     withdrawalModal.classList.remove('hidden');
     withdrawalDetailsReview.classList.add('hidden'); // Hide review section initially
 
-    const monetizedViews = parseInt(totalMonetizedViewsSpan.textContent.replace('k', '000').replace('M', '000000')) || 0;
+    const monetizedViews = parseInt(totalMonetizedViewsSpan.textContent.replace(/[^0-9.]/g, '')) || 0; // Remove non-numeric, allow dot for thousands if used. Convert to Int.
     withdrawalViewsDisplay.textContent = formatNumber(monetizedViews);
 
     // Reset input fields
@@ -2974,7 +3019,7 @@ confirmWithdrawalBtn.addEventListener('click', () => {
     const id = withdrawalIdInput.value.trim();
     const views = withdrawalViewsDisplay.textContent;
 
-    if (id === '') {
+    if (!id) { // Check for empty string correctly
         showToast("Please enter your UPI ID or PayPal Email.", 'error');
         return;
     }
@@ -2997,13 +3042,22 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
 
     const method = withdrawalMethodSelect.value;
     const id = withdrawalIdInput.value.trim();
-    const views = parseInt(totalMonetizedViewsSpan.textContent.replace('k', '000').replace('M', '000000')) || 0;
-    const estimatedEarnings = parseFloat(estimatedEarningsSpan.textContent.replace('$', '').trim());
+    // Re-parse the current monetized views directly from data for accuracy before sending request
+    const userDoc = await db.collection('users').doc(currentUser.uid).get();
+    const currentMonetizedViews = userDoc.exists ? (userDoc.data().monetizedViewsCount || 0) : 0;
+    const estimatedEarnings = userDoc.exists ? (userDoc.data().earnedAmount || 0.00) : 0.00;
 
-    if (id === '') {
+    if (!id) {
         showToast("Withdrawal ID cannot be empty.", 'error');
         return;
     }
+
+    const WITHDRAWAL_THRESHOLD = 100000;
+    if (currentMonetizedViews < WITHDRAWAL_THRESHOLD) {
+        showToast(`Withdrawal requires ${formatNumber(WITHDRAWAL_THRESHOLD)} monetized views.`, 'error', 5000);
+        return;
+    }
+
 
     try {
         // IMPORTANT: Here you would typically call a Firebase Cloud Function to handle this
@@ -3018,7 +3072,7 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
             username: myProfileUsername.textContent,
             method: method,
             id: id,
-            views: views,
+            views: currentMonetizedViews,
             amount: estimatedEarnings,
             timestamp: new Date().toISOString()
         });
@@ -3029,15 +3083,15 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
             username: myProfileUsername.textContent.replace('@', ''),
             method: method,
             id: id,
-            monetizedViewsAtRequest: views,
+            monetizedViewsAtRequest: currentMonetizedViews,
             estimatedAmount: estimatedEarnings,
             requestTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
             status: 'pending' // pending, approved, rejected, completed
         });
 
-        // Reset user's monetized views and earnings after request (admin panel would confirm payment first in real app)
-        // This is done here for immediate UI feedback, but in a real app,
-        // this reset would happen AFTER the admin marks the payment as "completed" in the admin panel.
+        // Reset user's monetized views and earnings AFTER the request is successfully lodged
+        // (In a real app, this reset would happen AFTER the admin marks the payment as "completed" in the admin panel,
+        // often through a Cloud Function triggered by the admin action)
         await db.collection('users').doc(currentUser.uid).update({
             monetizedViewsCount: 0,
             earnedAmount: 0.00
@@ -3048,10 +3102,291 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
         loadEarningsPage(); // Refresh earnings
     } catch (error) {
         console.error("Error sending withdrawal request:", error);
-        showToast("Failed to send withdrawal request. Try again.", 'error');
+        showToast("Failed to send withdrawal request. Try again. " + (error.message || ''), 'error');
     }
 });
 
 cancelWithdrawalBtn.addEventListener('click', () => {
     withdrawalModal.classList.add('hidden');
 });
+```
+
+---
+
+### **`firebase.rules` (Updated)**
+
+मैंने `posts` collection के `allow update` नियम की line 156-159 को ध्यान से फिर से लिखा है। विशेष रूप से, `hasOnly()` और `get()` के साथ complex boolean लॉजिक को सरल बनाया गया है, जो पिछली errors का कारण बन रहा होगा।
+
+अब यह owner updates (`commentCount`, `isPrivate`, profile details propagated from user document) और non-owner updates (`likes`, `reactions`, `views`) को अलग-अलग रूप से हैंडल करता है।
+
+**अत्यंत महत्वपूर्ण:** नियम अपडेट करते समय, Firebase Console में हमेशा `Publish` करने से पहले "Test Rules" सिमुलेटर का उपयोग करके कुछ scenarios को test करना सुनिश्चित करें।
+
+```firestore
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function for admin role check
+    // WARNING: This is highly insecure for production admin panel access.
+    // In production, secure admin operations should go through a backend (e.g., Firebase Cloud Functions
+    // with Admin SDK and custom token claims for users/roles).
+    function isAdmin() {
+      // REPLACE 'YOUR_ADMIN_UID_HERE' with the actual UID of your designated admin user from Firebase Auth
+      return request.auth.uid == "YOUR_ADMIN_UID_HERE"; // <---- IMPORTANT: Update this UID in production
+    }
+
+    // --- Users Collection ---
+    // Users can create their own profile, and read profiles of any authenticated user.
+    // Users can update specific fields of their own. Admin can delete.
+    match /users/{userId} {
+      // Read access: Any authenticated user can read user profiles.
+      // Private profiles require the requesting user to be following.
+      allow read: if request.auth != null && (
+        resource.data.isPrivate == false ||
+        request.auth.uid == userId ||
+        resource.data.followers.hasAny([request.auth.uid])
+      );
+
+      // Create access: A user can create their own document on signup.
+      // All initial counts and states must be zero/default.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.username is string
+                    && request.resource.data.username.size() >= 1 // Username must not be empty
+                    && request.resource.data.username.size() <= 30 // Max 30 characters
+                    && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") // No spaces or special chars for username
+                    && request.resource.data.email == request.auth.token.email // Email matches authenticated user's email
+                    && request.resource.data.get('followersCount', 0) == 0
+                    && request.resource.data.get('followingCount', 0) == 0
+                    && request.resource.data.get('postCount', 0) == 0
+                    && request.resource.data.get('monetizedViewsCount', 0) == 0
+                    && request.resource.data.get('unmonetizedViewsCount', 0) == 0
+                    && request.resource.data.get('earnedAmount', 0.0) == 0.0
+                    && request.resource.data.get('reposts', []).size() == 0 // Empty reposts array
+                    && request.resource.data.isPrivate is bool // Default false/true based on app config
+                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null || request.resource.data.profilePicUrl == '') // Can be empty/null string
+                    && (request.resource.data.profileLogo is string || request.resource.data.profileLogo == null || request.resource.data.profileLogo == '') // Can be empty/null string
+                    && request.resource.data.createdAt is timestamp;
+
+
+      // Update access: Users can update their own profile fields.
+      allow update: if request.auth != null && request.auth.uid == userId && (
+        // Ensure username is valid if present AND either unchanged OR unique
+        (request.resource.data.username is string
+          && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$")
+          && request.resource.data.username.size() >= 1
+          && request.resource.data.username.size() <= 30
+          && (resource.data.username == request.resource.data.username || !exists(get(/databases/$(database)/documents/users).where('username', '==', request.resource.data.username).limit(1)))
+        )
+        // Check for updates to other non-counter/non-array fields
+        && (request.resource.data.get('name', null) is string || request.resource.data.name == null)
+        && (request.resource.data.get('bio', null) is string || request.resource.data.bio == null)
+        && (request.resource.data.get('whatsapp', null) is string || request.resource.data.whatsapp == null)
+        && (request.resource.data.get('instagram', null) is string || request.resource.data.instagram == null)
+        && (request.resource.data.get('profileLogo', null) is string || request.resource.data.profileLogo == null)
+        && (request.resource.data.get('profilePicUrl', null) is string || request.resource.data.profilePicUrl == null)
+        && (request.resource.data.isPrivate is bool)
+
+        // System-controlled counters can only increment or stay the same (cannot decrement via user directly)
+        // postCount allows -1 when a post is deleted by owner
+        && request.resource.data.postCount >= (resource.data.postCount - 1)
+        && request.resource.data.monetizedViewsCount >= resource.data.monetizedViewsCount
+        && request.resource.data.unmonetizedViewsCount >= resource.data.unmonetizedViewsCount
+        && request.resource.data.earnedAmount >= resource.data.earnedAmount
+
+        // Reposts array must be a list if updated, allowing arrayUnion/Remove operations.
+        && (request.resource.data.reposts is list || request.resource.data.reposts == null)
+
+        // Special handling for follower/following lists - specific fields updated by array ops
+        && ((request.resource.data.following is list) || (resource.data.following is list && request.resource.data.following == resource.data.following))
+        && ((request.resource.data.followers is list) || (resource.data.followers is list && request.resource.data.followers == resource.data.followers))
+      );
+
+
+      // Deny direct deletion of user profiles from client-side. Only via Cloud Function or Admin Panel for safety.
+      allow delete: if isAdmin();
+    }
+
+
+    // --- Posts Collection ---
+    // Anyone authenticated can read active posts. Users can create, update, and delete their own posts.
+    // Other users can like/react to posts.
+    match /posts/{postId} {
+      // Read access: Allow read if user is authenticated AND post is not expired AND (post is public OR requesting user is owner OR requesting user is follower if private)
+      allow read: if request.auth != null
+                  && request.time < resource.data.expiryTime // Check post is not expired (24-hour limit in this case)
+                  && (resource.data.isPrivate == false // Public posts can always be read
+                      || request.auth.uid == resource.data.userId // Owner can always read their own private posts
+                      || (existsAfter(get(/databases/$(database)/documents/users/$(request.auth.uid))) // Check if requesting user's doc exists and
+                          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([resource.data.userId]) // is a follower
+                         )
+                    );
+
+
+      // Create access: Only post owner can create, with initial values locked down.
+      // Content length and type, initial counts. Inherits user's private status.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.get('likes', 0) == 0
+                    && request.resource.data.get('views', 0) == 0
+                    && request.resource.data.get('commentCount', 0) == 0
+                    && request.resource.data.get('reactions', {}) == {}
+                    && request.resource.data.get('userReactions', {}) == {}
+                    && request.resource.data.username is string // Comes from user profile
+                    && (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == '') // Can be empty if profilePicUrl is used
+                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == '') // Can be empty if userProfileLogo is used
+                    && request.resource.data.content is string
+                    && request.resource.data.category is string
+                    && request.resource.data.isMonetized is bool
+                    && request.resource.data.isPrivate is bool // Post inherits user's privacy settings
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.expiryTime is timestamp
+                    && request.resource.data.content.size() >= 60 // Minimum content length
+                    && request.resource.data.content.size() <= 10000; // Maximum content length
+
+
+      // Update access: Strict rules for specific updates.
+      allow update: if request.auth != null && (
+        // Scenario 1: Post owner updates their own post
+        (request.auth.uid == resource.data.userId &&
+         // Allowed fields to be updated by owner on their own post:
+         request.resource.data.keys().hasOnly(['commentCount', 'isPrivate', 'username', 'userProfileLogo', 'profilePicUrl']) &&
+         // commentCount can only increase (or stay same), it's incremented client-side after comment
+         request.resource.data.commentCount >= resource.data.commentCount &&
+         // isPrivate must be a boolean (and is likely propagated from user doc change)
+         (request.resource.data.isPrivate is bool || request.resource.data.isPrivate == null) &&
+         // username, userProfileLogo, profilePicUrl are also propagated from user's own profile changes.
+         // Ensuring their types:
+         (request.resource.data.username is string || request.resource.data.username == null) &&
+         (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == null) &&
+         (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null)
+        )
+        // Scenario 2: Another authenticated user (not the owner) likes/reacts/views
+        || (request.auth.uid != resource.data.userId &&
+            (
+                // Only 'likes' and 'likedBy' can be updated for liking/unliking
+                (request.resource.data.keys().hasOnly(['likes', 'likedBy']) &&
+                 (request.resource.data.likes == resource.data.likes + 1 || request.resource.data.likes == resource.data.likes - 1 || request.resource.data.likes == resource.data.likes))
+                ||
+                // Only 'reactions' and 'userReactions' can be updated for emoji reactions
+                (request.resource.data.keys().hasOnly(['reactions', 'userReactions']))
+                ||
+                // Only 'views' can be updated for view count increments
+                (request.resource.data.keys().hasOnly(['views']) &&
+                 request.resource.data.views == resource.data.views + 1)
+            )
+           )
+      );
+
+
+      // Delete access: Only post owner or Admin can delete a post.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
+    }
+
+    // --- Comments Collection ---
+    // Users can read all comments on a post. Users can add comments, and delete their own. Admin can delete.
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.postId is string
+                    && request.resource.data.content is string
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.content.size() >= 1
+                    && request.resource.data.content.size() <= 100; // Comment max length 100 characters
+
+      allow update: if false; // Comments are immutable.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
+    }
+
+    // --- Messages Collection ---
+    // Users can only read/write messages in conversations they are part of.
+    // Messages also have a client-side expiration. Firestore rule enforces 12h visibility.
+    match /messages/{messageId} {
+      // Read access: Sender or receiver can read if message is still within 12 hours.
+      allow read: if request.auth != null
+                  && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid)
+                  && (request.time < resource.data.timestamp + duration('12h')); // Messages visible for 12 hours from timestamp
+
+      // Create access: Only if sender is the current authenticated user and both parties are in 'participants' array.
+      allow create: if request.auth != null
+                    && request.resource.data.senderId == request.auth.uid
+                    && request.resource.data.receiverId is string
+                    && request.resource.data.content is string
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.participants is list
+                    && request.resource.data.participants.size() == 2
+                    && request.resource.data.participants.hasAll([request.auth.uid, request.resource.data.receiverId])
+                    && request.resource.data.get('read', false) == false; // New messages start as unread
+
+      // No direct updates or deletes via client. Messages are immutable after creation.
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- Post Views Collection ---
+    // This collection is used internally to track unique views per user per post.
+    // It should only be updated in a specific transactional way.
+    match /postViews/{postId} {
+        // Read access: No direct public read of internal view records. These are system managed.
+        allow read: if false;
+
+        // Write access: Allows creation or update for logging views.
+        // Requires authentication, ensures totalViews increments by 1, and the current user's ID is set to true in viewedBy.
+        allow write: if request.auth != null && (
+          // Creation (first view for this post ID) - `totalViews` initialized to 1 and `viewedBy` map has 1 entry
+          (request.resource.data.get('totalViews', 0) == 1
+           && request.resource.data.viewedBy is map
+           && request.resource.data.viewedBy.keys().size() == 1
+           && request.resource.data.viewedBy.get(request.auth.uid) == true
+           && request.resource.data.keys().hasOnly(['totalViews', 'viewedBy']) // Only these two fields can be created
+          )
+          ||
+          // Update (subsequent views for this post ID) - `totalViews` increments, and user is added to `viewedBy`
+          (request.resource.data.get('totalViews', 0) == resource.data.totalViews + 1
+           && request.resource.data.viewedBy is map
+           && resource.data.get('viewedBy', {}).get(request.auth.uid) != true // Ensure user has not viewed it previously in this persistent record (must be false or non-existent)
+           && request.resource.data.viewedBy.get(request.auth.uid) == true // Current user now marked true
+           && request.resource.data.keys().hasOnly(['totalViews', 'viewedBy']) // Affected keys
+          )
+        );
+
+        // Delete access: Only by admin, usually in conjunction with post deletion.
+        allow delete: if isAdmin();
+    }
+
+    // --- Reports Collection ---
+    // Authenticated users can create reports. Read/Update/Delete only for admin.
+    match /reports/{reportId} {
+      allow read: if isAdmin(); // Only Admin can read reports.
+      allow create: if request.auth != null
+                    && request.auth.data.reportedBy == request.auth.uid // User reports their own UID
+                    && request.resource.data.postId is string // Report linked to a postId
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.get('status', 'pending') == 'pending'; // New reports always start as 'pending'
+
+      allow update: if isAdmin(); // Only Admin can update (e.g., status: resolved)
+      allow delete: if isAdmin(); // Only Admin can delete reports.
+    }
+
+    // --- Withdrawal Requests Collection ---
+    // Users can create their own withdrawal requests. Read/Update/Delete only for admin.
+    match /withdrawalRequests/{requestId} {
+      allow read: if isAdmin(); // Only Admin can read withdrawal requests.
+      allow create: if request.auth != null
+                    && request.auth.uid == request.resource.data.userId // Request from current user
+                    && request.resource.data.username is string
+                    && request.resource.data.method is string
+                    && request.resource.data.id is string
+                    && request.resource.data.monetizedViewsAtRequest is int
+                    && request.resource.data.monetizedViewsAtRequest >= 100000 // Enforce withdrawal threshold at request time
+                    && request.resource.data.estimatedAmount is float
+                    && request.resource.data.estimatedAmount >= 0 // Should be non-negative
+                    && request.resource.data.requestTimestamp is timestamp
+                    && request.resource.data.get('status', 'pending') == 'pending'; // New requests start as 'pending'
+
+      allow update: if isAdmin(); // Only Admin can update (e.g., status: completed/rejected)
+      allow delete: if isAdmin(); // Only Admin can delete.
+    }
+  }
+}
