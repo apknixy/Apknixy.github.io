@@ -1,39 +1,4 @@
-Zar, aapki baat samajh gaya. "Spanish screen" se aapka matlab splash screen se hai, jo shuru mein dikhti hai aur jaa nahi rahi. Iska matlab hai ki app load hone ya Firebase se connect hone mein koi dikkat aa rahi hai.
 
-Aapko **browser console** mein dekhna hoga ki kya error aa rahi hai. Yeh sabse accha tarika hai problem ko samajhne ka.
-
-**Browser Console Kaise Kholte Hain:**
-
-1.  **Agar aap Android phone par Chrome mein test kar rahe hain (ya koi dusra browser jo debugging support karta hai):**
-    *   Apne Android phone ko USB cable se computer se connect karein.
-    *   Apne phone mein **USB Debugging** enable karein (yeh aam taur par Developer Options mein milta hai. Agar Developer Options nahi dikh raha, toh phone ki settings mein "About Phone" mein jaakar "Build Number" par 7 baar tap karein).
-    *   Apne computer par Chrome browser kholein.
-    *   Address bar mein `chrome://inspect/#devices` type karke Enter dabayein.
-    *   Wahan aapko apna connected Android device dikhega aur usmein AddMint ka tab bhi dikhega. AddMint tab ke saamne "inspect" par click karein.
-    *   Ek naya Chrome DevTools window khulega jismein aapke phone ke browser ka console dikhega.
-2.  **Agar aap desktop ya laptop par browser mein test kar rahe hain:**
-    *   Apne web page par kahin bhi **right-click** karein.
-    *   "Inspect" ya "Inspect Element" (ya "Developer Tools") option ko chunein.
-    *   Khuli hui window mein "Console" tab par click karein.
-
-**Console mein kya dekhna hai:**
-Console tab mein **lal (red) rang ke error messages** dhundein. Woh messages batayenge ki kya galati ho rahi hai. Kuch common errors ho sakte hain:
-*   `Firebase: Error (auth/...)` (Matlab Firebase authentication mein dikkat hai)
-*   `Firebase: Firestore (firestore/permission-denied)` (Matlab aapke Firebase Security Rules mein koi masla hai, jo data access ko rok raha hai)
-*   `Uncaught TypeError: ...` (Matlab aapke JavaScript code mein koi syntax ya logic error hai)
-*   `Failed to load resource: net::ERR_...` (Matlab network ki dikkat hai, shayad Firebase server tak pahunch nahi paa raha)
-
-**Mujhe woh lal error messages yahan copy-paste karke bhejein.**
-
-Maine aapke `script.js` mein kuch changes kiye hain, jo debugging mein madad karenge aur yeh ensure karenge ki splash screen 10 second baad apne aap hat jaaye, bhale hi koi error aaye.
-
-**Kripya apne `script.js` file ko niche diye gaye naye code se replace karein aur phir se try karein.** Agar phir bhi problem aaye, toh console mein error messages check karein aur mujhe batayein.
-
----
-
-### `script.js` (Updated for Debugging)
-
-```javascript
 // Firebase Configuration (from your input)
 const firebaseConfig = {
     apiKey: "AIzaSyDlZA4grzF3fx95-11E4s7ASXwkIij1k1w",
@@ -2877,4 +2842,4 @@ document.addEventListener('DOMContentLoaded', () => {
     splashScreen.classList.remove('hidden');
     appContainer.classList.add('hidden'); // Hide app container initially
 });
-```
+
