@@ -107,16 +107,18 @@ body.light-mode {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center; /* This is key for vertical centering */
+    align-items: center; /* This is key for horizontal centering of block content in a flex container */
     animation: fadeIn 1s ease-out forwards;
     width: 100%; /* Ensure it takes full width for alignment */
-    height: 100%; /* Ensure it takes full height for centering */
+    /* Removed fixed height for dynamic content; rely on parent for total height or overflow */
+    padding: 20px; /* Add some padding around content */
+    box-sizing: border-box;
     text-align: center; /* Re-center text explicitly */
 }
 .splash-content { /* Specific padding/margin adjustments */
-    padding: 20px; /* Add some padding around content */
-    box-sizing: border-box;
+    height: 100%; /* Make splash content take full height to center logo */
 }
+
 
 .app-logo-splash {
     width: 100px;
@@ -188,6 +190,10 @@ body.light-mode {
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
     border: 1px solid var(--border-color-main);
+    /* For Auth Screens within */
+    display: flex; /* Make it a flex container to manage children */
+    flex-direction: column;
+    align-items: center; /* Center children horizontally */
 }
 .auth-content .auth-logo {
     width: 80px;
@@ -201,10 +207,13 @@ body.light-mode {
     text-shadow: 0 0 5px var(--highlight-color-main);
 }
 .auth-screen {
-    display: none;
+    display: none; /* Hide by default */
+    width: 100%; /* Take full width of parent .auth-content */
+    flex-direction: column; /* Inner flex for content */
+    align-items: center; /* Center form elements horizontally */
 }
 .auth-screen.active {
-    display: block;
+    display: flex; /* Show active screen with flex */
 }
 .auth-text {
     font-size: 0.9em;
