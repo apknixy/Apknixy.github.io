@@ -98,6 +98,8 @@ body.light-mode {
     z-index: 1000;
     color: white;
     text-align: center;
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
 }
 
 .splash-content {
@@ -149,6 +151,85 @@ body.light-mode {
     margin-top: 20px;
 }
 
+/* Auth Container (Login/Signup) */
+.auth-container {
+    width: 100%;
+    max-width: 420px;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background-color: var(--bg-color-lighter);
+    box-shadow: 0 0 30px var(--shadow-color-main);
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid var(--border-color-main);
+    padding: 20px;
+    box-sizing: border-box; /* Include padding in width/height */
+    flex-direction: column;
+    text-align: center;
+}
+.auth-content {
+    width: 100%;
+    background-color: var(--bg-color-main);
+    padding: 30px 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
+    border: 1px solid var(--border-color-main);
+}
+.auth-content .auth-logo {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 15px auto;
+}
+.auth-content h1 {
+    font-size: 2.2em;
+    color: var(--highlight-color-main);
+    margin-bottom: 25px;
+    text-shadow: 0 0 5px var(--highlight-color-main);
+}
+.auth-screen {
+    display: none;
+}
+.auth-screen.active {
+    display: block;
+}
+.auth-text {
+    font-size: 0.9em;
+    margin-top: 15px;
+    color: var(--text-color-light);
+}
+.auth-text a {
+    color: var(--highlight-color-main);
+    text-decoration: none;
+    font-weight: bold;
+}
+.auth-text a:hover {
+    text-decoration: underline;
+}
+.status-message {
+    margin-top: 15px;
+    padding: 8px 10px;
+    border-radius: 5px;
+    font-size: 0.9em;
+}
+.status-message.error {
+    background-color: rgba(231, 76, 60, 0.2);
+    color: #e74c3c;
+    border: 1px solid #e74c3c;
+}
+.status-message.success {
+    background-color: rgba(51, 255, 87, 0.2);
+    color: #33ff57;
+    border: 1px solid #33ff57;
+}
+.status-message.info {
+    background-color: rgba(0, 255, 255, 0.1);
+    color: #00ffff;
+    border: 1px solid #00ffff;
+}
+
+
 /* Header */
 .app-header {
     display: flex;
@@ -175,19 +256,7 @@ body.light-mode {
     text-shadow: 0 0 5px var(--highlight-color-main);
 }
 
-.status-display {
-    font-size: 0.9em;
-    background-color: var(--bg-color-main);
-    padding: 5px 10px;
-    border-radius: 5px;
-    border: 1px solid var(--highlight-color-main);
-    box-shadow: 0 0 5px var(--shadow-color-strong);
-}
-
-.status-display span {
-    margin: 0 5px;
-    font-weight: bold;
-}
+/* Status display removed */
 
 .icon-button {
     background: none;
@@ -251,6 +320,10 @@ body.light-mode {
     margin: 0 0 0 15px;
     color: var(--highlight-color-main);
     font-size: 1.4em;
+    max-width: 150px; /* Prevent long names from pushing close button */
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .sidebar-header .close-sidebar {
@@ -273,6 +346,8 @@ body.light-mode {
     border: 2px solid var(--highlight-color-main);
     flex-shrink: 0;
     box-shadow: 0 0 8px var(--shadow-color-strong);
+    background-size: cover; /* For direct pic link */
+    background-position: center; /* For direct pic link */
 }
 .profile-avatar-small::before {
     content: '👤'; /* Default large avatar */
@@ -453,35 +528,20 @@ h2 {
     position: relative;
     border: 2px solid var(--highlight-color-main);
     flex-shrink: 0;
+    background-size: cover; /* For direct pic link */
+    background-position: center; /* For direct pic link */
 }
-
-/* Styles for coded avatars (dynamic in JS) */
-/* Example for more complex CSS logos */
-.profile-avatar.user-logo-3 {
-    background: #FF5733; /* Orange base */
-    border-color: #FFC300;
-}
-.profile-avatar.user-logo-3::before {
-    content: '';
+.profile-avatar::before {
+    content: '👤'; /* Default placeholder emoji */
+    font-family: 'Montserrat', sans-serif;
+    font-size: 24px;
     position: absolute;
-    width: 60%;
-    height: 60%;
-    background: #fff;
-    border-radius: 50%;
-    top: 20%;
-    left: 20%;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.3);
-}
-.profile-avatar.user-logo-3::after {
-    content: '';
-    position: absolute;
-    width: 30%;
-    height: 30%;
-    background: #33FF57; /* Green accent */
-    border-radius: 50%;
-    top: 50%;
-    left: 50%;
+    top: 50%; left: 50%;
     transform: translate(-50%, -50%);
+    color: var(--button-primary-text);
+}
+.profile-avatar[style*="background-image"]::before {
+    content: none; /* Hide default emoji if image is loaded */
 }
 
 
@@ -526,7 +586,7 @@ h2 {
     padding: 10px 15px;
     cursor: pointer;
     color: var(--text-color-main);
-    transition: background-color 0.2s ease;
+    transition: background-color 0.2s ease, color 0.2s ease;
 }
 
 .options-dropdown span:hover {
@@ -904,6 +964,13 @@ input[type="file"] {
     border-bottom: 1px solid var(--border-color-main);
     padding-bottom: 10px;
 }
+#profile-modal-instruction {
+    color: var(--highlight-color-secondary);
+    font-weight: bold;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
 
 .modal-content .btn {
     margin-top: 15px;
@@ -933,7 +1000,24 @@ input[type="file"] {
     align-items: center;
     border: 2px solid transparent;
     transition: border-color 0.2s ease, transform 0.2s ease;
+    background-size: cover; /* For direct pic link */
+    background-position: center; /* For direct pic link */
 }
+.logo-option-item::before {
+    content: '👤'; /* Default placeholder emoji */
+    font-size: 28px;
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    color: var(--button-primary-text);
+}
+.logo-option-item.selected[style*="background-image"]::before {
+    content: none; /* Hide default emoji if image is selected */
+}
+.logo-option-item[style*="background-image"]::before {
+    content: none; /* Hide default emoji if image is present */
+}
+
 
 .logo-option-item.selected {
     border-color: var(--highlight-color-main);
@@ -946,12 +1030,7 @@ input[type="file"] {
 
 /* Specific profile avatar styles for edit profile */
 /* (These will be dynamically generated by JS for 50 logos) */
-.profile-avatar.user-logo-1 { background-color: #ff6347; }
-.profile-avatar.user-logo-1::before { content: '🚀'; font-size: 28px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-
-.profile-avatar.user-logo-2 { background-color: #6a5acd; }
-.profile-avatar.user-logo-2::before { content: '💡'; font-size: 28px; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); }
-/* ... continue for 50 logos in JS generation */
+/* Moved to JS for dynamic insertion via style tags */
 
 
 /* Profile Screen Specifics */
@@ -975,6 +1054,8 @@ input[type="file"] {
     position: relative;
     border: 4px solid var(--highlight-color-main);
     box-shadow: 0 0 15px var(--shadow-color-strong);
+    background-size: cover; /* For direct pic link */
+    background-position: center; /* For direct pic link */
 }
 
 .profile-avatar-large::before {
@@ -986,6 +1067,10 @@ input[type="file"] {
     transform: translate(-50%, -50%);
     color: var(--button-primary-text);
 }
+.profile-avatar-large[style*="background-image"]::before {
+    content: none; /* Hide default emoji if image is loaded */
+}
+
 
 .profile-name {
     font-size: 1.1em;
@@ -1567,6 +1652,13 @@ input[type="file"] {
         max-width: 100%;
         height: 100vh; /* Ensure it takes full height on small screens */
     }
+    .auth-container {
+        border-radius: 0;
+        box-shadow: none;
+        max-width: 100%;
+        height: 100vh;
+    }
+
 
     body {
         align-items: flex-start; /* Align to top on small screens */
@@ -1585,10 +1677,7 @@ input[type="file"] {
         margin-left: 10px;
     }
 
-    .status-display {
-        font-size: 0.8em;
-        padding: 3px 8px;
-    }
+    /* Status display removed from small screen overrides */
 
     .icon-button {
         font-size: 1em;
