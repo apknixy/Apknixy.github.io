@@ -316,10 +316,10 @@ applyLogoStyles(); // Call once on script load
 
 // --- Firebase Authentication Flow ---
 let splashScreenTimeout; // Variable to hold splash screen timeout ID
+let authCheckCompleted = false; // Flag to ensure initial auth check runs once
 
 // Hide splash screen and show auth container
-function showAuthContainer() {
-    clearTimeout(splashScreenTimeout); // Clear any pending splash screen timeout
+function hideSplashScreenAndShowAuth() {
     splashScreen.style.opacity = '0';
     setTimeout(() => {
         splashScreen.classList.add('hidden');
@@ -328,13 +328,18 @@ function showAuthContainer() {
 }
 
 // Hide auth container and show app container
-function showAppContainer() {
+function hideAuthAndShowApp() {
     authContainer.classList.add('hidden');
     appContainer.classList.remove('hidden');
 }
 
-// Check user status and direct to appropriate screen
+// Central function to check user status and direct to appropriate screen
 async function checkUserAndRedirect(user) {
+    // Only proceed if the initial auth check hasn't been completed or if a significant user state change occurs
+    if (authCheckCompleted && user === currentUser) { // This condition tries to prevent unnecessary re-runs
+        return;
+    }
+
     if (user && user.emailVerified) {
         currentUser = user;
         try {
@@ -343,11 +348,11 @@ async function checkUserAndRedirect(user) {
             const userData = userDoc.data();
 
             if (!userDoc.exists || !userData.username || !userData.name || userData.username === "" || userData.name === "") { // Check for empty username/name too
-                // New user or incomplete profile, show edit profile modal
+                // New user or incomplete profile (missing username or name), show edit profile modal
                 console.log("User profile incomplete. Directing to profile setup.");
-                showAppContainer();
-                showScreen('profile-screen');
-                editProfileModal.classList.remove('hidden');
+                hideAuthAndShowApp(); // Show app elements first
+                showScreen('profile-screen'); // Then navigate to profile
+                editProfileModal.classList.remove('hidden'); // Show edit modal
                 profileModalInstruction.textContent = "Welcome! Please complete your profile to use the app.";
                 myProfileUsername.textContent = "@NewUser";
                 sidebarUsername.textContent = "New User";
@@ -356,36 +361,36 @@ async function checkUserAndRedirect(user) {
             } else {
                 console.log("User profile complete. Loading app.");
                 loadUserProfile(currentUser.uid); // Also updates sidebar
-                showAppContainer();
-                showScreen('home-screen');
+                hideAuthAndShowApp(); // Hide auth and show main app
+                showScreen('home-screen'); // Navigate to home
                 loadPosts(); // Load initial posts
                 showToast("Logged in successfully!", 'success');
             }
         } catch (error) {
-            console.error("Error fetching user document:", error);
-            showToast("Failed to load user data. Please try again.", 'error', 5000);
+            console.error("Error fetching user document during redirect:", error);
+            showToast("Failed to load user data. Please log in again.", 'error', 5000);
             auth.signOut(); // Force sign out on critical error
-            showAuthContainer(); // Show auth screen on error
+            hideSplashScreenAndShowAuth(); // Go to auth screen
         }
-    } else if (user && !user.emailVerified) {
-        currentUser = user;
-        console.log("User logged in but email not verified. Showing auth container.");
-        showAuthContainer();
-        loginScreen.classList.add('active'); // Keep on login screen
-        signupScreen.classList.add('hidden');
-        updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
-        auth.signOut(); // Sign out user until they verify, makes the flow cleaner
-    } else {
+    } else { // No user or email not verified
         currentUser = null;
-        console.log("No user or email not verified. Showing auth container.");
-        showAuthContainer();
+        console.log("No user authenticated or email not verified. Showing authentication screen.");
+        hideSplashScreenAndShowAuth(); // Always show auth screen if not logged in
         loginScreen.classList.add('active'); // Show login screen by default
-        signupScreen.classList.add('hidden');
+        signupScreen.classList.remove('hidden'); // Hide signup screen
+        if(user && !user.emailVerified) {
+             updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
+             auth.signOut(); // Sign out user until they verify for cleaner flow
+        } else {
+             updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous status
+        }
     }
+    authCheckCompleted = true; // Mark initial check as completed
+    clearTimeout(splashScreenTimeout); // Clear any splash screen fallback timeout once auth state is processed
 }
 
 
-auth.onAuthStateChanged(checkUserAndRedirect); // Call the redirect logic on auth state change
+auth.onAuthStateChanged(checkUserAndRedirect);
 
 
 // Login/Signup/Forgot Password UI handlers
@@ -393,14 +398,14 @@ showSignupLink.addEventListener('click', (e) => {
     e.preventDefault();
     loginScreen.classList.remove('active');
     signupScreen.classList.add('active');
-    loginStatus.classList.add('hidden');
+    loginStatus.classList.add('hidden'); // Hide login status on switch
 });
 
 showLoginLink.addEventListener('click', (e) => {
     e.preventDefault();
     signupScreen.classList.remove('active');
     loginScreen.classList.add('active');
-    signupStatus.classList.add('hidden');
+    signupStatus.classList.add('hidden'); // Hide signup status on switch
 });
 
 forgotPasswordLink.addEventListener('click', (e) => {
@@ -430,17 +435,21 @@ async function signInUser() {
     }
 
     try {
-        await auth.signInWithEmailAndPassword(email, password);
-        // auth.onAuthStateChanged will handle the redirect
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        // auth.onAuthStateChanged will handle the redirect. No need to redirect here manually.
         updateAuthStatus(loginStatus, "Logging in...", 'info');
-        loginEmailInput.value = ''; // Clear inputs
+        // Clear inputs after attempt, not just success, but on success authStateChanged cleans anyway
+        loginEmailInput.value = '';
         loginPasswordInput.value = '';
     } catch (error) {
         console.error("Login error:", error);
         let errorMessage = "Login failed. Please check your email and password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password') {
             errorMessage = "Invalid email or password.";
-        } else if (error.code === 'auth/too-many-requests') {
+        } else if (error.code === 'auth/invalid-credential') { // Firebase 9 error code for invalid credentials
+             errorMessage = "Invalid email or password.";
+        }
+        else if (error.code === 'auth/too-many-requests') {
             errorMessage = "Too many login attempts. Try again later.";
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = "Network error. Check your internet connection.";
@@ -448,6 +457,8 @@ async function signInUser() {
             errorMessage = "Your account has been disabled.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format.";
+        } else if (error.code === 'auth/internal-error') {
+            errorMessage = "Server error. Try again later.";
         }
         updateAuthStatus(loginStatus, errorMessage, 'error');
     }
@@ -504,10 +515,10 @@ async function registerUser() {
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        // After successful registration, send them to login screen for verification check
+        // After successful registration, direct to login screen, onAuthStateChanged will handle pending verification
         loginScreen.classList.add('active');
         signupScreen.classList.remove('active');
-        updateAuthStatus(loginStatus, "Registered! Check your email to verify and login.", 'info');
+        updateAuthStatus(loginStatus, "Registered! Check your email to verify and then login.", 'info');
 
     } catch (error) {
         console.error("Registration error:", error);
@@ -516,6 +527,8 @@ async function registerUser() {
             errorMessage = "This email is already in use.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format.";
+        } else if (error.code === 'auth/weak-password') {
+            errorMessage = "Password is too weak. Choose a stronger one.";
         }
         updateAuthStatus(signupStatus, errorMessage, 'error');
     }
@@ -561,12 +574,16 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
     try {
         await auth.signOut();
         showToast("Logged out successfully.", 'info');
-        // `onAuthStateChanged` will handle showing the login screen
-        loginEmailInput.value = ''; // Clear fields for new login
+        // The onAuthStateChanged listener will automatically redirect to auth screens.
+        // Clear inputs here just in case, for a fresh start.
+        loginEmailInput.value = '';
         loginPasswordInput.value = '';
-        // Hide app container elements that require logged in user
-        appContainer.classList.add('hidden');
-        showAuthContainer(); // Show auth screens
+        signupEmailInput.value = '';
+        signupPasswordInput.value = '';
+        signupConfirmPasswordInput.value = '';
+        editUsernameInput.value = ''; // Clear profile edit fields as well.
+        editNameInput.value = '';
+        // No explicit hide/show here, as auth.onAuthStateChanged will trigger and handle this.
     } catch (error) {
         console.error("Error logging out:", error);
         showToast("Failed to log out.", 'error');
@@ -574,27 +591,33 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 
-// --- Splash Screen and Initial Load ---
+// --- Splash Screen and Initial Load Trigger ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Hide everything initially
+    // Hide all main app and auth UI elements initially.
     appContainer.classList.add('hidden');
     authContainer.classList.add('hidden');
 
-    // Show splash screen, then Firebase `onAuthStateChanged` will direct the flow
+    // Ensure splash screen is visible immediately.
     splashScreen.classList.remove('hidden');
 
-    // Fallback: If Firebase auth state doesn't resolve in 10 seconds, hide splash
+    // Set a strict minimum display time for the splash screen (e.g., 3 seconds).
+    // After this minimum time, the `auth.onAuthStateChanged` listener
+    // (which fires when Firebase finishes its initial check)
+    // will determine where to send the user (app or auth screens).
+    // The timeout below acts as a failsafe; it calls checkUserAndRedirect() if Firebase takes too long.
     splashScreenTimeout = setTimeout(() => {
-        console.warn("Splash screen fallback: Firebase authentication might be stuck or slow. Displaying auth screen.");
-        if (appContainer.classList.contains('hidden') && authContainer.classList.contains('hidden')) {
-            showAuthContainer(); // Fallback to showing login if nothing happened
+        if (!authCheckCompleted) { // Only if authStateChanged hasn't processed yet
+            console.warn("Splash screen minimum display time met. Forcing initial auth check and redirect.");
+            // Directly trigger the redirection logic.
+            // Firebase Auth state is usually resolved quickly, but this ensures no infinite splash.
+            checkUserAndRedirect(auth.currentUser);
         }
-    }, 10000); // 10 seconds
-});
+    }, 3000); // Set splash screen to appear for a minimum of 3 seconds.
 
-// Remove Gift Claim Btn
-// (Code related to Daily Rewards is completely removed from this version)
-// (Code related to Coins, Credits, Limits from headers is completely removed)
+    // Note: The actual hiding and showing of auth/app containers is now managed within
+    // the `checkUserAndRedirect` function which is called by `onAuthStateChanged`.
+    // This provides a more reliable flow linked to Firebase's actual readiness.
+});
 
 
 // --- Data Saver Toggle ---
@@ -621,6 +644,7 @@ darkModeCheckbox.addEventListener('change', (e) => {
 });
 
 // Set initial theme based on local storage or default
+// This runs on DOMContentLoaded now
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
     if (savedTheme === 'light') {
@@ -742,35 +766,40 @@ async function loadPosts() {
         let snapshot;
         let fetchedPosts = [];
 
-        // Attempt to get posts from followed users (Firestore `in` query is limited to 10 UIDs)
-        const followedPostsQuery = db.collection('posts')
-                                    .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                                    .orderBy('expiryTime', 'desc')
-                                    .orderBy('timestamp', 'desc');
-
+        // Fetch followed users' posts
         if (followedUsers.length > 0) {
-            const chunkedFollowedUsers = [];
-            for (let i = 0; i < followedUsers.length; i += 10) {
-                chunkedFollowedUsers.push(followedUsers.slice(i, i + 10));
-            }
+            // Firestore 'in' query limitation (max 10) means we need to chunk UIDs if > 10.
+            const chunkSize = 10;
+            for (let i = 0; i < followedUsers.length; i += chunkSize) {
+                const chunk = followedUsers.slice(i, i + chunkSize);
+                // Create a temporary query for each chunk
+                let chunkQuery = db.collection('posts')
+                                   .where('userId', 'in', chunk)
+                                   .where('expiryTime', '>', firebase.firestore.Timestamp.now())
+                                   .orderBy('timestamp', 'desc'); // Ordering important for pagination consistency
 
-            for (const chunk of chunkedFollowedUsers) {
-                let currentChunkQuery = followedPostsQuery.where('userId', 'in', chunk);
-                if (lastVisiblePost) { // Attempt to continue pagination from previous state
-                     currentChunkQuery = currentChunkQuery.startAfter(lastVisiblePost);
+                if (lastVisiblePost) { // Apply pagination only if starting from somewhere
+                    chunkQuery = chunkQuery.startAfter(lastVisiblePost);
                 }
-                const followedPostsSnapshot = await currentChunkQuery.limit(postsToLoadPerScroll).get();
-                followedPostsSnapshot.forEach(doc => {
-                    if (!fetchedPosts.some(p => p.id === doc.id)) { // Prevent duplicates if already fetched
+                const chunkSnapshot = await chunkQuery.limit(postsToLoadPerScroll).get();
+
+                chunkSnapshot.forEach(doc => {
+                    // Prevent duplicates (especially if a user appears in multiple chunks or is followed/public)
+                    if (!fetchedPosts.some(p => p.id === doc.id)) {
                          fetchedPosts.push({ id: doc.id, ...doc.data() });
                     }
                 });
-                if (!followedPostsSnapshot.empty) {
-                    lastVisiblePost = followedPostsSnapshot.docs[followedPostsSnapshot.docs.length - 1]; // Update for next query
+
+                if (!chunkSnapshot.empty) {
+                    // Important: If we get posts from chunks, update lastVisiblePost
+                    // However, directly using last doc of a chunk might break next query of general posts if it was ordered differently.
+                    // A better approach is to collect ALL potential posts first, then sort/filter for pagination.
+                    lastVisiblePost = chunkSnapshot.docs[chunkSnapshot.docs.length - 1];
                 }
-                if (fetchedPosts.length >= postsToLoadPerScroll) break; // If we have enough posts
+                if (fetchedPosts.length >= postsToLoadPerScroll) break; // Break early if we've gathered enough posts
             }
         }
+
 
         // Fill up remaining slots with general public posts if not enough from followed users
         if (fetchedPosts.length < postsToLoadPerScroll) {
@@ -780,15 +809,21 @@ async function loadPosts() {
                                         .orderBy('expiryTime', 'desc')
                                         .orderBy('timestamp', 'desc');
 
-             if (lastVisiblePost && followedUsers.length === 0) { // Only use general posts for pagination if no followed users
-                 generalPostsRef = generalPostsRef.startAfter(lastVisiblePost);
-             } else if (lastVisiblePost && fetchedPosts.length > 0) { // If some followed posts, general posts start from beginning
-                 // No need to adjust, fresh query will add on
+             // Only apply pagination start after if NO followed posts were found OR if general feed is truly paginating
+             if (!lastVisiblePost || fetchedPosts.length === 0) { // If starting fresh for general feed or if no followed posts from pagination
+                 if (lastVisiblePost && fetchedPosts.length === 0) {
+                     generalPostsRef = generalPostsRef.startAfter(lastVisiblePost);
+                 }
+                 // Else, if first load, it starts from beginning by default
+             } else { // If we got some followed posts, general posts should complement
+                 // It's tricky to continue precise pagination while combining. Simplification:
+                 // Fetch general posts and let client filter duplicates
              }
+
 
              const generalPostsSnapshot = await generalPostsRef.limit(postsToLoadPerScroll - fetchedPosts.length).get();
              generalPostsSnapshot.forEach(doc => {
-                 if (!fetchedPosts.some(p => p.id === doc.id)) {
+                 if (!fetchedPosts.some(p => p.id === doc.id)) { // Avoid duplicates from followed feed if user is also public
                     fetchedPosts.push({ id: doc.id, ...doc.data() });
                  }
              });
@@ -797,9 +832,8 @@ async function loadPosts() {
              }
         }
 
-
-        // If no new posts are found from both followed and general after trying, reset for looping.
-        if (fetchedPosts.length === 0) {
+        // If after combining, no new posts were found, reset for looping.
+        if (fetchedPosts.length === 0 || fetchedPosts.every(p => postsFeed.querySelector(`[data-post-id="${p.id}"]`))) {
             if (postsFeed.children.length > 0) { // Only show toast if feed isn't completely empty already
                 showToast("No more new posts. Looping feed...", 'info', 3000);
             }
@@ -813,39 +847,51 @@ async function loadPosts() {
         }
 
         // Randomize the layout of new posts
-        let tempPosts = [...fetchedPosts];
-        // Clear old content only if it's the very first load or explicit refresh.
-        // Otherwise, append to current content for continuous feed.
-        if (!lastVisiblePost && postsFeed.innerHTML.trim() !== '') {
-            postsFeed.innerHTML = ''; // Clear for initial load or full refresh.
+        let postsToRenderInBatch = [];
+        // Only add posts that are not already in the feed
+        fetchedPosts.forEach(post => {
+            if (!postsFeed.querySelector(`[data-post-id="${post.id}"]`)) {
+                postsToRenderInBatch.push(post);
+            }
+        });
+
+
+        // If it's a completely fresh load or explicit refresh, clear existing.
+        // Otherwise, append.
+        if (!lastVisiblePost && postsFeed.innerHTML.trim() !== '') { // If just initialized and content exists
+            postsFeed.innerHTML = '';
+        } else if (lastVisiblePost && postsFeed.innerHTML.trim() === '') { // If lastVisible was set but page is empty
+             postsFeed.innerHTML = '';
         }
 
-        while (tempPosts.length > 0) {
+
+        // Apply random layout for the current batch of posts to render
+        while (postsToRenderInBatch.length > 0) {
             const randomLayout = Math.floor(Math.random() * 3); // 0: vertical, 1: horizontal, 2: table
 
-            if (randomLayout === 0 || tempPosts.length < 4) { // Vertical or not enough for other layouts
-                const post = tempPosts.shift();
+            if (randomLayout === 0 || postsToRenderInBatch.length < 4) { // Vertical or not enough for other layouts
+                const post = postsToRenderInBatch.shift();
                 renderPost(post, postsFeed, 'vertical-post');
-            } else if (randomLayout === 1 && tempPosts.length >= 2) { // Horizontal (2-3 posts)
-                const numHorizontal = Math.min(tempPosts.length, Math.floor(Math.random() * 2) + 2); // 2 or 3
+            } else if (randomLayout === 1 && postsToRenderInBatch.length >= 2) { // Horizontal (2-3 posts)
+                const numHorizontal = Math.min(postsToRenderInBatch.length, Math.floor(Math.random() * 2) + 2); // 2 or 3
                 const horizontalContainer = document.createElement('div');
                 horizontalContainer.className = 'horizontal-post-container';
                 for (let i = 0; i < numHorizontal; i++) {
-                    const post = tempPosts.shift();
+                    const post = postsToRenderInBatch.shift();
                     horizontalContainer.appendChild(createPostElement(post, 'horizontal-post'));
                 }
                 postsFeed.appendChild(horizontalContainer);
-            } else if (randomLayout === 2 && tempPosts.length >= 4) { // Table (4-6 posts)
-                const numTable = Math.min(tempPosts.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
+            } else if (randomLayout === 2 && postsToRenderInBatch.length >= 4) { // Table (4-6 posts)
+                const numTable = Math.min(postsToLoadPerScroll.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'table-post-container';
                 for (let i = 0; i < numTable; i++) {
-                    const post = tempPosts.shift();
+                    const post = postsToRenderInBatch.shift();
                     tableContainer.appendChild(createPostElement(post, 'table-post'));
                 }
                 postsFeed.appendChild(tableContainer);
             } else { // Fallback to vertical if conditions not met
-                const post = tempPosts.shift();
+                const post = postsToRenderInBatch.shift();
                 renderPost(post, postsFeed, 'vertical-post');
             }
         }
@@ -898,19 +944,19 @@ async function loadImmersiveFeedPosts() {
             fetchedPosts.push({ id: doc.id, ...doc.data() });
         });
 
-        // Clear only if starting a fresh load, otherwise append
-        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (lastVisibleImmersivePost === snapshot.docs[snapshot.docs.length -1] && snapshot.size < postsToLoadPerScroll)) { // Check if we are at the very end of content before refreshing
+        // Clear existing immersive feed if we looped or starting fresh
+        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (lastVisibleImmersivePost && snapshot.size < postsToLoadPerScroll) && (lastVisibleImmersivePost && immersiveFeed.children.length > 0)) { // If current fetch is less than limit, assume end and refresh for loop
              immersiveFeed.innerHTML = '';
-             if (snapshot.size === 0) { // If initial fetch is empty
-                immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available.</p>';
-                return;
-             }
+        } else if (!lastVisibleImmersivePost && immersiveFeed.innerHTML.trim() !== '') {
+            immersiveFeed.innerHTML = ''; // Initial load but had some prior content
         }
 
-
         fetchedPosts.forEach(post => {
-            renderPost(post, immersiveFeed, 'immersive-post'); // Use immersive-post class
+            if (!immersiveFeed.querySelector(`[data-post-id="${post.id}"]`)) { // Prevent rendering duplicates in a dynamic refresh scenario
+                renderPost(post, immersiveFeed, 'immersive-post'); // Use immersive-post class
+            }
         });
+
 
     } catch (error) {
         console.error("Error loading immersive posts:", error);
@@ -2779,9 +2825,9 @@ async function performSearch() {
 
         postSnapshot.docs.forEach(doc => {
             const postData = { id: doc.id, ...doc.data() };
-            // Ensure public posts can be found, and private posts only by followers/owner if desired (more complex rule)
-            if ((!postData.isPrivate || (currentUser && postData.isPrivate && (postData.userId === currentUser.uid || (doc.ref.parent.parent.collection('users').doc(currentUser.uid).data().following || []).includes(postData.userId)))) // Simplified logic; security rules handle ultimate access
-                 && postData.content && postData.content.toLowerCase().includes(query)) {
+            // Security rules handle exact read permissions based on privacy.
+            // Client-side simply attempts to match content.
+            if (postData.content && postData.content.toLowerCase().includes(query)) {
                 foundResults = true;
                 searchPostList.appendChild(createPostElement(postData));
             }
@@ -3109,284 +3155,3 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
 cancelWithdrawalBtn.addEventListener('click', () => {
     withdrawalModal.classList.add('hidden');
 });
-```
-
----
-
-### **`firebase.rules` (Updated)**
-
-मैंने `posts` collection के `allow update` नियम की line 156-159 को ध्यान से फिर से लिखा है। विशेष रूप से, `hasOnly()` और `get()` के साथ complex boolean लॉजिक को सरल बनाया गया है, जो पिछली errors का कारण बन रहा होगा।
-
-अब यह owner updates (`commentCount`, `isPrivate`, profile details propagated from user document) और non-owner updates (`likes`, `reactions`, `views`) को अलग-अलग रूप से हैंडल करता है।
-
-**अत्यंत महत्वपूर्ण:** नियम अपडेट करते समय, Firebase Console में हमेशा `Publish` करने से पहले "Test Rules" सिमुलेटर का उपयोग करके कुछ scenarios को test करना सुनिश्चित करें।
-
-```firestore
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Helper function for admin role check
-    // WARNING: This is highly insecure for production admin panel access.
-    // In production, secure admin operations should go through a backend (e.g., Firebase Cloud Functions
-    // with Admin SDK and custom token claims for users/roles).
-    function isAdmin() {
-      // REPLACE 'YOUR_ADMIN_UID_HERE' with the actual UID of your designated admin user from Firebase Auth
-      return request.auth.uid == "YOUR_ADMIN_UID_HERE"; // <---- IMPORTANT: Update this UID in production
-    }
-
-    // --- Users Collection ---
-    // Users can create their own profile, and read profiles of any authenticated user.
-    // Users can update specific fields of their own. Admin can delete.
-    match /users/{userId} {
-      // Read access: Any authenticated user can read user profiles.
-      // Private profiles require the requesting user to be following.
-      allow read: if request.auth != null && (
-        resource.data.isPrivate == false ||
-        request.auth.uid == userId ||
-        resource.data.followers.hasAny([request.auth.uid])
-      );
-
-      // Create access: A user can create their own document on signup.
-      // All initial counts and states must be zero/default.
-      allow create: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.data.username is string
-                    && request.resource.data.username.size() >= 1 // Username must not be empty
-                    && request.resource.data.username.size() <= 30 // Max 30 characters
-                    && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") // No spaces or special chars for username
-                    && request.resource.data.email == request.auth.token.email // Email matches authenticated user's email
-                    && request.resource.data.get('followersCount', 0) == 0
-                    && request.resource.data.get('followingCount', 0) == 0
-                    && request.resource.data.get('postCount', 0) == 0
-                    && request.resource.data.get('monetizedViewsCount', 0) == 0
-                    && request.resource.data.get('unmonetizedViewsCount', 0) == 0
-                    && request.resource.data.get('earnedAmount', 0.0) == 0.0
-                    && request.resource.data.get('reposts', []).size() == 0 // Empty reposts array
-                    && request.resource.data.isPrivate is bool // Default false/true based on app config
-                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null || request.resource.data.profilePicUrl == '') // Can be empty/null string
-                    && (request.resource.data.profileLogo is string || request.resource.data.profileLogo == null || request.resource.data.profileLogo == '') // Can be empty/null string
-                    && request.resource.data.createdAt is timestamp;
-
-
-      // Update access: Users can update their own profile fields.
-      allow update: if request.auth != null && request.auth.uid == userId && (
-        // Ensure username is valid if present AND either unchanged OR unique
-        (request.resource.data.username is string
-          && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$")
-          && request.resource.data.username.size() >= 1
-          && request.resource.data.username.size() <= 30
-          && (resource.data.username == request.resource.data.username || !exists(get(/databases/$(database)/documents/users).where('username', '==', request.resource.data.username).limit(1)))
-        )
-        // Check for updates to other non-counter/non-array fields
-        && (request.resource.data.get('name', null) is string || request.resource.data.name == null)
-        && (request.resource.data.get('bio', null) is string || request.resource.data.bio == null)
-        && (request.resource.data.get('whatsapp', null) is string || request.resource.data.whatsapp == null)
-        && (request.resource.data.get('instagram', null) is string || request.resource.data.instagram == null)
-        && (request.resource.data.get('profileLogo', null) is string || request.resource.data.profileLogo == null)
-        && (request.resource.data.get('profilePicUrl', null) is string || request.resource.data.profilePicUrl == null)
-        && (request.resource.data.isPrivate is bool)
-
-        // System-controlled counters can only increment or stay the same (cannot decrement via user directly)
-        // postCount allows -1 when a post is deleted by owner
-        && request.resource.data.postCount >= (resource.data.postCount - 1)
-        && request.resource.data.monetizedViewsCount >= resource.data.monetizedViewsCount
-        && request.resource.data.unmonetizedViewsCount >= resource.data.unmonetizedViewsCount
-        && request.resource.data.earnedAmount >= resource.data.earnedAmount
-
-        // Reposts array must be a list if updated, allowing arrayUnion/Remove operations.
-        && (request.resource.data.reposts is list || request.resource.data.reposts == null)
-
-        // Special handling for follower/following lists - specific fields updated by array ops
-        && ((request.resource.data.following is list) || (resource.data.following is list && request.resource.data.following == resource.data.following))
-        && ((request.resource.data.followers is list) || (resource.data.followers is list && request.resource.data.followers == resource.data.followers))
-      );
-
-
-      // Deny direct deletion of user profiles from client-side. Only via Cloud Function or Admin Panel for safety.
-      allow delete: if isAdmin();
-    }
-
-
-    // --- Posts Collection ---
-    // Anyone authenticated can read active posts. Users can create, update, and delete their own posts.
-    // Other users can like/react to posts.
-    match /posts/{postId} {
-      // Read access: Allow read if user is authenticated AND post is not expired AND (post is public OR requesting user is owner OR requesting user is follower if private)
-      allow read: if request.auth != null
-                  && request.time < resource.data.expiryTime // Check post is not expired (24-hour limit in this case)
-                  && (resource.data.isPrivate == false // Public posts can always be read
-                      || request.auth.uid == resource.data.userId // Owner can always read their own private posts
-                      || (existsAfter(get(/databases/$(database)/documents/users/$(request.auth.uid))) // Check if requesting user's doc exists and
-                          && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([resource.data.userId]) // is a follower
-                         )
-                    );
-
-
-      // Create access: Only post owner can create, with initial values locked down.
-      // Content length and type, initial counts. Inherits user's private status.
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.get('likes', 0) == 0
-                    && request.resource.data.get('views', 0) == 0
-                    && request.resource.data.get('commentCount', 0) == 0
-                    && request.resource.data.get('reactions', {}) == {}
-                    && request.resource.data.get('userReactions', {}) == {}
-                    && request.resource.data.username is string // Comes from user profile
-                    && (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == '') // Can be empty if profilePicUrl is used
-                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == '') // Can be empty if userProfileLogo is used
-                    && request.resource.data.content is string
-                    && request.resource.data.category is string
-                    && request.resource.data.isMonetized is bool
-                    && request.resource.data.isPrivate is bool // Post inherits user's privacy settings
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.expiryTime is timestamp
-                    && request.resource.data.content.size() >= 60 // Minimum content length
-                    && request.resource.data.content.size() <= 10000; // Maximum content length
-
-
-      // Update access: Strict rules for specific updates.
-      allow update: if request.auth != null && (
-        // Scenario 1: Post owner updates their own post
-        (request.auth.uid == resource.data.userId &&
-         // Allowed fields to be updated by owner on their own post:
-         request.resource.data.keys().hasOnly(['commentCount', 'isPrivate', 'username', 'userProfileLogo', 'profilePicUrl']) &&
-         // commentCount can only increase (or stay same), it's incremented client-side after comment
-         request.resource.data.commentCount >= resource.data.commentCount &&
-         // isPrivate must be a boolean (and is likely propagated from user doc change)
-         (request.resource.data.isPrivate is bool || request.resource.data.isPrivate == null) &&
-         // username, userProfileLogo, profilePicUrl are also propagated from user's own profile changes.
-         // Ensuring their types:
-         (request.resource.data.username is string || request.resource.data.username == null) &&
-         (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == null) &&
-         (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null)
-        )
-        // Scenario 2: Another authenticated user (not the owner) likes/reacts/views
-        || (request.auth.uid != resource.data.userId &&
-            (
-                // Only 'likes' and 'likedBy' can be updated for liking/unliking
-                (request.resource.data.keys().hasOnly(['likes', 'likedBy']) &&
-                 (request.resource.data.likes == resource.data.likes + 1 || request.resource.data.likes == resource.data.likes - 1 || request.resource.data.likes == resource.data.likes))
-                ||
-                // Only 'reactions' and 'userReactions' can be updated for emoji reactions
-                (request.resource.data.keys().hasOnly(['reactions', 'userReactions']))
-                ||
-                // Only 'views' can be updated for view count increments
-                (request.resource.data.keys().hasOnly(['views']) &&
-                 request.resource.data.views == resource.data.views + 1)
-            )
-           )
-      );
-
-
-      // Delete access: Only post owner or Admin can delete a post.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
-    }
-
-    // --- Comments Collection ---
-    // Users can read all comments on a post. Users can add comments, and delete their own. Admin can delete.
-    match /comments/{commentId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.postId is string
-                    && request.resource.data.content is string
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.content.size() >= 1
-                    && request.resource.data.content.size() <= 100; // Comment max length 100 characters
-
-      allow update: if false; // Comments are immutable.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
-    }
-
-    // --- Messages Collection ---
-    // Users can only read/write messages in conversations they are part of.
-    // Messages also have a client-side expiration. Firestore rule enforces 12h visibility.
-    match /messages/{messageId} {
-      // Read access: Sender or receiver can read if message is still within 12 hours.
-      allow read: if request.auth != null
-                  && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid)
-                  && (request.time < resource.data.timestamp + duration('12h')); // Messages visible for 12 hours from timestamp
-
-      // Create access: Only if sender is the current authenticated user and both parties are in 'participants' array.
-      allow create: if request.auth != null
-                    && request.resource.data.senderId == request.auth.uid
-                    && request.resource.data.receiverId is string
-                    && request.resource.data.content is string
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.participants is list
-                    && request.resource.data.participants.size() == 2
-                    && request.resource.data.participants.hasAll([request.auth.uid, request.resource.data.receiverId])
-                    && request.resource.data.get('read', false) == false; // New messages start as unread
-
-      // No direct updates or deletes via client. Messages are immutable after creation.
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // --- Post Views Collection ---
-    // This collection is used internally to track unique views per user per post.
-    // It should only be updated in a specific transactional way.
-    match /postViews/{postId} {
-        // Read access: No direct public read of internal view records. These are system managed.
-        allow read: if false;
-
-        // Write access: Allows creation or update for logging views.
-        // Requires authentication, ensures totalViews increments by 1, and the current user's ID is set to true in viewedBy.
-        allow write: if request.auth != null && (
-          // Creation (first view for this post ID) - `totalViews` initialized to 1 and `viewedBy` map has 1 entry
-          (request.resource.data.get('totalViews', 0) == 1
-           && request.resource.data.viewedBy is map
-           && request.resource.data.viewedBy.keys().size() == 1
-           && request.resource.data.viewedBy.get(request.auth.uid) == true
-           && request.resource.data.keys().hasOnly(['totalViews', 'viewedBy']) // Only these two fields can be created
-          )
-          ||
-          // Update (subsequent views for this post ID) - `totalViews` increments, and user is added to `viewedBy`
-          (request.resource.data.get('totalViews', 0) == resource.data.totalViews + 1
-           && request.resource.data.viewedBy is map
-           && resource.data.get('viewedBy', {}).get(request.auth.uid) != true // Ensure user has not viewed it previously in this persistent record (must be false or non-existent)
-           && request.resource.data.viewedBy.get(request.auth.uid) == true // Current user now marked true
-           && request.resource.data.keys().hasOnly(['totalViews', 'viewedBy']) // Affected keys
-          )
-        );
-
-        // Delete access: Only by admin, usually in conjunction with post deletion.
-        allow delete: if isAdmin();
-    }
-
-    // --- Reports Collection ---
-    // Authenticated users can create reports. Read/Update/Delete only for admin.
-    match /reports/{reportId} {
-      allow read: if isAdmin(); // Only Admin can read reports.
-      allow create: if request.auth != null
-                    && request.auth.data.reportedBy == request.auth.uid // User reports their own UID
-                    && request.resource.data.postId is string // Report linked to a postId
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.get('status', 'pending') == 'pending'; // New reports always start as 'pending'
-
-      allow update: if isAdmin(); // Only Admin can update (e.g., status: resolved)
-      allow delete: if isAdmin(); // Only Admin can delete reports.
-    }
-
-    // --- Withdrawal Requests Collection ---
-    // Users can create their own withdrawal requests. Read/Update/Delete only for admin.
-    match /withdrawalRequests/{requestId} {
-      allow read: if isAdmin(); // Only Admin can read withdrawal requests.
-      allow create: if request.auth != null
-                    && request.auth.uid == request.resource.data.userId // Request from current user
-                    && request.resource.data.username is string
-                    && request.resource.data.method is string
-                    && request.resource.data.id is string
-                    && request.resource.data.monetizedViewsAtRequest is int
-                    && request.resource.data.monetizedViewsAtRequest >= 100000 // Enforce withdrawal threshold at request time
-                    && request.resource.data.estimatedAmount is float
-                    && request.resource.data.estimatedAmount >= 0 // Should be non-negative
-                    && request.resource.data.requestTimestamp is timestamp
-                    && request.resource.data.get('status', 'pending') == 'pending'; // New requests start as 'pending'
-
-      allow update: if isAdmin(); // Only Admin can update (e.g., status: completed/rejected)
-      allow delete: if isAdmin(); // Only Admin can delete.
-    }
-  }
-}
