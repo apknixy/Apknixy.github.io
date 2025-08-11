@@ -17,9 +17,11 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // --- DOM Elements ---
-const splashScreen = document.getElementById('splash-screen'); // Kept for its styling, though now just shows a background.
+// const splashScreen = document.getElementById('splash-screen'); // Splash screen is now removed from HTML.
 const authContainer = document.getElementById('auth-container'); // Container for login/signup screens
 const appContainer = document.getElementById('app-container'); // Main application container
+const loadTestMessage = document.getElementById('load-test-message'); // Element for debugging basic JS load
+
 
 // Auth Screens Elements
 const loginScreen = document.getElementById('login-screen');
@@ -189,13 +191,8 @@ let postsToLoadPerScroll = 10; // Number of posts to load on scroll
 let dataSaverEnabled = false; // Flag for data saver feature (logic implementation needed)
 let currentPostIdForComments = null; // Stores post ID when comments modal is open
 
-// Flags for Authentication Flow Control
 let isProcessingAuth = false; // Prevents multiple rapid authentication requests
-let hasRunInitialAuthCheck = false; // Ensures the `onAuthStateChanged` block runs its full logic only ONCE on app load
-
-// Promises for controlling app flow (e.g., minimum splash screen time)
-let splashScreenMinTimePromise; // Resolves after minimum splash screen time
-let splashScreenTimeout; // Fallback timeout if `onAuthStateChanged` is slow to fire.
+let hasRunInitialAuthCheck = false; // Ensures the `onAuthStateChanged` block runs its full logic only once per app load cycle
 
 // Text-to-Speech API
 const synth = window.speechSynthesis;
@@ -303,7 +300,7 @@ function showScreen(screenId) {
         }
     });
 
-    // Close sidebar if it's open when screen changes
+    // Close sidebar if open
     sidebar.classList.remove('open');
 }
 
@@ -338,63 +335,57 @@ applyLogoStyles(); // Call once when the script loads.
 
 // --- Core Authentication Flow Logic ---
 
-// Function to safely hide the splash screen once UI is ready
-function hideSplashScreenProperly() {
-    if (splashScreen.classList.contains('hidden') && splashScreen.style.display === 'none') {
-        return; // Already hidden
-    }
-    console.log("Hiding splash screen fully.");
-    splashScreen.style.opacity = '0';
-    setTimeout(() => {
-        splashScreen.classList.add('hidden');
-        splashScreen.style.display = 'none';
-    }, 500); // Wait for fade out
-}
-
-// Show authentication container (Login/Signup)
+// Show authentication container (Login/Signup) UI
 function showAuthContainerUI() {
-    hideSplashScreenProperly(); // Ensure splash is hidden
-    appContainer.classList.add('hidden'); // Ensure app is hidden
-    authContainer.style.display = 'flex'; // Use flex for centering
-    authContainer.classList.remove('hidden'); // Show auth container
+    console.log("Entering showAuthContainerUI()");
+    // Set explicit display to flex to correctly handle visibility AND layout
+    authContainer.style.display = 'flex';
+    authContainer.classList.remove('hidden'); // Ensure it's not marked as 'hidden' anymore
+    
+    appContainer.style.display = 'none'; // Ensure app container is hidden
+    appContainer.classList.add('hidden'); 
+    
     loginScreen.classList.add('active'); // Default to login screen active
     signupScreen.classList.remove('active'); // Ensure signup is inactive
     console.log("UI: Displaying Authentication screens.");
 }
 
-// Show main app container (Home Feed, Profile, etc.)
+// Show main app container (Home Feed, Profile, etc.) UI
 function showAppContainerUI() {
-    hideSplashScreenProperly(); // Ensure splash is hidden
-    authContainer.classList.add('hidden'); // Ensure auth is hidden
-    appContainer.style.display = 'flex'; // Or 'block', depending on its default layout
-    appContainer.classList.remove('hidden'); // Show app container
+    console.log("Entering showAppContainerUI()");
+    // Set explicit display to flex to correctly handle visibility AND layout
+    appContainer.style.display = 'flex';
+    appContainer.classList.remove('hidden'); // Ensure it's not marked as 'hidden' anymore
+
+    authContainer.style.display = 'none'; // Ensure auth container is hidden
+    authContainer.classList.add('hidden'); 
+    
     console.log("UI: Displaying Main App screens.");
 }
 
 
 // Central function to handle authentication state and UI redirection
-async function handleInitialAuthAndRedirect(user) {
-    // This `onAuthStateChanged` handler can fire multiple times (on load, login, logout).
-    // `hasRunInitialAuthCheck` flag ensures that the full initial UI setup logic
-    // runs only once per full page load, regardless of subsequent quick state changes.
+async function checkUserAndRedirect(user) {
+    console.log(`checkUserAndRedirect called. User: ${user ? user.uid : "None"}. Email Verified: ${user ? user.emailVerified : "N/A"}.`);
+    
+    // Only process this flow once per full page load, regardless of subsequent quick state changes.
+    // This is crucial to prevent re-rendering/re-initialization bugs on multiple onAuthStateChanged firings.
     if (hasRunInitialAuthCheck && user === auth.currentUser) {
-        console.log("onAuthStateChanged: Secondary fire, user state unchanged. Skipping initial redirect logic.");
+        console.log("checkUserAndRedirect: Already performed initial check, skipping.");
         return;
     }
-    hasRunInitialAuthCheck = true; // Mark as started immediately.
+    hasRunInitialAuthCheck = true; // Mark as started immediately to prevent other runs.
 
-    // Ensure minimum splash screen time has passed before processing UI transitions.
-    // This makes sure the splash screen is visible for a moment even if auth is instant.
-    console.log("onAuthStateChanged: Waiting for minimum splash screen display time to resolve...");
-    await splashScreenMinTimePromise; // PAUSE execution here until the minimum splash time is over.
-
-    clearTimeout(splashScreenTimeout); // Clear the fallback timeout, as auth state is being handled now.
-    console.log("Splash screen minimum time resolved, proceeding with user check.");
+    // Show the small test message if JavaScript is loading correctly.
+    if (loadTestMessage) {
+        loadTestMessage.style.display = 'block'; // Make the test message visible
+        console.log("Test message should be visible: JavaScript is loading!");
+    }
 
 
     if (user && user.emailVerified) {
         currentUser = user; // Set global current user
-        console.log(`User is authenticated: ${user.uid}, Email verified: ${user.emailVerified}. Checking profile status.`);
+        console.log(`User ${user.uid} is authenticated and verified. Attempting to load user profile.`);
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
@@ -402,7 +393,7 @@ async function handleInitialAuthAndRedirect(user) {
 
             // If user document is missing OR username/name are not set, force profile setup.
             if (!userDoc.exists || !userData.username || userData.username === "" || !userData.name || userData.name === "") {
-                console.log("User profile incomplete (missing username/name). Forcing profile setup.");
+                console.log("User profile incomplete (missing username or display name). Forcing profile setup.");
                 showAppContainerUI(); // Transition to the main app container.
                 showScreen('profile-screen'); // Navigate to the profile screen.
                 editProfileModal.classList.remove('hidden'); // Automatically open the edit profile modal.
@@ -420,23 +411,23 @@ async function handleInitialAuthAndRedirect(user) {
                 showToast("Logged in successfully!", 'success');
             }
         } catch (firestoreError) {
-            console.error("Firestore error while loading user profile:", firestoreError);
-            showToast("Error loading user profile. Please try logging in again.", 'error', 5000);
-            auth.signOut(); // Force logout on profile data error to reset.
-            showAuthContainerUI(); // Redirect back to authentication screen.
+            console.error("Firebase Firestore error while loading user profile:", firestoreError);
+            showToast("Error loading user profile. Please try logging in again.", 'error', 7000);
+            auth.signOut(); // Critical error, force logout.
+            showAuthContainerUI(); // Fallback to authentication UI.
         }
     } else { // No user is logged in OR user's email is not verified
         currentUser = null; // Ensure global user object is null.
-        console.log("User not authenticated or email not verified. Redirecting to Authentication UI.");
+        console.log("No authenticated and verified user found. Displaying Authentication UI.");
         showAuthContainerUI(); // Display the Login/Register screens.
 
-        if (user && !user.emailVerified) {
+        if (user && !user.emailVerified) { // If there's a user object but not verified
             console.log("User is authenticated but email not verified. Instructing verification.");
             updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox (or spam folder) for a verification link.", 'info');
-            auth.signOut(); // It's best practice to sign out unverified users to force email verification flow.
+            auth.signOut(); // Sign out unverified users to streamline verification flow.
         } else {
             console.log("No active user session found. Showing login form.");
-            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous login status messages.
+            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous messages.
         }
     }
 }
@@ -444,7 +435,8 @@ async function handleInitialAuthAndRedirect(user) {
 
 // Attach the main authentication state listener to Firebase
 auth.onAuthStateChanged(user => {
-    handleInitialAuthAndRedirect(user); // Call our central handler
+    // console.log("onAuthStateChanged event fired. Current User:", user ? user.uid : "None");
+    checkUserAndRedirect(user); // Calls our central handler
 });
 
 
@@ -505,7 +497,7 @@ async function signInUser() {
     }
 
     try {
-        console.log("Attempting user sign-in...");
+        console.log("Attempting user sign-in for:", email);
         updateAuthStatus(loginStatus, "Logging in...", 'info');
         await auth.signInWithEmailAndPassword(email, password);
         // Success: `onAuthStateChanged` listener will pick this up and redirect UI.
@@ -577,8 +569,8 @@ async function registerUser() {
         await db.collection('users').doc(userCredential.user.uid).set({
             uid: userCredential.user.uid,
             email: userCredential.user.email,
-            username: "", // To be set in profile edit
-            name: "",     // To be set in profile edit
+            username: "", // Will be set in profile edit
+            name: "",     // Will be set in profile edit
             bio: "",
             whatsapp: "",
             instagram: "",
@@ -615,7 +607,7 @@ async function registerUser() {
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format. Please check and retry.";
         } else if (error.code === 'auth/weak-password') {
-            errorMessage = "Password is too weak. Please choose a stronger one (min 6 characters).";
+            errorMessage = "Password is too weak (min 6 chars).";
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = "Network error during registration. Check internet.";
         }
@@ -634,7 +626,7 @@ async function sendEmailVerification(user) {
         console.log("Verification email sent successfully.");
     } catch (error) {
         console.error("Error sending verification email:", error);
-        showToast("Failed to send verification email. Please try again later.", 'error');
+        showToast("Failed to send verification email. Try again later.", 'error');
     }
 }
 
@@ -658,7 +650,7 @@ async function sendPasswordReset() {
     try {
         console.log("Sending password reset email for:", email);
         await auth.sendPasswordResetEmail(email);
-        updateAuthStatus(resetStatus, "Password reset link sent to your email! Please check your inbox.", 'success');
+        updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
     } catch (error) {
         console.error("Firebase Forgot password error:", error.code, error.message);
         let errorMessage = "Failed to send reset link.";
@@ -683,10 +675,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         await auth.signOut();
         showToast("Logged out successfully.", 'info');
 
-        // Reset the flag so that onAuthStateChanged will perform full check next time
-        hasRunInitialAuthCheck = false;
-
-        // Clear all sensitive input fields for next user session or login.
+        // Clear input fields and reset state for new login/registration.
         loginEmailInput.value = '';
         loginPasswordInput.value = '';
         signupEmailInput.value = '';
@@ -698,7 +687,12 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         editWhatsappInput.value = '';
         editInstagramInput.value = '';
         profilePicUrlInput.value = '';
+        
+        // Reset flag so onAuthStateChanged will perform full check next time.
+        hasRunInitialAuthCheck = false; 
+
         // UI redirection will be handled by `onAuthStateChanged` listener.
+        // This ensures the correct UI (login/register) is shown based on Firebase's confirmed state.
     } catch (error) {
         console.error("Error during logout:", error);
         showToast("Failed to log out.", 'error');
@@ -706,44 +700,44 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 });
 
 
-// --- Initial App Load Trigger (Called when DOM is fully loaded) ---
+// --- Initial App Load Logic (Triggered on DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM Content Loaded. Initializing app UI states.");
-    // 1. Hide all main app and authentication UI elements at start.
-    appContainer.classList.add('hidden');
-    authContainer.classList.add('hidden');
+    console.log("DOMContentLoaded event fired. Initializing app UI states.");
+    
+    // 1. Initially hide main app and authentication UI elements to control visibility from JS.
+    // CSS's .hidden class will ensure they are initially display:none.
+    appContainer.classList.add('hidden'); 
+    authContainer.classList.add('hidden'); 
 
-    // 2. The splash screen HTML element might technically be present
-    // but without display/opacity settings it would not show anything.
-    // Ensure `splashScreen` itself (the div) exists, if not present remove its DOM dependencies in script.
-    if (splashScreen) { // Check if element exists, important after removing markup
-        // The styling in style.css handles the initial appearance and transition.
-        splashScreen.classList.remove('hidden');
-        splashScreen.style.opacity = '1';
-        splashScreen.style.display = 'flex'; // Explicitly set display for centering if splash is meant to be visible for a duration.
+    // 2. Make the load test message visible. If this is not seen on screen, JS is failing to load/execute.
+    if (loadTestMessage) {
+        loadTestMessage.style.display = 'block'; 
+        console.log("Diagnostic: 'load-test-message' is now displayed. JavaScript should be running.");
+    } else {
+        console.warn("Diagnostic: 'load-test-message' element not found in DOM.");
     }
 
 
-    // 3. Set a minimum display time for the splash screen (e.g., 3 seconds).
-    // This promise ensures any subsequent UI rendering waits for at least this long.
+    // 3. Create a promise that resolves after a short, fixed delay (e.g., 50ms).
+    // This provides a tiny buffer to allow browser rendering to catch up, improving smooth UI transitions.
     splashScreenMinTimePromise = new Promise(resolve => {
         setTimeout(() => {
-            console.log("Promise: Minimum splash screen display time (3s) completed.");
-            resolve(); // Resolve the promise.
-        }, 3000); // 3 seconds
+            console.log("UI readiness buffer (50ms) resolved. Proceeding with auth check.");
+            resolve();
+        }, 50); // Minimal delay
     });
 
     // 4. Set a fallback timeout for onAuthStateChanged listener.
-    // If the Firebase SDK's `onAuthStateChanged` takes unusually long to fire (e.g., network issues),
-    // this ensures the UI still transitions after a reasonable maximum delay.
+    // In rare cases (e.g., severe network issues, Firebase SDK failing), `onAuthStateChanged` might not fire quickly.
+    // This ensures UI still proceeds after a fixed max delay, preventing a completely blank/stuck screen.
     splashScreenTimeout = setTimeout(() => {
-        if (!hasRunInitialAuthCheck) { // Only force the check if it hasn't run already.
-            console.warn("Fallback: Splash screen timed out (5s). Forcing initial authentication check.");
-            // Explicitly call the handler to transition the UI based on the current Firebase auth state.
-            // auth.currentUser will be either a User object or null at this point.
-            handleInitialAuthAndRedirect(auth.currentUser);
+        if (!hasRunInitialAuthCheck) { // Only force the check if it hasn't run already via the primary listener.
+            console.warn("Fallback: Forced authentication check triggered due to timeout. Proceeding with UI.");
+            // Explicitly call the `checkUserAndRedirect` handler.
+            // At this point, `auth.currentUser` will represent whatever state Firebase was able to determine.
+            checkUserAndRedirect(auth.currentUser);
         }
-    }, 5000); // Max total wait time for auth status to decide initial UI.
+    }, 2000); // 2 seconds total max initial wait time for any UI to appear. (Adjust as needed, shorter if possible).
 });
 
 
@@ -769,9 +763,8 @@ darkModeCheckbox.addEventListener('change', (e) => {
     showToast(`Dark Mode ${e.target.checked ? 'Enabled' : 'Disabled'}`, 'info');
 });
 
-// Initialize theme from local storage on load (already done in DOMContentLoaded block, no need to duplicate)
-/*
-document.addEventListener('DOMContentLoaded', () => {
+// Load and apply initial theme setting from local storage.
+document.addEventListener('DOMContentLoaded', () => { // Already in the primary DOMContentLoaded listener.
     const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') {
         body.classList.remove('dark-mode');
@@ -783,7 +776,6 @@ document.addEventListener('DOMContentLoaded', () => {
         darkModeCheckbox.checked = true;
     }
 });
-*/
 
 
 // --- Sidebar Navigation Control ---
@@ -874,8 +866,12 @@ postCategoryFilter.addEventListener('change', () => {
 });
 
 async function loadPosts() {
-    if (fetchingPosts || !currentUser) {
-        console.log("loadPosts: Skipping (already fetching or no current user).");
+    if (!currentUser) { // Ensure logged in
+        console.log("loadPosts: Skipping, no current user.");
+        return;
+    }
+    if (fetchingPosts) { // Prevent concurrent fetches
+        console.log("loadPosts: Skipping, already fetching.");
         return;
     }
 
@@ -884,7 +880,6 @@ async function loadPosts() {
     console.log("loadPosts: Starting post fetch for home feed.");
 
     try {
-        // Base query for posts
         let postsBaseRef = db.collection('posts')
                                 .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active posts
                                 .orderBy('expiryTime', 'desc') // Newer expire dates first (effectively newer posts)
@@ -1051,8 +1046,12 @@ async function loadPosts() {
 
 // Immersive Feed (Snap Scrolling) Loading Logic
 async function loadImmersiveFeedPosts() {
-    if (fetchingImmersivePosts || !currentUser) {
-        console.log("loadImmersiveFeedPosts: Skipping (already fetching or no current user).");
+    if (!currentUser) { // Ensure logged in
+        console.log("loadImmersiveFeedPosts: Skipping, no current user.");
+        return;
+    }
+    if (fetchingImmersivePosts) { // Prevent concurrent fetches
+        console.log("loadImmersiveFeedPosts: Skipping, already fetching.");
         return;
     }
 
@@ -1082,7 +1081,7 @@ async function loadImmersiveFeedPosts() {
             fetchingImmersivePosts = false; // Release flag before recursion
             feedLoadingSpinner.classList.add('hidden');
             if (immersiveFeed.children.length === 0 || immersiveFeed.innerHTML.includes('No immersive posts available.')) {
-                 immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available.</p>';
+                 immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available. Try uploading a public post!</p>';
                  return; // Avoid infinite recursion if DB is truly empty.
             } else {
                  immersiveFeed.innerHTML = ''; // Clear for fresh start of looped content.
@@ -2241,15 +2240,13 @@ saveProfileBtn.addEventListener('click', async () => {
     }
 
     // Name must be provided if it's currently empty, especially for new registrations
-    // editProfileModal.classList.contains('hidden') is incorrect for initial registration check, better to check currentData.name
-    // A simplified check is: if this is a NEW user completing profile, require name.
     const userDocRef = db.collection('users').doc(currentUser.uid);
     const userDoc = await userDocRef.get();
     const currentData = userDoc.data();
     
     if (currentData && (currentData.username === "" || currentData.name === "") && newName.length < 1) { // If it's first time profile fill and name is empty
-        showToast("Display Name cannot be empty during initial profile setup.", 'error');
-        return;
+         showToast("Display Name cannot be empty during initial profile setup.", 'error');
+         return;
     }
 
 
@@ -2263,9 +2260,9 @@ saveProfileBtn.addEventListener('click', async () => {
             profileLogo: newProfileLogo,
             profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
-            // These counts should have already been initialized on creation. Just ensuring data consistency for clarity.
-            // Firebase update on existing fields without increment/decrement will simply overwrite, which is fine here.
-            // If they are undefined, default to 0.
+            // Initialize earning/follower counts if they don't exist (important for new users saving profile for first time)
+            // If they already exist, Firebase update will merge and use existing values.
+            // These lines ensure values are set for NEWLY CREATED documents through initial registration flow.
             followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
             followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
             postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
@@ -2293,7 +2290,7 @@ saveProfileBtn.addEventListener('click', async () => {
             console.log("Post updates batch committed successfully.");
         }
 
-        editProfileModal.classList.add('hidden'); // IMPORTANT: Now this should reliably hide the modal
+        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal on save
         showToast("Profile updated successfully!", 'success');
         loadUserProfile(currentUser.uid); // Reload profile display
     } catch (error) {
@@ -2390,7 +2387,7 @@ async function handleUnfollow(targetUserId) {
             }
 
             const currentUserData = currentUserDoc.data();
-            // Check if actually following before attempting to unfollow.
+            // Check if this person is indeed a follower.
             if (!currentUserData.following || !currentUserData.following.includes(targetUserId)) {
                 showToast("Not currently following this user.", 'info');
                 return; // Exit transaction if not already following.
@@ -2708,7 +2705,7 @@ async function openChatWindow(partnerId) {
     currentChatPartnerId = partnerId;
     messageListContainer.classList.add('hidden'); // Hide chat list.
     chatWindowContainer.classList.remove('hidden'); // Show chat window.
-    chatMessages.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show loader for messages.
+    chatMessages.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show a loading spinner.
 
     try {
         const partnerDoc = await db.collection('users').doc(partnerId).get();
@@ -2732,12 +2729,12 @@ async function openChatWindow(partnerId) {
         // Real-time listener for messages between these two specific users.
         db.collection('messages')
             .where('participants', 'array-contains', currentUser.uid) // Query messages where current user is a participant.
-            .orderBy('timestamp', 'asc') // Order by timestamp to show chronologically.
+            .orderBy('timestamp', 'asc') // Order messages chronologically.
             .onSnapshot(snapshot => {
                 chatMessages.innerHTML = ''; // Clear previous messages.
                 snapshot.docs.forEach(doc => {
                     const message = doc.data();
-                    // Filter messages to show ONLY those between current user and current chat partner.
+                    // Filter messages relevant *only* to the current chat partner in the UI
                     const isRelevant = (message.senderId === currentUser.uid && message.receiverId === partnerId) ||
                                        (message.senderId === partnerId && message.receiverId === currentUser.uid);
                     // Client-side expiry check for display (Firestore rules enforce true expiry on backend).
@@ -3031,7 +3028,6 @@ async function performSearch() {
 
         postSnapshot.docs.forEach(doc => {
             const postData = { id: doc.id, ...doc.data() };
-            // Client-side simple check if post content includes query (case-insensitive).
             // Security rules will ultimately decide if user can read the private posts found.
             if (postData.content && postData.content.toLowerCase().includes(query)) {
                 foundResults = true;
@@ -3093,6 +3089,7 @@ async function handleRepost(postId) {
         showToast("Failed to repost. Please try again.", 'error');
     }
 }
+
 
 async function handleDeletePost(postId, postElement, isMonetized) {
     if (!currentUser) {
@@ -3364,7 +3361,6 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
     }
 });
 
-// Cancel withdrawal request.
 cancelWithdrawalBtn.addEventListener('click', () => {
-    withdrawalModal.classList.add('hidden'); // Hide the modal.
+    withdrawalModal.classList.add('hidden');
 });
