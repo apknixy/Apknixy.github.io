@@ -10,9 +10,6 @@
 </head>
 <body class="dark-mode"> 
     
-    <!-- This paragraph is for JavaScript load testing. It should be the ONLY thing initially visible IF JS loads. -->
-    <p id="js-load-indicator" style="position:fixed; top:50%; left:50%; transform:translate(-50%, -50%); color:white; background:black; padding:10px; z-index:9999; display: none;">Loading Application...</p>
-
     <!-- Auth Container for Login/Register (Hidden by default, JS will manage display) -->
     <div id="auth-container" class="auth-container hidden">
         <div class="auth-content">
@@ -156,7 +153,7 @@
                         <option value="Esports">Esports</option>
                         <option value="Health & Fitness">Health & Fitness</option>
                         <option value="Yoga & Meditation">Yoga & Meditation</option>
-                        <option value="Education">Education</option>
+                        <option value="Education">Education</label>
                         <option value="Career & Jobs">Career & Jobs</option>
                         <option value="Startup & Entrepreneurship">Startup & Entrepreneurship</option>
                         <option value="Automobile">Automobile</option>
@@ -207,14 +204,14 @@
                     <div id="edit-profile-modal" class="modal hidden">
                         <div class="modal-content">
                             <h3>Edit Profile</h3>
-                            <p id="profile-modal-instruction">Please complete your profile to continue using the app.</p>
+                            <p id="profile-modal-instruction" class="status-message info"></p> <!-- Status for edit modal -->
                             <div class="form-group">
                                 <label for="edit-username">Username:</label>
                                 <input type="text" id="edit-username" placeholder="Enter new username">
                                 <span id="username-availability"></span>
                             </div>
                             <div class="form-group">
-                                <label for="edit-name">Display Name (Optional):</label>
+                                <label for="edit-name">Display Name:</label>
                                 <input type="text" id="edit-name" placeholder="Enter your display name">
                             </div>
                             <div class="form-group">
@@ -247,6 +244,7 @@
                                 </div>
                                 <span id="account-privacy-status">Public</span>
                             </div>
+                            <p id="save-profile-status" class="status-message"></p> <!-- Status for Save Changes button -->
                             <button class="btn primary-btn" id="save-profile-btn">Save Changes</button>
                             <button class="btn secondary-btn" id="cancel-edit-profile-btn">Cancel</button>
                         </div>
