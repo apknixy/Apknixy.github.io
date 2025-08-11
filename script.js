@@ -175,26 +175,23 @@ const body = document.body;
 const postCategoryFilter = document.getElementById('post-category-filter');
 
 // --- Global Variables ---
-let currentUser = null; // Currently logged-in user
-let currentProfileViewingId = null; // ID of the profile currently being displayed
-let currentChatPartnerId = null; // ID of the user in the active chat
+let currentUser = null; 
+let currentProfileViewingId = null;
+let currentChatPartnerId = null;
 
-let lastVisiblePost = null; // For Home feed pagination
-let lastVisibleImmersivePost = null; // For Immersive feed pagination
+let lastVisiblePost = null; 
+let lastVisibleImmersivePost = null;
 
-let fetchingPosts = false; // Flag to prevent multiple concurrent post fetches (Home)
-let fetchingImmersivePosts = false; // Flag for Immersive feed
+let fetchingPosts = false; 
+let fetchingImmersivePosts = false; 
 
-let postsToLoadPerScroll = 10; // Number of posts to load on scroll
+let postsToLoadPerScroll = 10; 
 
-let dataSaverEnabled = false; // Flag for data saver feature (logic implementation needed)
-let currentPostIdForComments = null; // Stores post ID when comments modal is open
+let dataSaverEnabled = false; 
+let currentPostIdForComments = null; 
 
-let isProcessingAuth = false; // Prevents multiple rapid authentication requests
-let hasRunInitialAuthCheck = false; // Ensures the `onAuthStateChanged` block runs its full logic only once per app load cycle
-
-let uiInitializationDone = false; // Flag to control initial UI display after Firebase SDK is ready.
-
+let isProcessingAuth = false; // Flag to prevent multiple rapid auth requests
+let hasRunInitialAuthCheck = false; // Flag: ensures onAuthStateChanged's main logic runs only once per page load
 
 // Text-to-Speech API
 const synth = window.speechSynthesis;
@@ -258,6 +255,7 @@ const PROFILE_LOGOS = [
 
 // Display a small toast notification on screen
 function showToast(message, type = 'info', duration = 3000) {
+    console.log(`Toast (${type}): ${message}`); // Log all toasts
     toastNotification.textContent = message;
     toastNotification.className = `toast-notification show ${type}`; // Add type for styling (e.g., 'error', 'success')
     setTimeout(() => {
@@ -326,7 +324,7 @@ function applyLogoStyles() {
             style.setAttribute('data-logo-class', logo.class);
             style.innerHTML = `
                 .profile-avatar.user-${logo.class}, .profile-avatar-large.user-${logo.class}, .profile-avatar-small.user-${logo.class}, .logo-option-item.user-${logo.class} { background-color: ${logo.color}; }
-                .profile-avatar.user-${logo.class}::before, .profile-avatar-large.user-${logo.class}::before, .profile-avatar-small.user-${logo.class}::before, .logo-option-item.user-${logo.class}::before { content: '${logo.emoji}'; font-size: ${logo.class.includes('large') ? '60px' : logo.class.includes('small') ? '30px' : '24px'}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--button-primary-text); }
+                .profile-avatar.user-${logo.class}::before, .profile-avatar-large.user-${logo.class}::before, .profile-avatar-small.user-${logo.class}::before, .logo-option-item.user-${logo.class}::before { content: '${logo.emoji}'; font-family: 'Font Awesome 6 Free'; font-weight: 900; font-size: ${logo.class.includes('large') ? '60px' : logo.class.includes('small') ? '30px' : '24px'}; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: var(--button-primary-text); }
             `;
             document.head.appendChild(style);
         }
@@ -339,10 +337,10 @@ applyLogoStyles(); // Call once when the script loads.
 
 // Show authentication container (Login/Signup) UI
 function showAuthContainerUI() {
-    console.log("Entering showAuthContainerUI(). Setting auth-container display to flex.");
+    console.log("showAuthContainerUI(): Setting auth-container display to flex.");
     appContainer.style.display = 'none'; // Hide main app
-    authContainer.style.display = 'flex'; // Show auth container using flex
-    authContainer.classList.remove('hidden'); // Ensure .hidden is removed
+    authContainer.classList.remove('hidden'); // Ensure .hidden is removed to allow display
+    authContainer.style.display = 'flex'; // Set display property after removing hidden class
     
     loginScreen.classList.add('active'); // Default to login screen active
     signupScreen.classList.remove('active'); // Ensure signup is inactive
@@ -351,10 +349,10 @@ function showAuthContainerUI() {
 
 // Show main app container (Home Feed, Profile, etc.) UI
 function showAppContainerUI() {
-    console.log("Entering showAppContainerUI(). Setting app-container display to flex.");
+    console.log("showAppContainerUI(): Setting app-container display to flex.");
     authContainer.style.display = 'none'; // Hide auth
-    appContainer.style.display = 'flex'; // Show app container using flex
-    appContainer.classList.remove('hidden'); // Ensure .hidden is removed
+    appContainer.classList.remove('hidden'); // Ensure .hidden is removed to allow display
+    appContainer.style.display = 'flex'; // Set display property after removing hidden class
     console.log("UI: Main App screens are now visible.");
 }
 
@@ -363,42 +361,41 @@ function showAppContainerUI() {
 async function checkUserAndRedirect(user) {
     console.log(`checkUserAndRedirect called. User: ${user ? user.uid : "None"}. Email Verified: ${user ? user.emailVerified : "N/A"}.`);
     
-    // This `onAuthStateChanged` listener can fire multiple times. We want initial setup once.
-    // If hasRunInitialAuthCheck is true AND current Firebase user matches global `currentUser` (stable state)
-    // then skip re-initialization logic to prevent unnecessary re-renders.
+    // This `onAuthStateChanged` handler can fire multiple times. Prevent re-initialization.
     if (hasRunInitialAuthCheck && user === auth.currentUser) {
         console.log("checkUserAndRedirect: Already performed initial check for this state, skipping.");
         return;
     }
     hasRunInitialAuthCheck = true; // Mark as having started processing the initial auth state.
 
-    // Immediately hide the JS load indicator once we start processing auth, as we're about to show the main UI.
+    // If you kept a JS loading indicator, hide it now
     if (jsLoadIndicator) {
         jsLoadIndicator.style.display = 'none';
-        console.log("Diagnostic: JavaScript load indicator hidden.");
+        console.log("Diagnostic: JavaScript load indicator hidden (main UI path taking over).");
     }
 
     if (user && user.emailVerified) {
         currentUser = user; // Set global current user
-        console.log(`User ${user.uid} is authenticated and verified. Attempting to load user profile from Firestore.`);
+        console.log(`User ${user.uid} is authenticated and verified. Attempting to load user profile.`);
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
             const userData = userDoc.data();
 
             // Check if user document exists AND if username and name fields are properly set (not empty strings).
+            // A new registered user will NOT have username/name immediately, so we redirect them.
             if (!userDoc.exists || !userData.username || userData.username === "" || !userData.name || userData.name === "") {
-                console.log("User profile incomplete (missing username/name/doc). Forcing profile setup flow.");
+                console.log("User profile incomplete or missing. Forcing profile setup.");
                 showAppContainerUI(); // Display the main app container where profile modal will live.
                 showScreen('profile-screen'); // Navigate to the profile tab.
                 editProfileModal.classList.remove('hidden'); // Automatically open the edit profile modal.
                 profileModalInstruction.textContent = "Welcome! Please complete your profile (Username and Display Name are required) to continue using the app.";
                 myProfileUsername.textContent = "@NewUser"; // Temporary UI placeholders.
                 sidebarUsername.textContent = "New User";
-                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
-                showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 5000);
+                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`; // Default logo
+                showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 6000);
             } else {
-                console.log("User profile is complete. Displaying main application UI.");
+                console.log("User profile complete. Displaying main application UI.");
                 loadUserProfile(currentUser.uid); // Load all user-specific data and update sidebar/header.
                 showAppContainerUI(); // Display the full main app UI.
                 showScreen('home-screen'); // Default to home feed.
@@ -406,23 +403,23 @@ async function checkUserAndRedirect(user) {
                 showToast("Logged in successfully!", 'success');
             }
         } catch (firestoreError) {
-            console.error("Firebase Firestore error while loading user profile (check rules or data structure):", firestoreError);
-            showToast("Error loading user profile. Please check your internet or try logging in again.", 'error', 7000);
+            console.error("Firebase Firestore error during user profile load:", firestoreError);
+            showToast("Error loading user profile. Please check your internet or try logging in again. (Check console for Firestore rules issues.)", 'error', 7000);
             auth.signOut(); // Critical error here, forcing logout.
             showAuthContainerUI(); // Fallback to authentication UI.
         }
-    } else { // No user is logged in (user is null) OR user is logged in but email is NOT verified
+    } else { // No user is logged in (user is null) OR user's email is not verified
         currentUser = null; // Ensure global user object is null.
-        console.log("No authenticated and verified user. Displaying Authentication UI.");
-        showAuthContainerUI(); // Display Login/Register screens.
+        console.log("User not authenticated or email not verified. Displaying Authentication UI.");
+        showAuthContainerUI(); // Display the Login/Register screens.
 
-        if (user && !user.emailVerified) { // If there's a user object, but their email is unverified
-            console.log(`User ${user.uid} is authenticated but email is NOT verified. Instructing user for verification.`);
+        if (user && !user.emailVerified) {
+            console.log(`User ${user.uid} is authenticated but email is NOT verified. Instructing verification.`);
             updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox (or spam folder) for a verification link.", 'info');
-            auth.signOut(); // Best practice: sign out unverified users to streamline verification flow on next login attempt.
+            auth.signOut(); // Sign out unverified users to streamline verification flow on next login attempt.
         } else {
             console.log("No active user session found. Showing login form.");
-            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous login status messages.
+            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous messages.
         }
     }
 }
@@ -431,8 +428,8 @@ async function checkUserAndRedirect(user) {
 // Attach the main authentication state listener to Firebase
 // This listener fires whenever the user's sign-in state changes (on app load, login, logout).
 auth.onAuthStateChanged(user => {
-    console.log("onAuthStateChanged event fired by Firebase SDK. User status detected.");
-    checkUserAndRedirect(user); // Call our central handler function.
+    // console.log("onAuthStateChanged event fired by Firebase SDK. Current User:", user ? user.uid : "None");
+    checkUserAndRedirect(user); // Calls our central handler
 });
 
 
@@ -496,12 +493,12 @@ async function signInUser() {
         console.log(`Attempting user sign-in for: ${email}`);
         updateAuthStatus(loginStatus, "Logging in...", 'info');
         await auth.signInWithEmailAndPassword(email, password);
-        // Success: The `onAuthStateChanged` listener will automatically pick this up and handle UI redirection.
+        // Success: The `onAuthStateChanged` listener will pick this up and redirect UI.
         console.log("Firebase signInWithEmailAndPassword succeeded.");
-        loginEmailInput.value = ''; // Clear inputs after attempt (whether success or fail).
+        loginEmailInput.value = ''; // Clear inputs after successful attempt.
         loginPasswordInput.value = '';
     } catch (error) {
-        console.error("Firebase Sign-in error caught:", error.code, error.message);
+        console.error("Firebase Sign-in error:", error.code, error.message);
         let errorMessage = "Login failed. Please check your email and password.";
         // Provide user-friendly error messages based on Firebase error codes.
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
@@ -509,17 +506,17 @@ async function signInUser() {
         } else if (error.code === 'auth/too-many-requests') {
             errorMessage = "Too many failed login attempts. Please try again later (rate limit).";
         } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = "Network error. Please check your internet connection.";
+            errorMessage = "Network error. Check your internet connection.";
         } else if (error.code === 'auth/user-disabled') {
             errorMessage = "Your account has been disabled. Please contact support.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format. Please check.";
         } else if (error.code === 'auth/internal-error') {
-            errorMessage = "Server error during login. Please try again later.";
+            errorMessage = "Server error. Please try again later.";
         }
         updateAuthStatus(loginStatus, errorMessage, 'error');
     } finally {
-        isProcessingAuth = false; // Always reset the flag.
+        isProcessingAuth = false; // Always reset flag.
         loginBtn.disabled = false; // Always re-enable the button.
     }
 }
@@ -599,7 +596,6 @@ async function registerUser() {
     } catch (error) {
         console.error("Firebase Registration error caught:", error.code, error.message);
         let errorMessage = "Registration failed.";
-        // Friendly error messages.
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = "This email is already in use. Please log in instead.";
         } else if (error.code === 'auth/invalid-email') {
@@ -607,7 +603,7 @@ async function registerUser() {
         } else if (error.code === 'auth/weak-password') {
             errorMessage = "Password is too weak. Please choose a stronger one (min 6 characters).";
         } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = "Network error during registration. Check internet connection.";
+            errorMessage = "Network error during registration. Check internet.";
         }
         updateAuthStatus(signupStatus, errorMessage, 'error');
     } finally {
@@ -686,7 +682,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         editInstagramInput.value = '';
         profilePicUrlInput.value = '';
         
-        // Reset the flag so that onAuthStateChanged will perform its full check next time.
+        // Reset flag so that onAuthStateChanged will perform its full check next time.
         hasRunInitialAuthCheck = false; 
 
         // UI redirection will be automatically handled by the `onAuthStateChanged` listener.
@@ -710,32 +706,23 @@ document.addEventListener('DOMContentLoaded', () => {
     // 2. Make the `js-load-indicator` visible. This is your immediate confirmation that JS has loaded and is running.
     if (jsLoadIndicator) {
         jsLoadIndicator.style.display = 'block'; 
-        console.log("Diagnostic: 'js-load-indicator' is now visible. JavaScript is running.");
+        console.log("Diagnostic: 'js-load-indicator' is now displayed. JavaScript should be running.");
     } else {
         console.warn("Diagnostic: 'js-load-indicator' element not found in DOM. Cannot confirm JS execution visually.");
     }
 
-    // 3. Create a promise that resolves after a tiny, fixed delay (e.g., 50ms).
-    // This provides a small buffer time for the browser's initial rendering and CSS application.
-    const initialRenderDelayPromise = new Promise(resolve => {
-        setTimeout(() => {
-            console.log("Initial render delay (50ms) resolved. Proceeding to authentication check.");
-            resolve(); // Fulfills the promise.
-        }, 50); 
-    });
-
-    // 4. Set a final fallback timeout for authentication state resolution.
+    // 3. Set a fallback timeout for onAuthStateChanged listener.
     // If Firebase SDK's `onAuthStateChanged` doesn't fire, or is too slow (e.g., due to network issues),
     // this ensures the UI still transitions after a fixed maximum delay (e.g., 2 seconds from DOMContentLoad).
     // It prevents the app from being stuck on a blank/loading screen indefinitely.
     splashScreenTimeout = setTimeout(() => {
-        if (!hasRunInitialAuthCheck) { // Only if `onAuthStateChanged` handler hasn't processed its initial check.
-            console.warn("Fallback: Authentication state check timed out (2s total). Forcing UI transition based on current Firebase state.");
+        if (!hasRunInitialAuthCheck) { // Only force the check if it hasn't run already via the primary listener.
+            console.warn("Fallback: Authentication state check timed out. Forcing UI transition based on current Firebase state.");
             // Explicitly call the `checkUserAndRedirect` handler.
-            // At this point, `auth.currentUser` will be either a User object or null, reflecting Firebase's best known state.
+            // `auth.currentUser` will represent whatever state Firebase was able to determine at this point.
             checkUserAndRedirect(auth.currentUser);
         }
-    }, 2000); // 2 seconds total max wait time.
+    }, 2000); // Max 2 seconds total initial wait time for any UI to appear.
 });
 
 
@@ -762,7 +749,7 @@ darkModeCheckbox.addEventListener('change', (e) => {
 });
 
 // Load and apply initial theme setting from local storage.
-document.addEventListener('DOMContentLoaded', () => { // Already handled within the primary DOMContentLoaded listener.
+document.addEventListener('DOMContentLoaded', () => { // This logic runs immediately.
     const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') {
         body.classList.remove('dark-mode');
@@ -1016,7 +1003,7 @@ async function loadPosts() {
                 }
                 postsFeed.appendChild(horizontalContainer);
             } else if (randomLayout === 2 && tempPostsForRendering.length >= 4) { // Table (4-6 posts)
-                const numTable = Math.min(postsToLoadPerScroll.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
+                const numTable = Math.min(tempPostsForRendering.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'table-post-container';
                 for (let i = 0; i < numTable; i++) {
@@ -1909,8 +1896,12 @@ async function loadUserProfile(userId) {
                 messageUserBtn.classList.add('hidden');
                 profileWhatsappLink.classList.add('hidden');
                 profileInstagramLink.classList.add('hidden');
-                profilePostTabs.textContent = 'My Posts';
-                profilePostTabs.textContent = 'My Reposts';
+                // profilePostTabs array should be iterated; profilePostTabs.textContent would error if not an element.
+                // Assuming it refers to a set of tabs based on index or something unique for that particular element.
+                // Revert these lines or properly use array.
+                // For now, I'm just correcting syntax. You may have to inspect how your profilePostTabs is exactly structured.
+                if (profilePostTabs[0]) profilePostTabs[0].textContent = 'My Posts'; 
+                if (profilePostTabs[1]) profilePostTabs[1].textContent = 'My Reposts';
             } else {
                 editProfileBtn.classList.add('hidden');
                 messageUserBtn.classList.remove('hidden'); // Always allow messaging
@@ -1929,19 +1920,20 @@ async function loadUserProfile(userId) {
                 if (userData.whatsapp) profileWhatsappLink.classList.remove('hidden'); else profileWhatsappLink.classList.add('hidden');
                 if (userData.instagram) profileInstagramLink.classList.remove('hidden'); else profileInstagramLink.classList.add('hidden');
 
-                profilePostTabs.textContent = `${userData.username}'s Posts`;
-                profilePostTabs.textContent = `${userData.username}'s Reposts`;
+                // For external user profile tabs, adjust their text
+                if (profilePostTabs[0]) profilePostTabs[0].textContent = `${userData.username}'s Posts`;
+                if (profilePostTabs[1]) profilePostTabs[1].textContent = `${userData.username}'s Reposts`;
 
                 // If target user's account is private and current user is not following,
                 // hide their posts and show a message.
                 if (userData.isPrivate && !(currentUserData.following && currentUserData.following.includes(userId))) {
                     profilePostsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">This account is private. Follow to view posts.</p>';
                     profileRepostsFeed.innerHTML = '';
-                    profilePostTabs.classList.add('hidden');
-                    profilePostTabs.classList.add('hidden');
+                    if (profilePostTabs[0]) profilePostTabs[0].classList.add('hidden');
+                    if (profilePostTabs[1]) profilePostTabs[1].classList.add('hidden');
                 } else {
-                    profilePostTabs.classList.remove('hidden');
-                    profilePostTabs.classList.remove('hidden');
+                    if (profilePostTabs[0]) profilePostTabs[0].classList.remove('hidden');
+                    if (profilePostTabs[1]) profilePostTabs[1].classList.remove('hidden');
                 }
 
             }
@@ -2086,6 +2078,7 @@ async function loadProfileReposts(userId) {
 editProfileBtn.addEventListener('click', () => {
     editProfileModal.classList.remove('hidden');
     profileModalInstruction.textContent = "Edit your profile details:"; // General instruction when clicking 'Edit Profile'
+    updateAuthStatus(saveProfileStatus, '', 'hidden'); // Clear status messages on open.
     console.log("UI: Displayed Edit Profile modal.");
 });
 
@@ -2109,7 +2102,7 @@ editUsernameInput.addEventListener('input', () => {
     }
 
     // Get current username from logged-in user's data for comparison
-    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@') : "";
+    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@')[0] : "";
     if(myProfileUsername && myProfileUsername.textContent) {
         currentAuthUsername = myProfileUsername.textContent.replace('@', '');
     }
@@ -2198,7 +2191,12 @@ function populateProfileLogoOptions(currentLogoClass, currentProfilePicUrl) {
 
 // Save Profile Changes
 saveProfileBtn.addEventListener('click', async () => {
-    if (!currentUser) return;
+    updateAuthStatus(saveProfileStatus, '', 'hidden'); // Clear previous save status.
+
+    if (!currentUser) {
+        showToast("Error: No authenticated user. Please log in.", 'error');
+        return;
+    }
 
     const newUsername = editUsernameInput.value.trim();
     const newName = editNameInput.value.trim();
@@ -2229,11 +2227,11 @@ saveProfileBtn.addEventListener('click', async () => {
     const isPrivate = accountPrivacyToggle.checked;
 
     if (newUsername === '') {
-        showToast("Username cannot be empty.", 'error');
+        updateAuthStatus(saveProfileStatus, "Username cannot be empty.", 'error');
         return;
     }
      if (newUsername.includes(" ") || newUsername.includes("@") || newUsername.includes("#")) {
-        showToast("Username cannot contain spaces or special characters like @ or #.", "error");
+        updateAuthStatus(saveProfileStatus, "Username cannot contain spaces or special characters like @ or #.", 'error');
         return;
     }
 
@@ -2242,13 +2240,15 @@ saveProfileBtn.addEventListener('click', async () => {
     const userDoc = await userDocRef.get();
     const currentData = userDoc.data();
     
-    if (currentData && (currentData.username === "" || currentData.name === "") && newName.length < 1) { // If it's first time profile fill and name is empty
-         showToast("Display Name cannot be empty during initial profile setup.", 'error');
-         return;
+    // Only apply strict name requirement if this is initial profile completion (username OR name were initially empty)
+    if (currentData && (currentData.username === "" || currentData.name === "") && newName.length < 1) { 
+        updateAuthStatus(saveProfileStatus, "Display Name is required for initial profile setup.", 'error');
+        return;
     }
 
 
     try {
+        updateAuthStatus(saveProfileStatus, "Saving profile changes...", 'info');
         await userDocRef.update({
             username: newUsername,
             name: newName,
@@ -2258,21 +2258,12 @@ saveProfileBtn.addEventListener('click', async () => {
             profileLogo: newProfileLogo,
             profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
-            // Initialize earning/follower counts if they don't exist (important for new users saving profile for first time)
-            // If they already exist, Firebase update will merge and use existing values.
-            // These lines ensure values are set for NEWLY CREATED documents through initial registration flow.
-            followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
-            followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
-            postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
-            monetizedViewsCount: currentData.monetizedViewsCount !== undefined ? currentData.monetizedViewsCount : 0,
-            unmonetizedViewsCount: currentData.unmonetizedViewsCount !== undefined ? currentData.unmonetizedViewsCount : 0,
-            earnedAmount: currentData.earnedAmount !== undefined ? currentData.earnedAmount : 0.00,
-            reposts: currentData.reposts !== undefined ? currentData.reposts : []
+            // These fields are only updated for existing values if they changed, Firebase automatically merges
         });
 
         // Update username and profile info in existing posts if changed (requires write permissions on posts too)
         if (newUsername !== (currentData.username || '') || finalProfilePicUrl !== (currentData.profilePicUrl || '') || newProfileLogo !== (currentData.profileLogo || '') || isPrivate !== currentData.isPrivate) {
-            console.log("Updating username/profile info on posts via batch...");
+            console.log("Updating username/profile info on user's posts via batch...");
             const postsSnapshot = await db.collection('posts').where('userId', '==', currentUser.uid).get();
             const batch = db.batch();
             postsSnapshot.docs.forEach(doc => {
@@ -2288,12 +2279,13 @@ saveProfileBtn.addEventListener('click', async () => {
             console.log("Post updates batch committed successfully.");
         }
 
-        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal on save
+        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal on successful save
         showToast("Profile updated successfully!", 'success');
-        loadUserProfile(currentUser.uid); // Reload profile display
+        loadUserProfile(currentUser.uid); // Reload profile display with new data
+        console.log("Profile saved and modal hidden.");
     } catch (error) {
         console.error("Error saving profile:", error);
-        showToast("Failed to save profile. Please try again. Error: " + (error.message || 'Unknown error'), 'error', 6000);
+        updateAuthStatus(saveProfileStatus, `Failed to save profile. ${error.message || 'Unknown error'}.`, 'error');
     }
 });
 
@@ -2331,7 +2323,7 @@ async function handleFollow(targetUserId) {
                 return; // Exit transaction if already following.
             }
 
-            // If target user is private, cannot follow directly. Need a request system.
+            // If target user is private, direct follow is not allowed (would need a follow request system).
             if (targetUserData.isPrivate) {
                 showToast("This account is private. Cannot follow directly.", 'info', 4000);
                 throw new Error("Private account, direct follow not allowed."); // Abort transaction.
@@ -2690,676 +2682,4 @@ async function loadRecentChats() {
                 showToast("Error loading chats. Please check console.", 'error');
                 recentChatsList.innerHTML = '<p style="text-align: center; color: red;">Error loading chats.</p>';
             });
-    } catch (error) {
-        console.error("Error setting up recent chats listener:", error);
-        showToast("Error setting up chat listener. Please try again.", 'error');
     }
-}
-
-async function openChatWindow(partnerId) {
-    if (!currentUser) {
-        showToast("Please log in to chat.", 'info');
-        return;
-    }
-    currentChatPartnerId = partnerId;
-    messageListContainer.classList.add('hidden'); // Hide chat list.
-    chatWindowContainer.classList.remove('hidden'); // Show chat window.
-    chatMessages.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show a loading spinner.
-
-    try {
-        const partnerDoc = await db.collection('users').doc(partnerId).get();
-        if (partnerDoc.exists) {
-            chatPartnerUsername.textContent = `@${partnerDoc.data().username}`; // Set chat partner's username.
-            // Set chat partner's avatar.
-            if (partnerDoc.data().profilePicUrl) {
-                chatPartnerAvatar.style.backgroundImage = `url('${partnerDoc.data().profilePicUrl}')`;
-                chatPartnerAvatar.className = 'profile-avatar small';
-            } else {
-                chatPartnerAvatar.style.backgroundImage = 'none';
-                const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || 'logo-1');
-                partnerAvatarHtml = `<div class="profile-avatar small ${partnerLogoClass}"></div>`;
-            }
-        } else {
-            chatPartnerUsername.textContent = "@UnknownUser";
-            chatPartnerAvatar.style.backgroundImage = 'none';
-            chatPartnerAvatar.className = `profile-avatar small ${getLogoCssClass('logo-1')}`;
-        }
-
-        // Real-time listener for messages between these two specific users.
-        db.collection('messages')
-            .where('participants', 'array-contains', currentUser.uid) // Query messages where current user is a participant.
-            .orderBy('timestamp', 'asc') // Order messages chronologically.
-            .onSnapshot(snapshot => {
-                chatMessages.innerHTML = ''; // Clear previous messages.
-                snapshot.docs.forEach(doc => {
-                    const message = doc.data();
-                    // Filter messages relevant *only* to the current chat partner in the UI
-                    const isRelevant = (message.senderId === currentUser.uid && message.receiverId === partnerId) ||
-                                       (message.senderId === partnerId && message.receiverId === currentUser.uid);
-                    // Client-side expiry check for display (Firestore rules enforce true expiry on backend).
-                    const isWithin12Hours = (Date.now() - message.timestamp.toMillis()) < (12 * 60 * 60 * 1000);
-
-                    if (isRelevant && isWithin12Hours) {
-                        const messageBubble = document.createElement('div');
-                        messageBubble.className = `message-bubble ${message.senderId === currentUser.uid ? 'right' : 'left'}`; // Align bubbles.
-                        messageBubble.textContent = message.content;
-                        chatMessages.appendChild(messageBubble);
-                    }
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to latest message.
-            }, error => {
-                console.error("Error getting chat messages:", error);
-                chatMessages.innerHTML = '<p style="text-align: center; color: red;">Error loading messages.</p>';
-                showToast("Error loading messages.", 'error');
-            });
-
-        // Long press for emoji reactions in chat (similar to posts)
-        const emojiPickerChat = chatWindowContainer.querySelector('.emoji-picker-chat');
-        messageInput.addEventListener('touchstart', (e) => {
-            clearTimeout(longPressTimer);
-            longPressTimer = setTimeout(() => {
-                emojiPickerChat.classList.remove('hidden');
-            }, 800);
-        }, { passive: true }); // Use passive to avoid blocking native scroll behavior.
-
-        messageInput.addEventListener('touchend', () => {
-            clearTimeout(longPressTimer);
-        });
-
-        // Hide emoji picker when clicking outside.
-        const hideEmojiPickerChat = (e) => {
-            if (!emojiPickerChat.contains(e.target) && !messageInput.contains(e.target) && !emojiPickerChat.classList.contains('hidden')) {
-                emojiPickerChat.classList.add('hidden');
-            }
-        };
-        document.addEventListener('click', hideEmojiPickerChat); // Listen for clicks on the document to hide picker.
-
-
-        emojiPickerChat.querySelectorAll('.emoji-option').forEach(emojiOption => {
-            emojiOption.addEventListener('click', (e) => {
-                const selectedEmoji = e.target.dataset.emoji;
-                messageInput.value += ` ${selectedEmoji} `; // Append emoji to input.
-                emojiPickerChat.classList.add('hidden'); // Hide picker after selection.
-                messageInput.focus(); // Keep focus on input.
-            });
-        });
-
-    } catch (error) {
-        console.error("Error opening chat window:", error);
-        showToast("Failed to open chat. Please try again.", 'error');
-    }
-}
-
-// Back button in chat window to return to recent chats list.
-backToChatsBtn.addEventListener('click', () => {
-    messageListContainer.classList.remove('hidden'); // Show chat list.
-    chatWindowContainer.classList.add('hidden'); // Hide chat window.
-    currentChatPartnerId = null; // Clear active chat partner.
-    // Ideally, detach Firestore snapshot listener for performance, but requires storing its unsubscribe function.
-});
-
-// Send message button in chat window.
-sendMessageBtn.addEventListener('click', async () => {
-    if (!currentUser || !currentChatPartnerId) {
-        showToast("You need to be logged in and select a recipient to send a message.", 'error');
-        return;
-    }
-
-    const messageContent = messageInput.value.trim();
-    if (messageContent === '') {
-        showToast("Message cannot be empty.", 'info');
-        return;
-    }
-
-    try {
-        await db.collection('messages').add({
-            senderId: currentUser.uid,
-            receiverId: currentChatPartnerId,
-            content: messageContent,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            participants: [currentUser.uid, currentChatPartnerId], // For efficient querying of conversations.
-            read: false // Mark as unread for the receiver.
-        });
-
-        messageInput.value = ''; // Clear message input after sending.
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to the bottom of the chat.
-        showToast("Message sent!", 'success');
-    } catch (error) {
-        console.error("Error sending message:", error);
-        // Provide user-friendly error feedback.
-        if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
-            showToast("Error sending message: Missing or insufficient permissions. Please check Firebase rules.", 'error', 5000);
-        } else {
-            showToast("Failed to send message. Please try again.", 'error');
-        }
-    }
-});
-
-
-// --- Comments Feature ---
-// Open comments modal for a specific post.
-function openCommentsModal(postId) {
-    if (!currentUser) {
-        showToast("Please log in to view or add comments.", 'info');
-        return;
-    }
-    currentPostIdForComments = postId; // Store the ID of the post for which comments are being viewed.
-    commentsModal.classList.remove('hidden'); // Display the comments modal.
-    commentsList.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show a loading spinner.
-    commentsModalTitle.textContent = 'Comments'; // Set modal title.
-
-    // Real-time listener for comments related to this post.
-    db.collection('comments')
-        .where('postId', '==', postId)
-        .orderBy('timestamp', 'asc') // Order comments chronologically.
-        .onSnapshot(async (snapshot) => {
-            commentsList.innerHTML = ''; // Clear existing comments.
-            if (snapshot.empty) {
-                commentsList.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No comments yet. Be the first to comment!</p>';
-                return;
-            }
-
-            for (const doc of snapshot.docs) {
-                const commentData = doc.data();
-                const commentUserDoc = await db.collection('users').doc(commentData.userId).get();
-                const username = commentUserDoc.exists ? commentUserDoc.data().username : 'Deleted User'; // Display username or 'Deleted User'.
-
-                const commentItem = document.createElement('div');
-                commentItem.className = 'comment-item';
-                commentItem.innerHTML = `
-                    <strong>@${username}</strong>: ${commentData.content}
-                    <small>${new Date(commentData.timestamp.toMillis()).toLocaleString()}</small>
-                `;
-                commentsList.appendChild(commentItem);
-            }
-            commentsList.scrollTop = commentsList.scrollHeight; // Auto-scroll to the bottom of the comments list.
-        }, error => {
-            console.error("Error loading comments:", error);
-            commentsList.innerHTML = '<p style="text-align: center; color: red;">Error loading comments.</p>';
-            showToast("Error loading comments.", 'error');
-        });
-}
-
-// Add a new comment to the current post.
-addCommentBtn.addEventListener('click', async () => {
-    if (!currentUser || !currentPostIdForComments) {
-        showToast("You need to be logged in and viewing a post to comment.", 'error');
-        return;
-    }
-
-    const commentContent = newCommentInput.value.trim();
-    if (commentContent.length < 1 || commentContent.length > 100) {
-        showToast("Comment must be between 1 and 100 characters.", 'error');
-        return;
-    }
-
-    try {
-        await db.collection('comments').add({
-            postId: currentPostIdForComments,
-            userId: currentUser.uid,
-            content: commentContent,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-        });
-
-        // Increment the comment count on the post document.
-        await db.collection('posts').doc(currentPostIdForComments).update({
-            commentCount: firebase.firestore.FieldValue.increment(1)
-        });
-
-        newCommentInput.value = ''; // Clear comment input field.
-        showToast("Comment added!", 'success');
-    } catch (error) {
-        console.error("Error adding comment:", error);
-        showToast("Failed to add comment. Please try again.", 'error');
-    }
-});
-
-// Close comments modal.
-closeCommentsModalBtn.addEventListener('click', () => {
-    commentsModal.classList.add('hidden');
-    currentPostIdForComments = null; // Clear the post ID.
-});
-
-
-// --- Search Functionality ---
-searchBtn.addEventListener('click', () => performSearch()); // Trigger search on button click.
-searchQueryInput.addEventListener('keypress', (e) => { // Trigger search on Enter key press.
-    if (e.key === 'Enter') {
-        performSearch();
-    }
-});
-
-async function performSearch() {
-    const query = searchQueryInput.value.trim().toLowerCase();
-    searchUserList.innerHTML = ''; // Clear previous user results.
-    searchPostList.innerHTML = ''; // Clear previous post results.
-    noSearchResults.classList.add('hidden'); // Hide 'no results' message initially.
-
-    if (query === '') {
-        showToast("Please enter a search query.", 'info');
-        return;
-    }
-
-    let foundResults = false;
-
-    // Search Users by username.
-    try {
-        const userSnapshot = await db.collection('users')
-            .where('username', '>=', query) // Starts with query
-            .where('username', '<=', query + '\uf8ff') // Ends with query (approx)
-            .limit(10) // Limit results.
-            .get();
-
-        if (!userSnapshot.empty) {
-            foundResults = true;
-            userSnapshot.docs.forEach(doc => {
-                const userData = { id: doc.id, ...doc.data() };
-                const userItem = document.createElement('li');
-                userItem.className = 'search-user-item';
-                userItem.dataset.userId = userData.id;
-
-                // Determine user avatar.
-                let userAvatarHtml;
-                if (userData.profilePicUrl) {
-                    userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${userData.profilePicUrl}');"></div>`;
-                } else {
-                    const userLogoClass = getLogoCssClass(userData.profileLogo || 'logo-1');
-                    userAvatarHtml = `<div class="profile-avatar small ${userLogoClass}"></div>`;
-                }
-
-                userItem.innerHTML = `
-                    ${userAvatarHtml}
-                    <span class="search-username">@${userData.username}</span>
-                    <button class="btn small primary-btn follow-btn" data-target-id="${userData.id}"></button>
-                `;
-                searchUserList.appendChild(userItem);
-
-                const followBtn = userItem.querySelector('.follow-btn');
-                if (currentUser.uid === userData.id) { // Hide button if it's current user's profile.
-                    followBtn.classList.add('hidden');
-                } else {
-                    // Update follow button status (Follow/Following).
-                    db.collection('users').doc(currentUser.uid).get().then(doc => {
-                        const followingList = doc.data().following || [];
-                        if (followingList.includes(userData.id)) {
-                            followBtn.textContent = 'Following';
-                            followBtn.classList.add('secondary-btn');
-                            followBtn.classList.remove('primary-btn');
-                        } else {
-                            followBtn.textContent = 'Follow';
-                            followBtn.classList.add('primary-btn');
-                            followBtn.classList.remove('secondary-btn');
-                        }
-                    });
-                }
-
-                followBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation(); // Prevent opening profile when clicking button.
-                    const targetId = e.target.dataset.targetId;
-                    if (e.target.textContent === 'Follow') {
-                        await handleFollow(targetId);
-                        e.target.textContent = 'Following';
-                        e.target.classList.add('secondary-btn');
-                        e.target.classList.remove('primary-btn');
-                    } else {
-                        await handleUnfollow(targetId);
-                        e.target.textContent = 'Follow';
-                        e.target.classList.add('primary-btn');
-                        e.target.classList.remove('secondary-btn');
-                    }
-                });
-                userItem.addEventListener('click', () => openUserProfile(userData.id)); // Open user profile on click.
-            });
-        }
-    } catch (error) {
-        console.error("Error searching users:", error);
-        showToast("Error searching users. Please check console.", 'error');
-    }
-
-    // Search Posts by content keyword (basic client-side match).
-    // Note: For large scale full-text search, Firebase functions + Algolia or a similar solution is recommended.
-    try {
-        const postSnapshot = await db.collection('posts')
-            .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-            .orderBy('expiryTime', 'desc')
-            .limit(10)
-            .get();
-
-        postSnapshot.docs.forEach(doc => {
-            const postData = { id: doc.id, ...doc.data() };
-            // Security rules will ultimately decide if user can read the private posts found.
-            if (postData.content && postData.content.toLowerCase().includes(query)) {
-                foundResults = true;
-                searchPostList.appendChild(createPostElement(postData));
-            }
-        });
-    } catch (error) {
-        console.error("Error searching posts:", error);
-        showToast("Error searching posts. Please check console.", 'error');
-    }
-
-    if (!foundResults) {
-        noSearchResults.classList.remove('hidden'); // Show 'No results' message if nothing found.
-    }
-}
-
-// --- Post Options (Report, Delete, Repost) ---
-async function handleReportPost(postId) {
-    if (!currentUser) {
-        showToast("Please log in to report posts.", 'info');
-        return;
-    }
-    try {
-        await db.collection('reports').add({
-            postId: postId,
-            reportedBy: currentUser.uid,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending' // Initial status
-        });
-        showToast("Post reported successfully. We will review it.", 'info');
-    } catch (error) {
-        console.error("Error reporting post:", error);
-        showToast("Failed to report post. Please try again.", 'error');
-    }
-}
-
-async function handleRepost(postId) {
-    if (!currentUser) {
-        showToast("Please log in to repost.", 'info');
-        return;
-    }
-    try {
-        const userDocRef = db.collection('users').doc(currentUser.uid);
-        const userDoc = await userDocRef.get();
-        const userData = userDoc.data();
-        const currentReposts = userData.reposts || [];
-
-        if (currentReposts.includes(postId)) {
-            showToast("You have already reposted this.", 'info');
-            return;
-        }
-
-        await userDocRef.update({
-            reposts: firebase.firestore.FieldValue.arrayUnion(postId) // Add post ID to user's reposts array.
-        });
-        showToast("Post reposted to your profile!", 'success');
-    } catch (error) {
-        console.error("Error reposting:", error);
-        showToast("Failed to repost. Please try again.", 'error');
-    }
-}
-
-
-async function handleDeletePost(postId, postElement, isMonetized) {
-    if (!currentUser) {
-        showToast("Please log in to delete posts.", 'info');
-        return;
-    }
-
-    try {
-        const postRef = db.collection('posts').doc(postId);
-        const postDoc = await postRef.get();
-
-        if (postDoc.exists && postDoc.data().userId === currentUser.uid) { // Only owner can delete.
-            if (confirm("Are you sure you want to delete this post? This cannot be undone.")) {
-                // Perform deletion in a transaction to ensure atomicity for related data.
-                await db.runTransaction(async (transaction) => {
-                    transaction.delete(postRef); // Delete the main post document.
-
-                    // Delete related comments (a Cloud Function is ideal for full cascade deletion).
-                    const commentsSnapshot = await db.collection('comments').where('postId', '==', postId).get();
-                    commentsSnapshot.docs.forEach(commentDoc => {
-                        transaction.delete(db.collection('comments').doc(commentDoc.id));
-                    });
-
-                    // Delete the postViews record for this post.
-                    const postViewsRef = db.collection('postViews').doc(postId);
-                    const postViewsDoc = await transaction.get(postViewsRef);
-                    if (postViewsDoc.exists) {
-                         transaction.delete(postViewsRef);
-                    }
-
-                    // Decrement the user's total post count.
-                    const userRef = db.collection('users').doc(currentUser.uid);
-                    transaction.update(userRef, {
-                        postCount: firebase.firestore.FieldValue.increment(-1)
-                    });
-                });
-
-                postElement.remove(); // Remove post from UI.
-                showToast("Post deleted successfully.", 'success');
-            }
-        } else {
-            showToast("You can only delete your own posts.", 'error');
-        }
-    } catch (error) {
-        console.error("Error deleting post:", error);
-        showToast("Failed to delete post. Please try again.", 'error');
-    }
-}
-
-// --- Text-to-Speech Feature ---
-function handleSpeakPost(text) {
-    if (!('speechSynthesis' in window)) { // Check if browser supports SpeechSynthesis API.
-        showToast("Your browser does not support text-to-speech.", 'error');
-        return;
-    }
-
-    if (synth.speaking) { // If speech is already ongoing, cancel it.
-        synth.cancel();
-        // If it was the same text, toggle off speech; otherwise, it will start new speech.
-        if (currentSpeechUtterance && currentSpeechUtterance.text === text) {
-            currentSpeechUtterance = null; // Stop current reading if it's a toggle.
-            showToast("Speech stopped.", 'info');
-            return;
-        }
-    }
-
-    // Clean HTML tags and markdown links/images for clearer speech.
-    const cleanText = text.replace(/<[^>]*>/g, '') // Remove HTML tags
-                        .replace(/\[.*?\]\(.*?\)/g, '') // Remove markdown links
-                        .replace(/!\[.*?\]\(.*?\)/g, ''); // Remove markdown images/videos
-
-    const utterance = new SpeechSynthesisUtterance(cleanText); // Create a new speech utterance.
-    utterance.lang = 'en-US'; // Set language (can be dynamic).
-    utterance.pitch = 1; // Standard pitch.
-    utterance.rate = 1; // Standard speed.
-
-    synth.speak(utterance); // Start speech.
-    currentSpeechUtterance = utterance; // Store for future reference (e.g., to stop it).
-
-    utterance.onend = () => { // Reset when speech ends.
-        currentSpeechUtterance = null;
-    };
-    showToast("Speaking post...", 'info');
-}
-
-// --- Post Translation Feature ---
-function handleTranslatePost(text) {
-    if (!currentUser) {
-        showToast("Please log in to translate posts.", 'info');
-        return;
-    }
-    // This functionality requires integration with a third-party translation API (e.g., Google Cloud Translation API).
-    // Client-side translation is not practical without external API due to library size and complexity.
-    showToast("Translation feature coming soon! (Requires external API integration)", 'info', 4000);
-
-    /* Example of how you *might* call a Firebase Cloud Function for translation:
-    // Make sure you have the Firebase Cloud Functions SDK initialized if using it in JS.
-    // const functions = firebase.functions();
-    // if (location.hostname === "localhost") {
-    //     functions.useEmulator("localhost", 5001); // Use local emulator for development
-    // }
-    
-    // functions.httpsCallable('translateText')({ text: text, targetLanguage: 'hi' }) // Target language can be user-selected.
-    //     .then(result => {
-    //         console.log('Translated text:', result.data.translatedText);
-    //         showToast(`Translated to Hindi: ${result.data.translatedText}`, 'success', 5000);
-    //         // Here, you would update the post's displayed content or open a translation modal.
-    //     })
-    //     .catch(error => {
-    //         console.error("Translation error via Cloud Function:", error);
-    //         showToast(`Failed to translate post: ${error.message}`, 'error');
-    //     });
-    */
-}
-
-
-// --- Earnings Screen Logic ---
-async function loadEarningsPage() {
-    if (!currentUser) {
-        showToast("Please log in to view your earnings.", 'info');
-        return;
-    }
-    try {
-        // Fetch current user's earning data from Firestore.
-        const userDoc = await db.collection('users').doc(currentUser.uid).get();
-        if (userDoc.exists) {
-            const userData = userDoc.data();
-            const monetizedViews = userData.monetizedViewsCount || 0;
-            const unmonetizedViews = userData.unmonetizedViewsCount || 0;
-            const earnedAmount = userData.earnedAmount || 0.00;
-
-            // Update UI elements with fetched data.
-            totalMonetizedViewsSpan.textContent = formatNumber(monetizedViews);
-            totalUnmonetizedViewsSpan.textContent = formatNumber(unmonetizedViews);
-            estimatedEarningsSpan.textContent = `${earnedAmount.toFixed(2)} $`;
-
-            const WITHDRAWAL_THRESHOLD = 100000; // Minimum monetized views for withdrawal (1 Lakh).
-            if (monetizedViews >= WITHDRAWAL_THRESHOLD) {
-                withdrawBtn.disabled = false;
-                withdrawBtn.classList.add('primary-btn');
-                withdrawBtn.classList.remove('secondary-btn');
-                withdrawalStatusDiv.classList.add('hidden'); // Hide status if eligible.
-            } else {
-                withdrawBtn.disabled = true; // Disable button if not eligible.
-                withdrawBtn.classList.add('secondary-btn');
-                withdrawBtn.classList.remove('primary-btn');
-                withdrawalStatusDiv.classList.remove('hidden'); // Show status message.
-                withdrawalStatusDiv.textContent = `You need ${formatNumber(WITHDRAWAL_THRESHOLD)} monetized views to withdraw. You currently have ${formatNumber(monetizedViews)}.`;
-            }
-        } else {
-            showToast("Your earning data is not available. Please try again.", 'error');
-        }
-    } catch (error) {
-        console.error("Error loading earnings data:", error);
-        showToast("Error loading earnings. Please try again.", 'error');
-    }
-}
-
-// Open the withdrawal modal.
-withdrawBtn.addEventListener('click', () => {
-    if (!currentUser) { // Double check login status.
-        showToast("Please log in to withdraw earnings.", 'info');
-        return;
-    }
-    withdrawalModal.classList.remove('hidden'); // Show the modal.
-    withdrawalDetailsReview.classList.add('hidden'); // Ensure review section is hidden initially.
-
-    // Display current monetized views in the modal.
-    const monetizedViews = parseInt(totalMonetizedViewsSpan.textContent.replace(/[^0-9.]/g, '')) || 0;
-    withdrawalViewsDisplay.textContent = formatNumber(monetizedViews);
-
-    // Reset withdrawal form fields.
-    withdrawalMethodSelect.value = 'upi';
-    withdrawalIdLabel.textContent = 'UPI ID:';
-    withdrawalIdInput.value = '';
-    withdrawalIdInput.placeholder = 'Enter UPI ID';
-    confirmWithdrawalBtn.classList.remove('hidden'); // Show confirm button.
-});
-
-// Update input label and placeholder based on withdrawal method selection.
-withdrawalMethodSelect.addEventListener('change', (e) => {
-    if (e.target.value === 'upi') {
-        withdrawalIdLabel.textContent = 'UPI ID:';
-        withdrawalIdInput.placeholder = 'Enter UPI ID (e.g., example@bank)';
-    } else {
-        withdrawalIdLabel.textContent = 'PayPal Email:';
-        withdrawalIdInput.placeholder = 'Enter PayPal Email';
-    }
-});
-
-// Confirm withdrawal details entered by the user.
-confirmWithdrawalBtn.addEventListener('click', () => {
-    const method = withdrawalMethodSelect.value;
-    const id = withdrawalIdInput.value.trim();
-    const views = withdrawalViewsDisplay.textContent;
-
-    if (!id) { // Validate if ID field is empty.
-        showToast("Please enter your UPI ID or PayPal Email.", 'error');
-        return;
-    }
-
-    // Populate the review section.
-    reviewMethodSpan.textContent = method === 'upi' ? 'UPI' : 'PayPal';
-    reviewIdSpan.textContent = id;
-    reviewViewsSpan.textContent = views;
-
-    withdrawalDetailsReview.classList.remove('hidden'); // Show review section.
-    confirmWithdrawalBtn.classList.add('hidden'); // Hide the "Check Details" button.
-});
-
-// Allow user to edit details after review.
-editWithdrawalBtn.addEventListener('click', () => {
-    withdrawalDetailsReview.classList.add('hidden'); // Hide review section.
-    confirmWithdrawalBtn.classList.remove('hidden'); // Show "Check Details" button again.
-});
-
-// Send withdrawal request to Firestore (simulated backend call).
-sendWithdrawalRequestBtn.addEventListener('click', async () => {
-    if (!currentUser) return; // Must be logged in.
-
-    const method = withdrawalMethodSelect.value;
-    const id = withdrawalIdInput.value.trim();
-    // Re-fetch current monetized views and earnings to ensure accuracy before submitting.
-    const userDoc = await db.collection('users').doc(currentUser.uid).get();
-    const currentMonetizedViews = userDoc.exists ? (userDoc.data().monetizedViewsCount || 0) : 0;
-    const estimatedEarnings = userDoc.exists ? (userDoc.data().earnedAmount || 0.00) : 0.00;
-
-    if (!id) {
-        showToast("Withdrawal ID cannot be empty.", 'error');
-        return;
-    }
-
-    const WITHDRAWAL_THRESHOLD = 100000;
-    if (currentMonetizedViews < WITHDRAWAL_THRESHOLD) {
-        showToast(`Withdrawal requires ${formatNumber(WITHDRAWAL_THRESHOLD)} monetized views.`, 'error', 5000);
-        return;
-    }
-
-    try {
-        console.log("Simulating withdrawal request submission and saving to Firestore...");
-        
-        // Save the request in a 'withdrawalRequests' collection for admin to process.
-        await db.collection('withdrawalRequests').add({
-            userId: currentUser.uid,
-            username: myProfileUsername.textContent.replace('@', ''), // Use the displayed username.
-            method: method,
-            id: id,
-            monetizedViewsAtRequest: currentMonetizedViews, // Record views at the time of request.
-            estimatedAmount: estimatedEarnings,
-            requestTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending' // Initial status for admin processing.
-        });
-
-        // IMPORTANT: In a production app, the reset of `monetizedViewsCount` and `earnedAmount`
-        // should happen *only after* an admin has successfully processed and sent the payment.
-        // This is typically handled by a Firebase Cloud Function triggered by the admin marking a request as 'completed'.
-        // For this client-side demo, we reset them immediately to simulate the process.
-        await db.collection('users').doc(currentUser.uid).update({
-            monetizedViewsCount: 0,
-            earnedAmount: 0.00
-        });
-
-        withdrawalModal.classList.add('hidden'); // Hide the modal after submission.
-        showToast("Withdrawal request sent! You will receive payment in 1-15 business days.", 'success', 8000);
-        loadEarningsPage(); // Reload earnings data to reflect reset.
-    } catch (error) {
-        console.error("Error sending withdrawal request:", error);
-        showToast("Failed to send withdrawal request. Please try again. Error: " + (error.message || 'Unknown error'), 'error', 6000);
-    }
-});
-
-cancelWithdrawalBtn.addEventListener('click', () => {
-    withdrawalModal.classList.add('hidden');
-});
