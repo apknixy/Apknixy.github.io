@@ -83,7 +83,7 @@ body.light-mode {
     display: none !important;
 }
 
-/* Splash Screen */
+/* Splash Screen - Adjusted display and opacity for smooth removal by JS */
 .splash-screen {
     position: fixed;
     top: 0;
@@ -91,7 +91,7 @@ body.light-mode {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #0f3460, #16213e); /* Gradient background */
-    display: flex;
+    display: flex; /* Kept flex here to center contents until removed */
     justify-content: center;
     align-items: center;
     flex-direction: column;
@@ -99,7 +99,7 @@ body.light-mode {
     color: white;
     text-align: center;
     opacity: 1;
-    transition: opacity 0.5s ease-out;
+    transition: opacity 0.5s ease-out; /* Smooth fade-out */
 }
 
 /* Centering the content within splash and auth containers */
@@ -886,7 +886,7 @@ input[type="file"] {
     transform: translateY(-2px);
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
 }
-.btn.primary-btn:disabled, .btn.secondary-btn:disabled, .btn.danger-btn:disabled {
+.btn:disabled { /* General styling for disabled buttons */
     opacity: 0.6;
     cursor: not-allowed;
     transform: translateY(0);
