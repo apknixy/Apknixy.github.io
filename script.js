@@ -17,11 +17,11 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // --- DOM Elements ---
-const splashScreen = document.getElementById('splash-screen');
-const authContainer = document.getElementById('auth-container'); // New
-const appContainer = document.getElementById('app-container');
+const splashScreen = document.getElementById('splash-screen'); // Kept for its styling, though now just shows a background.
+const authContainer = document.getElementById('auth-container'); // Container for login/signup screens
+const appContainer = document.getElementById('app-container'); // Main application container
 
-// Auth Screens
+// Auth Screens Elements
 const loginScreen = document.getElementById('login-screen');
 const signupScreen = document.getElementById('signup-screen');
 const loginEmailInput = document.getElementById('login-email');
@@ -51,24 +51,24 @@ const closeSidebarBtn = document.getElementById('close-sidebar');
 const mainContent = document.querySelector('.main-content');
 const bottomNavItems = document.querySelectorAll('.app-bottom-nav .nav-item');
 const screenSections = document.querySelectorAll('.app-screen');
-// Coins, Credits, Limits removed from header elements
+// Coins, Credits, Limits, Gift Claim Button removed based on previous request
+
 const refreshPostsBtn = document.getElementById('refresh-posts-btn');
 const postsFeed = document.getElementById('posts-feed');
 const loadingSpinner = document.getElementById('loading-spinner');
-// Gift Claim Button removed
 
 
-// Post Upload Screen
+// Post Upload Screen elements
 const uploadScreen = document.getElementById('upload-screen');
 const postCategorySelect = document.getElementById('post-category');
 const postContentInput = document.getElementById('post-content');
-const postBoostSelect = document.getElementById('post-boost');
+const postBoostSelect = document.getElementById('post-boost'); // Kept disabled for 24 hours only
 const monetizePostCheckbox = document.getElementById('monetize-post-checkbox');
 const publishPostBtn = document.getElementById('publish-post-btn');
 const uploadStatus = document.getElementById('upload-status');
 const editorToolbar = document.querySelector('.editor-toolbar');
 
-// Profile Screen
+// Profile Screen elements
 const profileScreen = document.getElementById('profile-screen');
 const myProfileAvatar = document.getElementById('my-profile-avatar');
 const myProfileUsername = document.getElementById('my-profile-username');
@@ -89,14 +89,14 @@ const profileRepostsFeed = document.getElementById('profile-reposts-feed');
 const profilePostTabs = document.querySelectorAll('.profile-post-tabs .tab-btn');
 
 const editProfileModal = document.getElementById('edit-profile-modal');
-const profileModalInstruction = document.getElementById('profile-modal-instruction'); // New instruction element
+const profileModalInstruction = document.getElementById('profile-modal-instruction');
 const editUsernameInput = document.getElementById('edit-username');
 const usernameAvailability = document.getElementById('username-availability');
 const editNameInput = document.getElementById('edit-name');
 const editBioInput = document.getElementById('edit-bio');
 const editWhatsappInput = document.getElementById('edit-whatsapp');
 const editInstagramInput = document.getElementById('edit-instagram');
-const profilePicUrlInput = document.getElementById('profile-pic-url-input'); // New direct URL input
+const profilePicUrlInput = document.getElementById('profile-pic-url-input');
 const profileLogoOptions = document.getElementById('profile-logo-options');
 const accountPrivacyToggle = document.getElementById('account-privacy-toggle');
 const accountPrivacyStatus = document.getElementById('account-privacy-status');
@@ -108,7 +108,7 @@ const followListTitle = document.getElementById('follow-list-title');
 const followListContent = document.getElementById('follow-list-content');
 const closeFollowListModalBtn = document.getElementById('close-follow-list-modal');
 
-// Messaging Screen
+// Messaging Screen elements
 const messagesScreen = document.getElementById('messages-screen');
 const messageListContainer = document.getElementById('message-list-container');
 const recentChatsList = document.getElementById('recent-chats-list');
@@ -120,7 +120,7 @@ const messageInput = document.getElementById('message-input');
 const sendMessageBtn = document.getElementById('send-message-btn');
 const backToChatsBtn = document.getElementById('back-to-chats-btn');
 
-// Search Screen
+// Search Screen elements
 const searchScreen = document.getElementById('search-screen');
 const searchQueryInput = document.getElementById('search-query');
 const searchBtn = document.getElementById('search-btn');
@@ -128,7 +128,7 @@ const searchUserList = document.getElementById('search-user-list');
 const searchPostList = document.getElementById('search-post-list');
 const noSearchResults = document.getElementById('no-search-results');
 
-// Earnings Screen
+// Earnings Screen elements
 const earningsScreen = document.getElementById('earnings-screen');
 const totalMonetizedViewsSpan = document.getElementById('total-monetized-views');
 const totalUnmonetizedViewsSpan = document.getElementById('total-unmonetized-views');
@@ -151,7 +151,7 @@ const sendWithdrawalRequestBtn = document.getElementById('send-withdrawal-reques
 const cancelWithdrawalBtn = document.getElementById('cancel-withdrawal-btn');
 
 
-// Comments Modal
+// Comments Modal elements
 const commentsModal = document.getElementById('comments-modal');
 const commentsModalTitle = document.getElementById('comments-modal-title');
 const commentsList = document.getElementById('comments-list');
@@ -159,94 +159,105 @@ const newCommentInput = document.getElementById('new-comment-input');
 const addCommentBtn = document.getElementById('add-comment-btn');
 const closeCommentsModalBtn = document.getElementById('close-comments-modal');
 
-// Immersive Feed
+// Immersive Feed elements
 const immersiveFeed = document.getElementById('immersive-feed');
 const feedLoadingSpinner = document.getElementById('feed-loading-spinner');
 
-// Sidebar user info
+// Sidebar user info elements
 const sidebarProfileAvatar = document.getElementById('sidebar-profile-avatar');
 const sidebarUsername = document.getElementById('sidebar-username');
 
-// Dark Mode Toggle
+// Dark Mode Toggle elements
 const darkModeToggle = document.getElementById('dark-mode-toggle');
 const darkModeCheckbox = document.getElementById('dark-mode-checkbox');
 const body = document.body;
 const postCategoryFilter = document.getElementById('post-category-filter');
 
 // --- Global Variables ---
-let currentUser = null;
-let currentProfileViewingId = null; // To differentiate between viewing own profile vs. other's
-let currentChatPartnerId = null;
-let lastVisiblePost = null; // For infinite scrolling pagination on home feed
-let lastVisibleImmersivePost = null; // For infinite scrolling pagination on immersive feed
-let fetchingPosts = false;
-let fetchingImmersivePosts = false;
-let postsToLoadPerScroll = 10;
-let dataSaverEnabled = false; // For data saver feature
-let currentPostIdForComments = null; // To store the post ID for comments modal
+let currentUser = null; // Currently logged-in user
+let currentProfileViewingId = null; // ID of the profile currently being displayed
+let currentChatPartnerId = null; // ID of the user in the active chat
 
-let isProcessingAuth = false; // NEW FLAG: To prevent multiple auth operations / UI conflicts
-let hasRunInitialAuthCheck = false; // NEW FLAG: Ensures initial onAuthStateChanged only performs full logic once
+let lastVisiblePost = null; // For Home feed pagination
+let lastVisibleImmersivePost = null; // For Immersive feed pagination
+
+let fetchingPosts = false; // Flag to prevent multiple concurrent post fetches (Home)
+let fetchingImmersivePosts = false; // Flag for Immersive feed
+
+let postsToLoadPerScroll = 10; // Number of posts to load on scroll
+
+let dataSaverEnabled = false; // Flag for data saver feature (logic implementation needed)
+let currentPostIdForComments = null; // Stores post ID when comments modal is open
+
+// Flags for Authentication Flow Control
+let isProcessingAuth = false; // Prevents multiple rapid authentication requests
+let hasRunInitialAuthCheck = false; // Ensures the `onAuthStateChanged` block runs its full logic only ONCE on app load
+
+// Promises for controlling app flow (e.g., minimum splash screen time)
+let splashScreenMinTimePromise; // Resolves after minimum splash screen time
+let splashScreenTimeout; // Fallback timeout if `onAuthStateChanged` is slow to fire.
 
 // Text-to-Speech API
 const synth = window.speechSynthesis;
 
+// Profile Logo Data (50 entries)
 const PROFILE_LOGOS = [
-    { class: 'logo-1', emoji: '🧑', color: '#ff6347' }, // Tomato
-    { class: 'logo-2', emoji: '👩', color: '#6a5acd' }, // SlateBlue
-    { class: 'logo-3', emoji: '🚀', color: '#32cd32' }, // LimeGreen
-    { class: 'logo-4', emoji: '💡', color: '#ff8c00' }, // DarkOrange
-    { class: 'logo-5', emoji: '🌟', color: '#ffd700' }, // Gold
-    { class: 'logo-6', emoji: '🌈', color: '#9932cc' }, // DarkOrchid
-    { class: 'logo-7', emoji: '🦊', color: '#d2691e' }, // Chocolate
-    { class: 'logo-8', emoji: '🐼', color: '#6495ed' }, // CornflowerBlue
-    { class: 'logo-9', emoji: '🦋', color: '#dda0dd' }, // Plum
-    { class: 'logo-10', emoji: '🐢', color: '#20b2aa' }, // LightSeaGreen
-    { class: 'logo-11', emoji: '🤖', color: '#87ceeb' }, // SkyBlue
-    { class: 'logo-12', emoji: '👽', color: '#7cfc00' }, // LawnGreen
-    { class: 'logo-13', emoji: '🦄', color: '#ee82ee' }, // Violet
-    { class: 'logo-14', emoji: '🐉', color: '#48d1cc' }, // MediumTurquoise
-    { class: 'logo-15', emoji: '🌊', color: '#4682b4' }, // SteelBlue
-    { class: 'logo-16', emoji: '🔥', color: '#dc143c' }, // Crimson
-    { class: 'logo-17', emoji: '👑', color: '#f0e68c' }, // Khaki
-    { class: 'logo-18', emoji: '💎', color: '#00ced1' }, // DarkTurquoise
-    { class: 'logo-19', emoji: '🔑', color: '#b0e0e6' }, // PowderBlue
-    { class: 'logo-20', emoji: '⚡', color: '#ffff00' }, // Yellow
-    { class: 'logo-21', emoji: '🎵', color: '#ff69b4' }, // HotPink
-    { class: 'logo-22', emoji: '🎨', color: '#7b68ee' }, // MediumSlateBlue
-    { class: 'logo-23', emoji: '🧩', color: '#ffa07a' }, // LightSalmon
-    { class: 'logo-24', emoji: '🍔', color: '#cd853f' }, // Peru
-    { class: 'logo-25', emoji: '🍕', color: '#f08080' }, // LightCoral
-    { class: 'logo-26', emoji: '🎮', color: '#c0c0c0' }, // Silver
-    { class: 'logo-27', emoji: '✈️', color: '#afeeee' }, // PaleTurquoise
-    { class: 'logo-28', emoji: '🌳', color: '#228b22' }, // ForestGreen
-    { class: 'logo-29', emoji: '🌸', color: '#ffb6c1' }, // LightPink
-    { class: 'logo-30', emoji: '⚽', color: '#b0c4de' }, // LightSteelBlue
-    { class: 'logo-31', emoji: '🎸', color: '#8b4513' }, // SaddleBrown
-    { class: 'logo-32', emoji: '🚲', color: '#00fa9a' }, // MediumSpringGreen
-    { class: 'logo-33', emoji: '📚', color: '#deb887' }, // BurlyWood
-    { class: 'logo-34', emoji: '☕', color: '#d2b48c' }, // Tan
-    { class: 'logo-35', emoji: '🎁', color: '#f4a460' }, // SandyBrown
-    { class: 'logo-36', emoji: '🎉', color: '#ba55d3' }, // MediumOrchid
-    { class: 'logo-37', emoji: '🌍', color: '#87cefa' }, // LightSkyBlue
-    { class: 'logo-38', emoji: '🔬', color: '#778899' }, // LightSlateGray
-    { class: 'logo-39', emoji: '🔭', color: '#696969' }, // DimGray
-    { class: 'logo-40', emoji: '🛠️', color: '#d3d3d3' }, // LightGray
-    { class: 'logo-41', emoji: '⚖️', color: '#add8e6' }, // LightBlue
-    { class: 'logo-42', emoji: '💰', color: '#b8860b' }, // DarkGoldenRod
-    { class: 'logo-43', emoji: '🛡️', color: '#5f9ea0' }, // CadetBlue
-    { class: 'logo-44', emoji: '🔔', color: '#f0f8ff' }, // AliceBlue
-    { class: 'logo-45', emoji: '⏳', color: '#fa8072' }, // Salmon
-    { class: 'logo-46', emoji: '💾', color: '#3cb371' }, // MediumSeaGreen
-    { class: 'logo-47', emoji: '⚙️', color: '#4682b4' }, // SteelBlue
-    { class: 'logo-48', emoji: '📡', color: '#2e8b57' }, // SeaGreen
-    { class: 'logo-49', emoji: '🌐', color: '#a52a2a' }, // Brown
-    { class: 'logo-50', emoji: '📈', color: '#c71585' }  // MediumVioletRed
+    { class: 'logo-1', emoji: '🧑', color: '#ff6347' },
+    { class: 'logo-2', emoji: '👩', color: '#6a5acd' },
+    { class: 'logo-3', emoji: '🚀', color: '#32cd32' },
+    { class: 'logo-4', emoji: '💡', color: '#ff8c00' },
+    { class: 'logo-5', emoji: '🌟', color: '#ffd700' },
+    { class: 'logo-6', emoji: '🌈', color: '#9932cc' },
+    { class: 'logo-7', emoji: '🦊', color: '#d2691e' },
+    { class: 'logo-8', emoji: '🐼', color: '#6495ed' },
+    { class: 'logo-9', emoji: '🦋', color: '#dda0dd' },
+    { class: 'logo-10', emoji: '🐢', color: '#20b2aa' },
+    { class: 'logo-11', emoji: '🤖', color: '#87ceeb' },
+    { class: 'logo-12', emoji: '👽', color: '#7cfc00' },
+    { class: 'logo-13', emoji: '🦄', color: '#ee82ee' },
+    { class: 'logo-14', emoji: '🐉', color: '#48d1cc' },
+    { class: 'logo-15', emoji: '🌊', color: '#4682b4' },
+    { class: 'logo-16', emoji: '🔥', color: '#dc143c' },
+    { class: 'logo-17', emoji: '👑', color: '#f0e68c' },
+    { class: 'logo-18', emoji: '💎', color: '#00ced1' },
+    { class: 'logo-19', emoji: '🔑', color: '#b0e0e6' },
+    { class: 'logo-20', emoji: '⚡', color: '#ffff00' },
+    { class: 'logo-21', emoji: '🎵', color: '#ff69b4' },
+    { class: 'logo-22', emoji: '🎨', color: '#7b68ee' },
+    { class: 'logo-23', emoji: '🧩', color: '#ffa07a' },
+    { class: 'logo-24', emoji: '🍔', color: '#cd853f' },
+    { class: 'logo-25', emoji: '🍕', color: '#f08080' },
+    { class: 'logo-26', emoji: '🎮', color: '#c0c0c0' },
+    { class: 'logo-27', emoji: '✈️', color: '#afeeee' },
+    { class: 'logo-28', emoji: '🌳', color: '#228b22' },
+    { class: 'logo-29', emoji: '🌸', color: '#ffb6c1' },
+    { class: 'logo-30', emoji: '⚽', color: '#b0c4de' },
+    { class: 'logo-31', emoji: '🎸', color: '#8b4513' },
+    { class: 'logo-32', emoji: '🚲', color: '#00fa9a' },
+    { class: 'logo-33', emoji: '📚', color: '#deb887' },
+    { class: 'logo-34', emoji: '☕', color: '#d2b48c' },
+    { class: 'logo-35', emoji: '🎁', color: '#f4a460' },
+    { class: 'logo-36', emoji: '🎉', color: '#ba55d3' },
+    { class: 'logo-37', emoji: '🌍', color: '#87cefa' },
+    { class: 'logo-38', emoji: '🔬', color: '#778899' },
+    { class: 'logo-39', emoji: '🔭', color: '#696969' },
+    { class: 'logo-40', emoji: '🛠️', color: '#d3d3d3' },
+    { class: 'logo-41', emoji: '⚖️', color: '#add8e6' },
+    { class: 'logo-42', emoji: '💰', color: '#b8860b' },
+    { class: 'logo-43', emoji: '🛡️', color: '#5f9ea0' },
+    { class: 'logo-44', emoji: '🔔', color: '#f0f8ff' },
+    { class: 'logo-45', emoji: '⏳', color: '#fa8072' },
+    { class: 'logo-46', emoji: '💾', color: '#3cb371' },
+    { class: 'logo-47', emoji: '⚙️', color: '#4682b4' },
+    { class: 'logo-48', emoji: '📡', color: '#2e8b57' },
+    { class: 'logo-49', emoji: '🌐', color: '#a52a2a' },
+    { class: 'logo-50', emoji: '📈', color: '#c71585' }
 ];
 
 
 // --- Utility Functions ---
 
+// Display a small toast notification on screen
 function showToast(message, type = 'info', duration = 3000) {
     toastNotification.textContent = message;
     toastNotification.className = `toast-notification show ${type}`; // Add type for styling (e.g., 'error', 'success')
@@ -255,14 +266,20 @@ function showToast(message, type = 'info', duration = 3000) {
     }, duration);
 }
 
-// Function to update status messages on auth screens
+// Update authentication form status messages
 function updateAuthStatus(element, message, type) {
     element.textContent = message;
     element.className = `status-message ${type}`;
-    element.classList.remove('hidden'); // Ensure it's visible
+    // If message is empty or hidden, set display:none for better rendering.
+    if (type === 'hidden' || message === '') {
+        element.style.display = 'none';
+    } else {
+        element.style.display = 'block'; // Or whatever is default for this status message
+    }
 }
 
 
+// Format numbers for display (e.g., 12000 -> 12k)
 function formatNumber(num) {
     if (num === undefined || num === null) return 0;
     if (num >= 1000000) return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
@@ -270,13 +287,14 @@ function formatNumber(num) {
     return num;
 }
 
+// Switch between app screens (Home, Profile, etc.)
 function showScreen(screenId) {
     screenSections.forEach(screen => {
         screen.classList.remove('active');
     });
     document.getElementById(screenId).classList.add('active');
 
-    // Update bottom nav active state
+    // Update active state in bottom navigation
     bottomNavItems.forEach(item => {
         if (item.dataset.screen === screenId.replace('-screen', '')) {
             item.classList.add('active');
@@ -285,22 +303,23 @@ function showScreen(screenId) {
         }
     });
 
-    // Close sidebar if open
+    // Close sidebar if it's open when screen changes
     sidebar.classList.remove('open');
 }
 
-// Function to generate a random logo class (e.g., for new users, search results)
+// Generate a random logo class from PROFILE_LOGOS
 function getRandomLogoClass() {
     const randomIndex = Math.floor(Math.random() * PROFILE_LOGOS.length);
-    return PROFILE_LOGOS[randomIndex].class; // Return just the class name
+    return PROFILE_LOGOS[randomIndex].class;
 }
 
+// Get the full CSS class name for a given logo name (e.g., 'logo-1' -> 'user-logo-1')
 function getLogoCssClass(logoName) {
     const logo = PROFILE_LOGOS.find(l => l.class === logoName);
-    return logo ? `user-${logo.class}` : 'user-logo-1'; // Default to logo-1 if not found
+    return logo ? `user-${logo.class}` : 'user-logo-1'; // Fallback to 'user-logo-1'
 }
 
-// Function to dynamically apply logo styles (for emoji based logos)
+// Dynamically inject CSS for profile logos to allow pseudo-elements (emojis) and background colors
 function applyLogoStyles() {
     PROFILE_LOGOS.forEach(logo => {
         if (!document.head.querySelector(`style[data-logo-class="${logo.class}"]`)) {
@@ -314,118 +333,127 @@ function applyLogoStyles() {
         }
     });
 }
-applyLogoStyles(); // Call once on script load
+applyLogoStyles(); // Call once when the script loads.
 
 
-// --- Firebase Authentication Flow ---
-let splashScreenTimeout; // Variable to hold splash screen timeout ID
-let authInitialCheckComplete = false; // Flag: Ensures `onAuthStateChanged`'s logic runs fully only once per app load cycle
-let splashScreenMinTimePromise; // Promise for minimum splash screen display duration
+// --- Core Authentication Flow Logic ---
 
+// Function to safely hide the splash screen once UI is ready
+function hideSplashScreenProperly() {
+    if (splashScreen.classList.contains('hidden') && splashScreen.style.display === 'none') {
+        return; // Already hidden
+    }
+    console.log("Hiding splash screen fully.");
+    splashScreen.style.opacity = '0';
+    setTimeout(() => {
+        splashScreen.classList.add('hidden');
+        splashScreen.style.display = 'none';
+    }, 500); // Wait for fade out
+}
 
-// Show authentication container (Login/Signup) UI
+// Show authentication container (Login/Signup)
 function showAuthContainerUI() {
-    splashScreen.style.display = 'none'; // Ensure splash is hidden
+    hideSplashScreenProperly(); // Ensure splash is hidden
     appContainer.classList.add('hidden'); // Ensure app is hidden
+    authContainer.style.display = 'flex'; // Use flex for centering
     authContainer.classList.remove('hidden'); // Show auth container
-    loginScreen.classList.add('active'); // Default to login screen
-    signupScreen.classList.remove('active');
+    loginScreen.classList.add('active'); // Default to login screen active
+    signupScreen.classList.remove('active'); // Ensure signup is inactive
     console.log("UI: Displaying Authentication screens.");
 }
 
-// Show main app container (Home Feed, Profile, etc.) UI
+// Show main app container (Home Feed, Profile, etc.)
 function showAppContainerUI() {
-    splashScreen.style.display = 'none'; // Ensure splash is hidden
+    hideSplashScreenProperly(); // Ensure splash is hidden
     authContainer.classList.add('hidden'); // Ensure auth is hidden
+    appContainer.style.display = 'flex'; // Or 'block', depending on its default layout
     appContainer.classList.remove('hidden'); // Show app container
     console.log("UI: Displaying Main App screens.");
 }
 
 
 // Central function to handle authentication state and UI redirection
-async function checkUserAndRedirect(user) {
+async function handleInitialAuthAndRedirect(user) {
     // This `onAuthStateChanged` handler can fire multiple times (on load, login, logout).
-    // `authInitialCheckComplete` flag ensures that the heavy lifting for initial UI setup
-    // only happens once per full page load, regardless of subsequent quick state changes.
-    if (authInitialCheckComplete && user === auth.currentUser) {
+    // `hasRunInitialAuthCheck` flag ensures that the full initial UI setup logic
+    // runs only once per full page load, regardless of subsequent quick state changes.
+    if (hasRunInitialAuthCheck && user === auth.currentUser) {
         console.log("onAuthStateChanged: Secondary fire, user state unchanged. Skipping initial redirect logic.");
         return;
     }
-    // Set flag immediately to prevent re-entry.
-    authInitialCheckComplete = true;
+    hasRunInitialAuthCheck = true; // Mark as started immediately.
 
-    // Ensure minimum splash screen time has passed before changing UI.
-    console.log("onAuthStateChanged: Waiting for minimum splash screen time...");
-    await splashScreenMinTimePromise; // This pauses execution until the promise resolves.
-    clearTimeout(splashScreenTimeout); // Clear any splash screen auto-hide fallback.
+    // Ensure minimum splash screen time has passed before processing UI transitions.
+    // This makes sure the splash screen is visible for a moment even if auth is instant.
+    console.log("onAuthStateChanged: Waiting for minimum splash screen display time to resolve...");
+    await splashScreenMinTimePromise; // PAUSE execution here until the minimum splash time is over.
+
+    clearTimeout(splashScreenTimeout); // Clear the fallback timeout, as auth state is being handled now.
+    console.log("Splash screen minimum time resolved, proceeding with user check.");
 
 
     if (user && user.emailVerified) {
-        currentUser = user;
-        console.log(`User logged in: ${user.uid}, Email verified: ${user.emailVerified}. Attempting profile load.`);
+        currentUser = user; // Set global current user
+        console.log(`User is authenticated: ${user.uid}, Email verified: ${user.emailVerified}. Checking profile status.`);
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
             const userData = userDoc.data();
 
-            // Check if profile is complete (username and name must be non-empty)
-            if (!userDoc.exists || !userData.username || !userData.name || userData.username === "" || userData.name === "") {
-                console.log("User profile incomplete. Displaying Profile setup modal.");
-                showAppContainerUI(); // Display the main app container (where profile modal resides)
-                showScreen('profile-screen'); // Navigate to profile tab
-                editProfileModal.classList.remove('hidden'); // Force open the edit profile modal
+            // If user document is missing OR username/name are not set, force profile setup.
+            if (!userDoc.exists || !userData.username || userData.username === "" || !userData.name || userData.name === "") {
+                console.log("User profile incomplete (missing username/name). Forcing profile setup.");
+                showAppContainerUI(); // Transition to the main app container.
+                showScreen('profile-screen'); // Navigate to the profile screen.
+                editProfileModal.classList.remove('hidden'); // Automatically open the edit profile modal.
                 profileModalInstruction.textContent = "Welcome! Please complete your profile (Username and Display Name are required) to continue using the app.";
-                myProfileUsername.textContent = "@NewUser"; // Default placeholders
-                sidebarUsername.textContent = "New User";
-                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
-                showToast("Welcome! Please complete your profile.", 'info', 5000);
+                myProfileUsername.textContent = "@NewUser"; // Placeholder for UI
+                sidebarUsername.textContent = "New User"; // Placeholder for UI
+                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`; // Default logo
+                showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 5000);
             } else {
-                console.log("User profile complete. Proceeding to main app.");
-                loadUserProfile(currentUser.uid); // Load user specific data and update sidebar/header
-                showAppContainerUI(); // Show the full main app UI
-                showScreen('home-screen'); // Default to home feed
-                loadPosts(); // Load initial posts
+                console.log("User profile is complete. Loading main application UI.");
+                loadUserProfile(currentUser.uid); // Load full profile details, update sidebar, etc.
+                showAppContainerUI(); // Transition to the main app container.
+                showScreen('home-screen'); // Default to home feed.
+                loadPosts(); // Start loading content.
                 showToast("Logged in successfully!", 'success');
             }
-        } catch (error) {
-            console.error("Firebase Firestore profile fetch error during redirection:", error);
-            showToast("Failed to load user profile data. Please try logging in again.", 'error', 5000);
-            auth.signOut(); // Critical error, force sign out.
-            showAuthContainerUI(); // Redirect to login/register.
+        } catch (firestoreError) {
+            console.error("Firestore error while loading user profile:", firestoreError);
+            showToast("Error loading user profile. Please try logging in again.", 'error', 5000);
+            auth.signOut(); // Force logout on profile data error to reset.
+            showAuthContainerUI(); // Redirect back to authentication screen.
         }
-    } else { // No user, or user's email is not verified
-        currentUser = null; // Ensure currentUser is null if not fully authenticated
-        console.log("No authenticated and verified user found. Showing Auth UI.");
-        showAuthContainerUI(); // Show login/register UI
+    } else { // No user is logged in OR user's email is not verified
+        currentUser = null; // Ensure global user object is null.
+        console.log("User not authenticated or email not verified. Redirecting to Authentication UI.");
+        showAuthContainerUI(); // Display the Login/Register screens.
 
-        if (user && !user.emailVerified) { // If there's a user object but not verified
-            console.log("User is authenticated but email not verified.");
-            updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
-            auth.signOut(); // Force sign out to make the user explicitly log in after verification.
+        if (user && !user.emailVerified) {
+            console.log("User is authenticated but email not verified. Instructing verification.");
+            updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox (or spam folder) for a verification link.", 'info');
+            auth.signOut(); // It's best practice to sign out unverified users to force email verification flow.
         } else {
-            console.log("No user is logged in.");
-            updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous messages
+            console.log("No active user session found. Showing login form.");
+            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous login status messages.
         }
     }
-    // Regardless of the path, hide the splash screen now.
-    // If AuthUI/AppUI are hidden from checkUserAndRedirect, they take over immediately after this.
-    hideSplashScreenProperly();
 }
 
 
+// Attach the main authentication state listener to Firebase
 auth.onAuthStateChanged(user => {
-    // This handler initiates the full redirection logic once Firebase state is known.
-    // console.log("onAuthStateChanged event fired. User:", user ? user.uid : "None");
-    checkUserAndRedirect(user);
+    handleInitialAuthAndRedirect(user); // Call our central handler
 });
 
 
-// Login/Signup/Forgot Password UI handlers
+// Login/Signup/Forgot Password UI interaction handlers
 showSignupLink.addEventListener('click', (e) => {
     e.preventDefault();
     loginScreen.classList.remove('active');
     signupScreen.classList.add('active');
-    updateAuthStatus(loginStatus, '', 'hidden'); // Clear status messages on switch
+    updateAuthStatus(loginStatus, '', 'hidden'); // Clear statuses on screen switch
     updateAuthStatus(signupStatus, '', 'hidden');
     console.log("UI: Switched to Signup screen.");
 });
@@ -434,7 +462,7 @@ showLoginLink.addEventListener('click', (e) => {
     e.preventDefault();
     signupScreen.classList.remove('active');
     loginScreen.classList.add('active');
-    updateAuthStatus(loginStatus, '', 'hidden'); // Clear status messages on switch
+    updateAuthStatus(loginStatus, '', 'hidden'); // Clear statuses on screen switch
     updateAuthStatus(signupStatus, '', 'hidden');
     console.log("UI: Switched to Login screen.");
 });
@@ -442,8 +470,8 @@ showLoginLink.addEventListener('click', (e) => {
 forgotPasswordLink.addEventListener('click', (e) => {
     e.preventDefault();
     forgotPasswordModal.classList.remove('hidden');
-    updateAuthStatus(resetStatus, '', 'hidden'); // Clear previous status
-    resetEmailInput.value = '';
+    updateAuthStatus(resetStatus, '', 'hidden'); // Clear status on modal open
+    resetEmailInput.value = ''; // Clear email input
     console.log("UI: Displayed Forgot Password modal.");
 });
 
@@ -457,13 +485,13 @@ signupBtn.addEventListener('click', registerUser);
 sendResetEmailBtn.addEventListener('click', sendPasswordReset);
 
 
-// Login User
+// Handle user sign-in process
 async function signInUser() {
-    if (isProcessingAuth) { // Prevent multiple clicks
-        console.warn("Auth process already ongoing. Please wait.");
+    if (isProcessingAuth) { // Prevent multiple clicks/requests
+        console.warn("Authentication process already ongoing. Please wait.");
         return;
     }
-    isProcessingAuth = true;
+    isProcessingAuth = true; // Set flag
     loginBtn.disabled = true; // Disable button during process
 
     const email = loginEmailInput.value.trim();
@@ -478,15 +506,15 @@ async function signInUser() {
 
     try {
         console.log("Attempting user sign-in...");
-        await auth.signInWithEmailAndPassword(email, password);
-        // `onAuthStateChanged` listener will handle redirection on successful sign-in.
         updateAuthStatus(loginStatus, "Logging in...", 'info');
-        // Clear inputs immediately, as they will be re-used/checked by `onAuthStateChanged`.
-        loginEmailInput.value = '';
+        await auth.signInWithEmailAndPassword(email, password);
+        // Success: `onAuthStateChanged` listener will pick this up and redirect UI.
+        loginEmailInput.value = ''; // Clear inputs after successful attempt.
         loginPasswordInput.value = '';
     } catch (error) {
         console.error("Firebase Sign-in error:", error.code, error.message);
         let errorMessage = "Login failed. Please check your email and password.";
+        // Friendly error messages based on Firebase error codes
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             errorMessage = "Invalid email or password.";
         } else if (error.code === 'auth/too-many-requests') {
@@ -502,18 +530,18 @@ async function signInUser() {
         }
         updateAuthStatus(loginStatus, errorMessage, 'error');
     } finally {
-        isProcessingAuth = false; // Ensure flag is reset
-        loginBtn.disabled = false; // Ensure button is re-enabled
+        isProcessingAuth = false; // Always reset flag
+        loginBtn.disabled = false; // Always re-enable button
     }
 }
 
-// Register User
+// Handle user registration process
 async function registerUser() {
-    if (isProcessingAuth) { // Prevent multiple clicks
-        console.warn("Auth process already ongoing. Please wait.");
+    if (isProcessingAuth) { // Prevent multiple clicks/requests
+        console.warn("Authentication process already ongoing. Please wait.");
         return;
     }
-    isProcessingAuth = true;
+    isProcessingAuth = true; // Set flag
     signupBtn.disabled = true; // Disable button
 
     const email = signupEmailInput.value.trim();
@@ -540,21 +568,22 @@ async function registerUser() {
     }
 
     try {
-        console.log("Attempting user registration...");
+        console.log("Attempting user registration for:", email);
+        updateAuthStatus(signupStatus, "Registering user...", 'info');
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        await sendEmailVerification(userCredential.user);
+        await sendEmailVerification(userCredential.user); // Send verification email immediately
 
-        // Create initial user document in Firestore with placeholder username/name
+        // Create initial user document in Firestore with placeholder data.
         await db.collection('users').doc(userCredential.user.uid).set({
             uid: userCredential.user.uid,
             email: userCredential.user.email,
-            username: "", // Will be set during first profile edit
-            name: "",     // Will be set during first profile edit
+            username: "", // To be set in profile edit
+            name: "",     // To be set in profile edit
             bio: "",
             whatsapp: "",
             instagram: "",
-            profileLogo: getRandomLogoClass(), // Default random logo
-            profilePicUrl: "", // Default empty direct pic URL
+            profileLogo: getRandomLogoClass(), // Assign a random default logo
+            profilePicUrl: "", // Empty for direct URL
             isPrivate: false,
             followers: [],
             following: [],
@@ -568,53 +597,55 @@ async function registerUser() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
+        console.log("User registered and profile doc created. Showing verification message.");
         updateAuthStatus(signupStatus, "Registration successful! Please verify your email.", 'success');
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        // After successful registration, automatically switch to login screen for verification instructions.
+        // Automatically switch to login screen and update its status.
         loginScreen.classList.add('active');
         signupScreen.classList.remove('active');
-        updateAuthStatus(loginStatus, "Registered! Check your email to verify and then login.", 'info');
+        updateAuthStatus(loginStatus, "Registered! Check your inbox (or spam) to verify email, then login.", 'info');
 
     } catch (error) {
         console.error("Firebase Registration error:", error.code, error.message);
         let errorMessage = "Registration failed.";
         if (error.code === 'auth/email-already-in-use') {
-            errorMessage = "This email is already in use. Please login.";
+            errorMessage = "This email is already in use. Please log in instead.";
         } else if (error.code === 'auth/invalid-email') {
-            errorMessage = "Invalid email format.";
+            errorMessage = "Invalid email format. Please check and retry.";
         } else if (error.code === 'auth/weak-password') {
-            errorMessage = "Password is too weak (min 6 chars).";
+            errorMessage = "Password is too weak. Please choose a stronger one (min 6 characters).";
         } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = "Network error. Check your internet connection.";
+            errorMessage = "Network error during registration. Check internet.";
         }
         updateAuthStatus(signupStatus, errorMessage, 'error');
     } finally {
-        isProcessingAuth = false; // Reset flag
-        signupBtn.disabled = false; // Re-enable button
+        isProcessingAuth = false; // Always reset flag
+        signupBtn.disabled = false; // Always re-enable button
     }
 }
 
-// Send Email Verification
+// Send email verification link
 async function sendEmailVerification(user) {
     try {
+        console.log(`Sending verification email to: ${user.email}`);
         await user.sendEmailVerification();
-        console.log("Verification email sent to:", user.email);
+        console.log("Verification email sent successfully.");
     } catch (error) {
         console.error("Error sending verification email:", error);
-        showToast("Failed to send verification email. Try again later.", 'error');
+        showToast("Failed to send verification email. Please try again later.", 'error');
     }
 }
 
-// Send Password Reset
+// Handle password reset request
 async function sendPasswordReset() {
     if (isProcessingAuth) {
-        console.warn("Auth process already ongoing.");
+        console.warn("Authentication process already ongoing.");
         return;
     }
     isProcessingAuth = true;
-    sendResetEmailBtn.disabled = true;
+    sendResetEmailBtn.disabled = true; // Disable button
 
     const email = resetEmailInput.value.trim();
     if (!email) {
@@ -625,121 +656,137 @@ async function sendPasswordReset() {
     }
 
     try {
-        console.log("Sending password reset email to:", email);
+        console.log("Sending password reset email for:", email);
         await auth.sendPasswordResetEmail(email);
-        updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
+        updateAuthStatus(resetStatus, "Password reset link sent to your email! Please check your inbox.", 'success');
     } catch (error) {
         console.error("Firebase Forgot password error:", error.code, error.message);
         let errorMessage = "Failed to send reset link.";
         if (error.code === 'auth/user-not-found') {
-            errorMessage = "No account found with that email.";
+            errorMessage = "No account found with that email address.";
         } else if (error.code === 'auth/invalid-email') {
-            errorMessage = "Invalid email format.";
+            errorMessage = "Invalid email format. Please check.";
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = "Network error. Check your internet connection.";
         }
         updateAuthStatus(resetStatus, errorMessage, 'error');
     } finally {
         isProcessingAuth = false;
-        sendResetEmailBtn.disabled = false;
+        sendResetEmailBtn.disabled = false; // Re-enable button
     }
 }
 
-// Logout Button
+// Handle user logout
 document.getElementById('logout-btn').addEventListener('click', async () => {
     try {
         console.log("Attempting user logout.");
         await auth.signOut();
         showToast("Logged out successfully.", 'info');
-        // Clear login/signup input fields for next use
+
+        // Reset the flag so that onAuthStateChanged will perform full check next time
+        hasRunInitialAuthCheck = false;
+
+        // Clear all sensitive input fields for next user session or login.
         loginEmailInput.value = '';
         loginPasswordInput.value = '';
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        // Clear profile edit fields just in case.
         editUsernameInput.value = '';
         editNameInput.value = '';
         editBioInput.value = '';
         editWhatsappInput.value = '';
         editInstagramInput.value = '';
         profilePicUrlInput.value = '';
-
-        // Reset the flag for `onAuthStateChanged` to run full logic on next state change
-        authInitialCheckComplete = false;
-
-        // No explicit hide/show here, as auth.onAuthStateChanged will be triggered automatically
-        // and it will handle the redirect to the authentication screens.
+        // UI redirection will be handled by `onAuthStateChanged` listener.
     } catch (error) {
-        console.error("Error logging out:", error);
+        console.error("Error during logout:", error);
         showToast("Failed to log out.", 'error');
     }
 });
 
 
-// --- Initial App Load Logic (Triggered on DOMContentLoaded) ---
+// --- Initial App Load Trigger (Called when DOM is fully loaded) ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOM Content Loaded. Starting initial app setup.");
-    // 1. Hide all main app and auth UI elements initially.
+    console.log("DOM Content Loaded. Initializing app UI states.");
+    // 1. Hide all main app and authentication UI elements at start.
     appContainer.classList.add('hidden');
     authContainer.classList.add('hidden');
 
-    // 2. Ensure splash screen is visible immediately for initial visual.
-    splashScreen.classList.remove('hidden');
-    splashScreen.style.display = 'flex'; // Important: Ensure it's display flex for centering
+    // 2. The splash screen HTML element might technically be present
+    // but without display/opacity settings it would not show anything.
+    // Ensure `splashScreen` itself (the div) exists, if not present remove its DOM dependencies in script.
+    if (splashScreen) { // Check if element exists, important after removing markup
+        // The styling in style.css handles the initial appearance and transition.
+        splashScreen.classList.remove('hidden');
+        splashScreen.style.opacity = '1';
+        splashScreen.style.display = 'flex'; // Explicitly set display for centering if splash is meant to be visible for a duration.
+    }
+
 
     // 3. Set a minimum display time for the splash screen (e.g., 3 seconds).
-    // This creates a Promise that resolves after the minimum time.
+    // This promise ensures any subsequent UI rendering waits for at least this long.
     splashScreenMinTimePromise = new Promise(resolve => {
         setTimeout(() => {
-            console.log("Splash screen minimum display time (3s) elapsed.");
-            resolve(); // Resolve the promise, signaling it's safe to change UI
-        }, 3000); // Minimum 3 seconds
+            console.log("Promise: Minimum splash screen display time (3s) completed.");
+            resolve(); // Resolve the promise.
+        }, 3000); // 3 seconds
     });
 
-    // 4. Set a fallback timeout for onAuthStateChanged.
-    // If Firebase auth state resolution takes too long (or fails silently in complex scenarios),
-    // this ensures the app still attempts to proceed after a max timeout (e.g., 5 seconds total wait time for auth).
+    // 4. Set a fallback timeout for onAuthStateChanged listener.
+    // If the Firebase SDK's `onAuthStateChanged` takes unusually long to fire (e.g., network issues),
+    // this ensures the UI still transitions after a reasonable maximum delay.
     splashScreenTimeout = setTimeout(() => {
-        if (!authInitialCheckComplete) { // Only act if the `onAuthStateChanged` handler hasn't processed its initial check.
-            console.warn("Splash screen hard timeout (5s) triggered. Forcing UI transition based on current auth state.");
-            // Explicitly call the redirection logic. auth.currentUser might be null or valid.
-            checkUserAndRedirect(auth.currentUser);
+        if (!hasRunInitialAuthCheck) { // Only force the check if it hasn't run already.
+            console.warn("Fallback: Splash screen timed out (5s). Forcing initial authentication check.");
+            // Explicitly call the handler to transition the UI based on the current Firebase auth state.
+            // auth.currentUser will be either a User object or null at this point.
+            handleInitialAuthAndRedirect(auth.currentUser);
         }
-    }, 5000); // Max total time including `splashScreenMinTimePromise`
-    // Note: The `checkUserAndRedirect` function itself manages hiding splash and showing subsequent UI.
+    }, 5000); // Max total wait time for auth status to decide initial UI.
 });
 
 
-// --- Data Saver Toggle ---
+// --- Data Saver Toggle Functionality ---
 document.getElementById('data-saver-checkbox').addEventListener('change', (e) => {
     dataSaverEnabled = e.target.checked;
     showToast(`Data Saver ${dataSaverEnabled ? 'Enabled' : 'Disabled'}`, 'info');
-    // Implement logic to reduce image quality or lazy load more aggressively
-    // when dataSaverEnabled is true during post loading.
-    // (This would typically involve modifying image URLs or loading smaller versions)
+    // Future enhancement: Add logic here to load lower resolution images or prioritize text over media.
 });
 
-// --- Dark Mode Toggle ---
+
+// --- Dark Mode Toggle Functionality ---
 darkModeCheckbox.addEventListener('change', (e) => {
     if (e.target.checked) {
         body.classList.add('dark-mode');
         body.classList.remove('light-mode');
-        localStorage.setItem('theme', 'dark');
+        localStorage.setItem('theme', 'dark'); // Save user preference
     } else {
         body.classList.remove('dark-mode');
         body.classList.add('light-mode');
-        localStorage.setItem('theme', 'light');
+        localStorage.setItem('theme', 'light'); // Save user preference
     }
     showToast(`Dark Mode ${e.target.checked ? 'Enabled' : 'Disabled'}`, 'info');
 });
 
-// Set initial theme based on local storage or default
-// This runs on DOMContentLoaded already (included in initial event listener logic above)
-// document.addEventListener('DOMContentLoaded', () => { /* ... existing code here ... */ });
+// Initialize theme from local storage on load (already done in DOMContentLoaded block, no need to duplicate)
+/*
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme') || 'dark';
+    if (savedTheme === 'light') {
+        body.classList.remove('dark-mode');
+        body.classList.add('light-mode');
+        darkModeCheckbox.checked = false;
+    } else {
+        body.classList.add('dark-mode');
+        body.classList.remove('light-mode');
+        darkModeCheckbox.checked = true;
+    }
+});
+*/
 
 
-// --- Sidebar Navigation ---
+// --- Sidebar Navigation Control ---
 menuToggle.addEventListener('click', () => {
     sidebar.classList.add('open');
 });
@@ -753,61 +800,65 @@ sidebar.querySelectorAll('ul li a').forEach(link => {
         e.preventDefault();
         const screenId = e.currentTarget.dataset.screen;
         if (screenId) {
-            showScreen(`${screenId}-screen`);
-            // Specific actions for screens
+            showScreen(`${screenId}-screen`); // Switch to the selected main screen
+
+            // Execute screen-specific loading functions
             if (screenId === 'profile') {
-                loadUserProfile(currentUser.uid); // Load own profile
+                loadUserProfile(currentUser.uid); // Load own profile for sidebar link
                 currentProfileViewingId = currentUser.uid;
             } else if (screenId === 'messages') {
                 loadRecentChats();
                 messageListContainer.classList.remove('hidden');
-                chatWindowContainer.classList.add('hidden');
+                chatWindowContainer.classList.add('hidden'); // Ensure chat window is hidden when returning to chat list
             } else if (screenId === 'home') {
+                 // On returning to home, clear feed and reload from beginning.
                  postsFeed.innerHTML = '';
                  lastVisiblePost = null;
                  loadPosts();
-                 postCategoryFilter.value = 'all'; // Reset filter
+                 postCategoryFilter.value = 'all'; // Reset category filter
             } else if (screenId === 'feed') {
+                 // On returning to immersive feed, clear feed and reload from beginning.
                  immersiveFeed.innerHTML = '';
                  lastVisibleImmersivePost = null;
                  loadImmersiveFeedPosts();
             } else if (screenId === 'earnings') {
-                loadEarningsPage();
+                loadEarningsPage(); // Load earnings data.
             }
         }
-        sidebar.classList.remove('open');
+        sidebar.classList.remove('open'); // Close sidebar after selection.
     });
 });
 
 
-// --- Bottom Navigation ---
+// --- Bottom Navigation Control ---
 bottomNavItems.forEach(item => {
     item.addEventListener('click', (e) => {
         e.preventDefault();
         const screenId = e.currentTarget.dataset.screen;
-        showScreen(`${screenId}-screen`);
-        // Specific actions for screens
+        showScreen(`${screenId}-screen`); // Switch to the selected main screen
+
+        // Execute screen-specific loading functions (similar to sidebar)
         if (screenId === 'profile') {
-            loadUserProfile(currentUser.uid); // Load own profile
+            loadUserProfile(currentUser.uid);
             currentProfileViewingId = currentUser.uid;
         } else if (screenId === 'messages') {
             loadRecentChats();
             messageListContainer.classList.remove('hidden');
             chatWindowContainer.classList.add('hidden');
         } else if (screenId === 'home') {
-            postsFeed.innerHTML = ''; // Clear existing posts
-            lastVisiblePost = null; // Reset pagination
-            loadPosts(); // Reload posts
-            postCategoryFilter.value = 'all'; // Reset filter
+            postsFeed.innerHTML = '';
+            lastVisiblePost = null;
+            loadPosts();
+            postCategoryFilter.value = 'all';
         } else if (screenId === 'search') {
-            searchUserList.innerHTML = '';
+            searchUserList.innerHTML = ''; // Clear search results on switch
             searchPostList.innerHTML = '';
             noSearchResults.classList.add('hidden');
-            searchQueryInput.value = '';
+            searchQueryInput.value = ''; // Clear search input
         } else if (screenId === 'upload') {
-            // Reset upload form
+            // Reset upload form inputs
             postContentInput.value = '';
-            postContentInput.textContent = ''; // Clear content
+            // postImageInput.value = ''; // No direct image input anymore, replaced by rich text editor.
             monetizePostCheckbox.checked = false;
             uploadStatus.textContent = '';
         }
@@ -817,233 +868,271 @@ bottomNavItems.forEach(item => {
 
 // --- Post Loading and Infinite Scrolling (Home Feed) ---
 postCategoryFilter.addEventListener('change', () => {
-    postsFeed.innerHTML = '';
-    lastVisiblePost = null;
-    loadPosts();
+    postsFeed.innerHTML = ''; // Clear posts on category change
+    lastVisiblePost = null; // Reset pagination for new filter
+    loadPosts(); // Reload posts
 });
 
 async function loadPosts() {
-    if (fetchingPosts || !currentUser) return; // Must be logged in
+    if (fetchingPosts || !currentUser) {
+        console.log("loadPosts: Skipping (already fetching or no current user).");
+        return;
+    }
 
     fetchingPosts = true;
     loadingSpinner.classList.remove('hidden');
+    console.log("loadPosts: Starting post fetch for home feed.");
 
     try {
-        let postsRef = db.collection('posts')
-                         .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active (not expired) posts
-                         .orderBy('expiryTime', 'desc') // Order by expiry to show newer relevant posts first
-                         .orderBy('timestamp', 'desc'); // Secondary order by original timestamp for consistency
+        // Base query for posts
+        let postsBaseRef = db.collection('posts')
+                                .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active posts
+                                .orderBy('expiryTime', 'desc') // Newer expire dates first (effectively newer posts)
+                                .orderBy('timestamp', 'desc'); // Then by creation timestamp
+
 
         const selectedCategory = postCategoryFilter.value;
         if (selectedCategory !== 'all') {
-            postsRef = postsRef.where('category', '==', selectedCategory);
+            postsBaseRef = postsBaseRef.where('category', '==', selectedCategory);
+            console.log(`loadPosts: Filtering by category: ${selectedCategory}`);
         }
 
-        // Apply follower-based filtering for home feed (display only posts from followed users or public posts)
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         const followedUsers = userDoc.data().following || [];
+        console.log(`loadPosts: Current user following ${followedUsers.length} users.`);
 
-        let snapshot;
-        let fetchedPosts = [];
 
-        // Fetch followed users' posts
+        let fetchedPosts = []; // Collect all posts here
+
+        // 1. Fetch posts from followed users (chunked if more than 10 followed users)
         if (followedUsers.length > 0) {
-            // Firestore 'in' query limitation (max 10) means we need to chunk UIDs if > 10.
-            const chunkSize = 10;
+            const chunkSize = 10; // Firestore 'in' query limit
             for (let i = 0; i < followedUsers.length; i += chunkSize) {
                 const chunk = followedUsers.slice(i, i + chunkSize);
-                // Create a temporary query for each chunk
-                let currentChunkQuery = db.collection('posts')
-                                   .where('userId', 'in', chunk)
-                                   .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                                   .orderBy('timestamp', 'desc'); // Ordering important for pagination consistency
+                let currentFollowedQuery = postsBaseRef.where('userId', 'in', chunk);
+                
+                // For combined pagination, we're not using startAfter on chunked queries directly.
+                // We'll collect all, sort, and then decide what to show/paginate.
+                const followedSnapshot = await currentFollowedQuery.limit(postsToLoadPerScroll * 2).get(); // Fetch a bit more to ensure variety
 
-                if (lastVisiblePost) { // Apply pagination only if starting from somewhere
-                    currentChunkQuery = currentChunkQuery.startAfter(lastVisiblePost);
-                }
-                const chunkSnapshot = await currentChunkQuery.limit(postsToLoadPerScroll).get();
-
-                chunkSnapshot.forEach(doc => {
-                    // Prevent duplicates (especially if a user appears in multiple chunks or is followed/public)
-                    if (!fetchedPosts.some(p => p.id === doc.id)) {
+                followedSnapshot.docs.forEach(doc => {
+                    if (!fetchedPosts.some(p => p.id === doc.id)) { // Prevent duplicates
                          fetchedPosts.push({ id: doc.id, ...doc.data() });
                     }
                 });
-
-                if (!chunkSnapshot.empty) {
-                    // Important: If we get posts from chunks, update lastVisiblePost
-                    // However, directly using last doc of a chunk might break next query of general posts if it was ordered differently.
-                    // A better approach is to collect ALL potential posts first, then sort/filter for pagination.
-                    lastVisiblePost = chunkSnapshot.docs[chunkSnapshot.docs.length - 1];
-                }
-                if (fetchedPosts.length >= postsToLoadPerScroll) break; // Break early if we've gathered enough posts
+                console.log(`loadPosts: Fetched ${followedSnapshot.size} posts from followed users chunk.`);
             }
         }
 
-
-        // Fill up remaining slots with general public posts if not enough from followed users
-        if (fetchedPosts.length < postsToLoadPerScroll) {
-             let generalPostsRef = db.collection('posts')
-                                        .where('isPrivate', '==', false) // Only public posts for general feed
-                                        .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                                        .orderBy('expiryTime', 'desc')
-                                        .orderBy('timestamp', 'desc');
-
-             // Only apply pagination start after if NO followed posts were found OR if general feed is truly paginating
-             if (!lastVisiblePost || fetchedPosts.length === 0) { // If starting fresh for general feed or if no followed posts from pagination
-                 if (lastVisiblePost && fetchedPosts.length === 0) {
-                     generalPostsRef = generalPostsRef.startAfter(lastVisiblePost);
-                 }
-                 // Else, if first load, it starts from beginning by default
-             } else { // If we got some followed posts, general posts should complement
-                 // It's tricky to continue precise pagination while combining. Simplification:
-                 // Fetch general posts and let client filter duplicates
-             }
-
-
-             const generalPostsSnapshot = await generalPostsRef.limit(postsToLoadPerScroll - fetchedPosts.length).get();
-             generalPostsSnapshot.forEach(doc => {
-                 if (!fetchedPosts.some(p => p.id === doc.id)) { // Avoid duplicates from followed feed if user is also public
-                    fetchedPosts.push({ id: doc.id, ...doc.data() });
-                 }
-             });
-             if (!generalPostsSnapshot.empty) {
-                lastVisiblePost = generalPostsSnapshot.docs[generalPostsSnapshot.docs.length - 1]; // Update for next query
-             }
+        // 2. Fetch general public posts to fill up the feed or as main content if no followed users.
+        let generalPostsRef = postsBaseRef.where('isPrivate', '==', false);
+        
+        // If it's the very first load or if no followed posts were retrieved, use general posts for pagination.
+        // If lastVisiblePost exists and fetchedPosts are few, means previous pagination hit end for followed.
+        // It's very complex to paginate across multiple WHERE clauses using Firestore directly this way.
+        // For 'never-ending' and complex feeds, Cloud Functions would typically pre-generate / paginate feeds.
+        
+        // Simpler pagination fallback for general public posts if we didn't fill up from followed.
+        // This will restart pagination for general posts only.
+        if (lastVisiblePost && (followedUsers.length === 0 || fetchedPosts.length < postsToLoadPerScroll)) {
+             generalPostsRef = generalPostsRef.startAfter(lastVisiblePost);
+             console.log("loadPosts: Adding general posts with pagination.");
+        } else if (!lastVisiblePost && fetchedPosts.length === 0) {
+            // First load, no followed, just general
+             console.log("loadPosts: First load, only general posts.");
+        } else {
+             // We have enough from followed, or just mixing without deep pagination across feed types
+             // To ensure some general content is always loaded along side followed:
+             generalPostsRef = generalPostsRef; // No startAfter for mixed content load if not strictly paginating
         }
 
-        // If after combining, no new posts were found, reset for looping.
-        if (fetchedPosts.length === 0 || fetchedPosts.every(p => postsFeed.querySelector(`[data-post-id="${p.id}"]`))) {
-            if (postsFeed.children.length > 0) { // Only show toast if feed isn't completely empty already
-                showToast("No more new posts. Looping feed...", 'info', 3000);
-            }
-            lastVisiblePost = null; // Reset to loop from the beginning on next load
-            fetchingPosts = false;
-            loadingSpinner.classList.add('hidden');
-            if (postsFeed.innerHTML === '') { // If feed is completely empty
-                 postsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No posts available.</p>';
-            }
-            return;
-        }
-
-        // Randomize the layout of new posts
-        let postsToRenderInBatch = [];
-        // Only add posts that are not already in the feed
-        fetchedPosts.forEach(post => {
-            if (!postsFeed.querySelector(`[data-post-id="${post.id}"]`)) {
-                postsToRenderInBatch.push(post);
+        const generalPostsSnapshot = await generalPostsRef.limit(postsToLoadPerScroll).get();
+        generalPostsSnapshot.docs.forEach(doc => {
+            if (!fetchedPosts.some(p => p.id === doc.id)) { // Avoid adding duplicates that might already be from followed.
+               fetchedPosts.push({ id: doc.id, ...doc.data() });
             }
         });
+        if (!generalPostsSnapshot.empty) {
+            // Only update lastVisiblePost if general posts were actually added in this round of fetching
+            // And they contributed to advancing the pointer.
+            if (!lastVisiblePost || generalPostsSnapshot.docs[generalPostsSnapshot.docs.length - 1].id !== lastVisiblePost.id) {
+                lastVisiblePost = generalPostsSnapshot.docs[generalPostsSnapshot.docs.length - 1];
+            }
+        }
+        console.log(`loadPosts: Added ${generalPostsSnapshot.size} posts from general feed.`);
 
 
-        // If it's a completely fresh load or explicit refresh, clear existing.
-        // Otherwise, append.
-        if (!lastVisiblePost && postsFeed.innerHTML.trim() !== '') { // If just initialized and content exists
-            postsFeed.innerHTML = '';
-        } else if (lastVisiblePost && postsFeed.innerHTML.trim() === '') { // If lastVisible was set but page is empty
-             postsFeed.innerHTML = '';
+        // 3. Post-fetch processing: Filter already-displayed posts and manage 'never-ending' logic.
+        const alreadyDisplayedPostIds = new Set(Array.from(postsFeed.children).map(el => el.dataset.postId));
+        let newPostsToRender = fetchedPosts.filter(post => !alreadyDisplayedPostIds.has(post.id));
+
+        console.log(`loadPosts: Total fetched posts: ${fetchedPosts.length}, new posts to render: ${newPostsToRender.length}.`);
+
+        if (newPostsToRender.length === 0 && fetchedPosts.length > 0 && postsFeed.children.length > 0) {
+            // If we fetched posts, but they were all duplicates already on screen, or no new content to add, then loop.
+            showToast("No new unique posts found. Looping feed to older content...", 'info', 3000);
+            lastVisiblePost = null; // Reset pagination to loop back to the start.
+            console.log("loadPosts: Resetting lastVisiblePost for feed loop.");
+            
+            // To immediately show looping, clear and reload if we couldn't add anything.
+            postsFeed.innerHTML = ''; // Clear for fresh start of looped content.
+            // Recurse to load the "new-loop" content. But prevent infinite recursion if database is truly empty.
+            if (postsToLoadPerScroll > 0) { // Check to prevent infinite empty calls
+                 fetchingPosts = false; // Release flag for recursive call.
+                 return loadPosts(); // Recursively call to get first batch of new loop.
+            }
+
+        } else if (newPostsToRender.length === 0 && postsFeed.children.length === 0) {
+            // Case where NO posts at all were ever loaded initially.
+            showToast("No posts available in this feed. Start by uploading one!", 'info', 5000);
+            postsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No posts available in this feed. Try uploading one!</p>';
+            loadingSpinner.classList.add('hidden');
+            fetchingPosts = false;
+            return;
+        } else if (newPostsToRender.length === 0) { // Fetched some, but all are already displayed AND feed is not empty. Just say nothing new.
+             console.log("loadPosts: All fetched posts were already displayed.");
+             showToast("No new posts at the moment.", 'info', 2000);
+             loadingSpinner.classList.add('hidden');
+             fetchingPosts = false;
+             return;
         }
 
 
-        // Apply random layout for the current batch of posts to render
-        while (postsToRenderInBatch.length > 0) {
+        // Clear feed only if it's explicitly the start of a full loop or initial empty state.
+        if (lastVisiblePost === null && postsFeed.innerHTML.trim() !== '' && !newPostsToRender.some(p => !alreadyDisplayedPostIds.has(p.id))) {
+             // This condition is for when the feed is implicitly resetting because of no new content from original order.
+             postsFeed.innerHTML = ''; // Clear previous content if we are effectively starting fresh from top of looped data.
+        }
+
+
+        // Randomize and render the NEW posts
+        let tempPostsForRendering = [...newPostsToRender];
+        while (tempPostsForRendering.length > 0) {
             const randomLayout = Math.floor(Math.random() * 3); // 0: vertical, 1: horizontal, 2: table
 
-            if (randomLayout === 0 || postsToRenderInBatch.length < 4) { // Vertical or not enough for other layouts
-                const post = postsToRenderInBatch.shift();
+            if (randomLayout === 0 || tempPostsForRendering.length < 4) { // Vertical or not enough for other layouts
+                const post = tempPostsForRendering.shift();
                 renderPost(post, postsFeed, 'vertical-post');
-            } else if (randomLayout === 1 && postsToRenderInBatch.length >= 2) { // Horizontal (2-3 posts)
-                const numHorizontal = Math.min(postsToRenderInBatch.length, Math.floor(Math.random() * 2) + 2); // 2 or 3
+            } else if (randomLayout === 1 && tempPostsForRendering.length >= 2) { // Horizontal (2-3 posts)
+                const numHorizontal = Math.min(tempPostsForRendering.length, Math.floor(Math.random() * 2) + 2); // 2 or 3
                 const horizontalContainer = document.createElement('div');
                 horizontalContainer.className = 'horizontal-post-container';
                 for (let i = 0; i < numHorizontal; i++) {
-                    const post = postsToRenderInBatch.shift();
+                    const post = tempPostsForRendering.shift();
                     horizontalContainer.appendChild(createPostElement(post, 'horizontal-post'));
                 }
                 postsFeed.appendChild(horizontalContainer);
-            } else if (randomLayout === 2 && postsToRenderInBatch.length >= 4) { // Table (4-6 posts)
-                const numTable = Math.min(postsToLoadPerScroll.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
+            } else if (randomLayout === 2 && tempPostsForRendering.length >= 4) { // Table (4-6 posts)
+                const numTable = Math.min(tempPostsForRendering.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'table-post-container';
                 for (let i = 0; i < numTable; i++) {
-                    const post = postsToRenderInBatch.shift();
+                    const post = tempPostsForRendering.shift();
                     tableContainer.appendChild(createPostElement(post, 'table-post'));
                 }
                 postsFeed.appendChild(tableContainer);
             } else { // Fallback to vertical if conditions not met
-                const post = postsToRenderInBatch.shift();
+                const post = tempPostsForRendering.shift();
                 renderPost(post, postsFeed, 'vertical-post');
             }
         }
+        console.log(`loadPosts: Successfully rendered ${newPostsToRender.length} new posts.`);
 
     } catch (error) {
-        console.error("Error loading posts:", error);
-        showToast("Error loading posts. Please refresh.", 'error');
+        console.error("Critical error loading posts for home feed:", error);
+        showToast("Error loading posts. Please refresh your page or check console for details.", 'error', 7000);
     } finally {
         loadingSpinner.classList.add('hidden');
         fetchingPosts = false;
+        console.log("loadPosts: Post fetching finished.");
     }
 }
 
 
-// Immersive Feed (Snap Scrolling)
+// Immersive Feed (Snap Scrolling) Loading Logic
 async function loadImmersiveFeedPosts() {
-    if (fetchingImmersivePosts || !currentUser) return; // Must be logged in
+    if (fetchingImmersivePosts || !currentUser) {
+        console.log("loadImmersiveFeedPosts: Skipping (already fetching or no current user).");
+        return;
+    }
 
     fetchingImmersivePosts = true;
     feedLoadingSpinner.classList.remove('hidden');
+    console.log("loadImmersiveFeedPosts: Starting fetch for immersive feed.");
 
     try {
         let postsRef = db.collection('posts')
                          .where('expiryTime', '>', firebase.firestore.Timestamp.now())
-                         .where('isPrivate', '==', false) // Only public posts in immersive feed
-                         .orderBy('expiryTime', 'desc')
-                         .orderBy('timestamp', 'desc');
+                         .where('isPrivate', '==', false) // Immersive feed only shows public posts
+                         .orderBy('expiryTime', 'desc') // Newer expire dates first
+                         .orderBy('timestamp', 'desc'); // Secondary sort for consistent ordering
+
 
         if (lastVisibleImmersivePost) {
             postsRef = postsRef.startAfter(lastVisibleImmersivePost);
+            console.log("loadImmersiveFeedPosts: Starting after last visible post for pagination.");
         }
 
         const snapshot = await postsRef.limit(postsToLoadPerScroll).get();
 
         if (snapshot.empty) {
+            console.log("loadImmersiveFeedPosts: No more posts found. Resetting for loop.");
             showToast("No more immersive posts. Looping back...", 'info', 3000);
             lastVisibleImmersivePost = null; // Reset to loop from the beginning
-            fetchingImmersivePosts = false;
+            fetchingImmersivePosts = false; // Release flag before recursion
             feedLoadingSpinner.classList.add('hidden');
-            if (immersiveFeed.innerHTML === '') {
-                immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available.</p>';
+            if (immersiveFeed.children.length === 0 || immersiveFeed.innerHTML.includes('No immersive posts available.')) {
+                 immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available.</p>';
+                 return; // Avoid infinite recursion if DB is truly empty.
+            } else {
+                 immersiveFeed.innerHTML = ''; // Clear for fresh start of looped content.
+                 return loadImmersiveFeedPosts(); // Recursive call to get the first batch of the new loop.
             }
-            return;
         }
 
-        lastVisibleImmersivePost = snapshot.docs[snapshot.docs.length - 1];
+        lastVisibleImmersivePost = snapshot.docs[snapshot.docs.length - 1]; // Update pagination cursor
 
         const fetchedPosts = [];
         snapshot.docs.forEach(doc => {
             fetchedPosts.push({ id: doc.id, ...doc.data() });
         });
+        console.log(`loadImmersiveFeedPosts: Fetched ${fetchedPosts.length} posts.`);
 
-        // Clear existing immersive feed if we looped or starting fresh
-        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (snapshot.size < postsToLoadPerScroll) && immersiveFeed.children.length > 0) {
-             immersiveFeed.innerHTML = '';
-        } else if (!lastVisibleImmersivePost && immersiveFeed.innerHTML.trim() !== '') {
-            immersiveFeed.innerHTML = ''; // Initial load but had some prior content
+        // Filter out posts that are already displayed to avoid duplicates.
+        const alreadyDisplayedImmersivePostIds = new Set(Array.from(immersiveFeed.children).map(el => el.dataset.postId));
+        const newPostsToRender = fetchedPosts.filter(post => !alreadyDisplayedImmersivePostIds.has(post.id));
+        
+        if (newPostsToRender.length === 0 && fetchedPosts.length > 0 && immersiveFeed.children.length > 0) {
+            console.log("loadImmersiveFeedPosts: Fetched posts were all duplicates, attempting loop reset.");
+            // All new fetched posts were already visible and there is content. Reset and re-loop.
+            showToast("No new immersive posts. Looping feed...", 'info', 3000);
+            lastVisibleImmersivePost = null; // Reset pagination.
+            immersiveFeed.innerHTML = ''; // Clear for fresh content.
+            fetchingImmersivePosts = false;
+            return loadImmersiveFeedPosts(); // Recursive call to load from the beginning.
+        } else if (newPostsToRender.length === 0 && immersiveFeed.children.length === 0) {
+            console.log("loadImmersiveFeedPosts: No posts fetched and feed is empty.");
+            showToast("No immersive posts available. Consider uploading a public post!", 'info', 5000);
+            immersiveFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No immersive posts available. Try uploading a public post!</p>';
+            loadingSpinner.classList.add('hidden');
+            fetchingImmersivePosts = false;
+            return;
         }
 
-        fetchedPosts.forEach(post => {
-            if (!immersiveFeed.querySelector(`[data-post-id="${post.id}"]`)) { // Prevent rendering duplicates in a dynamic refresh scenario
-                renderPost(post, immersiveFeed, 'immersive-post'); // Use immersive-post class
-            }
+        // Render posts
+        newPostsToRender.forEach(post => {
+            renderPost(post, immersiveFeed, 'immersive-post'); // Append directly to immersiveFeed
         });
+        console.log(`loadImmersiveFeedPosts: Rendered ${newPostsToRender.length} new posts.`);
 
 
     } catch (error) {
-        console.error("Error loading immersive posts:", error);
-        showToast("Error loading immersive posts. Please refresh.", 'error');
+        console.error("Critical error loading immersive feed posts:", error);
+        showToast("Error loading immersive feed. Please refresh your page or check console for details.", 'error', 7000);
     } finally {
         feedLoadingSpinner.classList.add('hidden');
         fetchingImmersivePosts = false;
+        console.log("loadImmersiveFeedPosts: Fetching finished.");
     }
 }
 
@@ -2151,26 +2240,20 @@ saveProfileBtn.addEventListener('click', async () => {
         return;
     }
 
-    // Name also must be provided to proceed beyond registration-profile
-    if (newName.length < 1 && editProfileModal.classList.contains('hidden')) { // This checks if it's the *initial* forced profile completion
-         showToast("Display Name cannot be empty.", 'error');
-         return;
+    // Name must be provided if it's currently empty, especially for new registrations
+    // editProfileModal.classList.contains('hidden') is incorrect for initial registration check, better to check currentData.name
+    // A simplified check is: if this is a NEW user completing profile, require name.
+    const userDocRef = db.collection('users').doc(currentUser.uid);
+    const userDoc = await userDocRef.get();
+    const currentData = userDoc.data();
+    
+    if (currentData && (currentData.username === "" || currentData.name === "") && newName.length < 1) { // If it's first time profile fill and name is empty
+        showToast("Display Name cannot be empty during initial profile setup.", 'error');
+        return;
     }
 
+
     try {
-        const userDocRef = db.collection('users').doc(currentUser.uid);
-        const userDoc = await userDocRef.get();
-        const currentData = userDoc.data();
-
-        // Check username uniqueness again before saving
-        if (newUsername !== (currentData.username || '')) { // Compare with currentData.username (can be empty string)
-            const usernameSnapshot = await db.collection('users').where('username', '==', newUsername).limit(1).get();
-            if (!usernameSnapshot.empty) {
-                showToast("Username already taken. Please choose another.", 'error');
-                return;
-            }
-        }
-
         await userDocRef.update({
             username: newUsername,
             name: newName,
@@ -2180,7 +2263,9 @@ saveProfileBtn.addEventListener('click', async () => {
             profileLogo: newProfileLogo,
             profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
-            // Initialize earning/follower counts if they don't exist (important for new users saving profile for first time)
+            // These counts should have already been initialized on creation. Just ensuring data consistency for clarity.
+            // Firebase update on existing fields without increment/decrement will simply overwrite, which is fine here.
+            // If they are undefined, default to 0.
             followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
             followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
             postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
@@ -2190,9 +2275,9 @@ saveProfileBtn.addEventListener('click', async () => {
             reposts: currentData.reposts !== undefined ? currentData.reposts : []
         });
 
-        // Update username and profile info in existing posts if changed
+        // Update username and profile info in existing posts if changed (requires write permissions on posts too)
         if (newUsername !== (currentData.username || '') || finalProfilePicUrl !== (currentData.profilePicUrl || '') || newProfileLogo !== (currentData.profileLogo || '') || isPrivate !== currentData.isPrivate) {
-            console.log("Updating username/profile info on posts...");
+            console.log("Updating username/profile info on posts via batch...");
             const postsSnapshot = await db.collection('posts').where('userId', '==', currentUser.uid).get();
             const batch = db.batch();
             postsSnapshot.docs.forEach(doc => {
@@ -2201,19 +2286,19 @@ saveProfileBtn.addEventListener('click', async () => {
                     username: newUsername,
                     profilePicUrl: finalProfilePicUrl,
                     userProfileLogo: finalProfilePicUrl ? "" : newProfileLogo, // Only use emoji if no direct pic URL
-                    isPrivate: isPrivate // Update post's privacy if user's privacy changed
+                    isPrivate: isPrivate // Propagate post's privacy if user's overall privacy changed
                 });
             });
             await batch.commit();
-            console.log("Post updates batch committed.");
+            console.log("Post updates batch committed successfully.");
         }
 
-        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal on save
+        editProfileModal.classList.add('hidden'); // IMPORTANT: Now this should reliably hide the modal
         showToast("Profile updated successfully!", 'success');
         loadUserProfile(currentUser.uid); // Reload profile display
     } catch (error) {
         console.error("Error saving profile:", error);
-        showToast("Failed to save profile. Please try again. " + (error.message || ''), 'error');
+        showToast("Failed to save profile. Please try again. Error: " + (error.message || 'Unknown error'), 'error', 6000);
     }
 });
 
@@ -2222,8 +2307,12 @@ followUserBtn.addEventListener('click', () => handleFollow(currentProfileViewing
 unfollowUserBtn.addEventListener('click', () => handleUnfollow(currentProfileViewingId));
 
 async function handleFollow(targetUserId) {
-    if (!currentUser || currentUser.uid === targetUserId) {
-        showToast("Cannot follow yourself or not logged in.", 'info');
+    if (!currentUser) {
+        showToast("Please log in to follow users.", 'info');
+        return;
+    }
+    if (currentUser.uid === targetUserId) {
+        showToast("Cannot follow yourself.", 'info');
         return;
     }
 
@@ -2236,54 +2325,55 @@ async function handleFollow(targetUserId) {
             const targetUserDoc = await transaction.get(targetUserRef);
 
             if (!currentUserDoc.exists || !targetUserDoc.exists) {
-                throw "User not found.";
+                throw new Error("User document not found during follow operation.");
             }
 
             const currentUserData = currentUserDoc.data();
             const targetUserData = targetUserDoc.data();
 
             if (currentUserData.following && currentUserData.following.includes(targetUserId)) {
-                showToast("Already following.", 'info');
-                return; // Already following, no action needed
+                showToast("Already following this user.", 'info');
+                return; // Exit transaction if already following.
             }
 
-            // If target user is private, cannot follow directly. Need a request system.
+            // If target user is private, direct follow is not allowed (would need a follow request system).
             if (targetUserData.isPrivate) {
                 showToast("This account is private. Cannot follow directly.", 'info', 4000);
-                throw "Private account."; // Stop transaction
+                throw new Error("Private account, direct follow not allowed."); // Abort transaction.
             }
 
-
-            // Update current user's following list and count
+            // Perform the follow updates in the transaction.
             transaction.update(currentUserRef, {
                 following: firebase.firestore.FieldValue.arrayUnion(targetUserId),
                 followingCount: firebase.firestore.FieldValue.increment(1)
             });
-
-            // Update target user's followers list and count
             transaction.update(targetUserRef, {
                 followers: firebase.firestore.FieldValue.arrayUnion(currentUser.uid),
                 followersCount: firebase.firestore.FieldValue.increment(1)
             });
         });
 
-        showToast("Followed user!", 'success');
+        showToast(`Successfully followed @${currentProfileUsername.textContent.replace('@','')}`, 'success');
         followUserBtn.classList.add('hidden');
         unfollowUserBtn.classList.remove('hidden');
-        loadUserProfile(currentProfileViewingId); // Refresh counts
+        loadUserProfile(currentProfileViewingId); // Refresh profile display to show updated counts.
     } catch (error) {
         console.error("Error following user:", error);
-        if (error === "Private account.") {
-             // Toast already handled above.
+        if (error.message && error.message.includes("Private account")) {
+             // Toast already handled by explicit throw above.
         } else {
-            showToast(`Failed to follow: ${error.message || error}`, 'error');
+            showToast(`Failed to follow: ${error.message || 'Unknown error'}`, 'error');
         }
     }
 }
 
 async function handleUnfollow(targetUserId) {
-    if (!currentUser || currentUser.uid === targetUserId) {
-        showToast("Cannot unfollow yourself or not logged in.", 'info');
+    if (!currentUser) {
+        showToast("Please log in to unfollow users.", 'info');
+        return;
+    }
+    if (currentUser.uid === targetUserId) {
+        showToast("Cannot unfollow yourself.", 'info');
         return;
     }
 
@@ -2296,41 +2386,44 @@ async function handleUnfollow(targetUserId) {
             const targetUserDoc = await transaction.get(targetUserRef);
 
             if (!currentUserDoc.exists || !targetUserDoc.exists) {
-                throw "User not found.";
+                throw new Error("User document not found during unfollow operation.");
             }
 
             const currentUserData = currentUserDoc.data();
+            // Check if actually following before attempting to unfollow.
             if (!currentUserData.following || !currentUserData.following.includes(targetUserId)) {
-                showToast("Not currently following.", 'info');
-                return; // Not following, no action needed
+                showToast("Not currently following this user.", 'info');
+                return; // Exit transaction if not already following.
             }
 
-            // Update current user's following list and count
+            // Perform unfollow updates.
             transaction.update(currentUserRef, {
                 following: firebase.firestore.FieldValue.arrayRemove(targetUserId),
                 followingCount: firebase.firestore.FieldValue.increment(-1)
             });
-
-            // Update target user's followers list and count
             transaction.update(targetUserRef, {
                 followers: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
                 followersCount: firebase.firestore.FieldValue.increment(-1)
             });
         });
 
-        showToast("Unfollowed user.", 'info');
+        showToast(`Successfully unfollowed @${currentProfileUsername.textContent.replace('@','')}`, 'success');
         followUserBtn.classList.remove('hidden');
         unfollowUserBtn.classList.add('hidden');
-        loadUserProfile(currentProfileViewingId); // Refresh counts
+        loadUserProfile(currentProfileViewingId); // Refresh profile display to show updated counts.
     } catch (error) {
         console.error("Error unfollowing user:", error);
-        showToast(`Failed to unfollow: ${error.message || error}`, 'error');
+        showToast(`Failed to unfollow: ${error.message || 'Unknown error'}`, 'error');
     }
 }
 
-// Remove Follower (Only for current user's profile)
+
+// Remove a follower (only if you are the user being unfollowed)
 async function removeFollower(followerId) {
-    if (!currentUser) return;
+    if (!currentUser) {
+        showToast("Please log in.", 'info');
+        return;
+    }
 
     try {
         const currentUserRef = db.collection('users').doc(currentUser.uid);
@@ -2341,46 +2434,46 @@ async function removeFollower(followerId) {
             const followerUserDoc = await transaction.get(followerUserRef);
 
             if (!currentUserDoc.exists || !followerUserDoc.exists) {
-                throw "User not found.";
+                throw new Error("User document not found.");
             }
 
             const currentUserData = currentUserDoc.data();
+            // Check if this person is indeed a follower.
             if (!currentUserData.followers || !currentUserData.followers.includes(followerId)) {
-                showToast("This user is not a follower.", 'info');
+                showToast("This user is not currently your follower.", 'info');
                 return;
             }
 
-            // Remove from current user's followers list and count
+            // Remove from current user's followers list.
             transaction.update(currentUserRef, {
                 followers: firebase.firestore.FieldValue.arrayRemove(followerId),
                 followersCount: firebase.firestore.FieldValue.increment(-1)
             });
-
-            // Remove current user from follower's following list and count
+            // Also update the removed follower's following list (remove current user from it).
             transaction.update(followerUserRef, {
                 following: firebase.firestore.FieldValue.arrayRemove(currentUser.uid),
                 followingCount: firebase.firestore.FieldValue.increment(-1)
             });
         });
 
-        showToast("Follower removed.", 'info');
-        // Refresh the follow list modal if it's open
+        showToast("Follower removed successfully.", 'success');
+        // Refresh the follow list modal if it's currently displaying followers.
         if (!followListModal.classList.contains('hidden') && followListTitle.textContent === 'Followers') {
             showFollowList(currentUser.uid, 'followers');
         }
-        loadUserProfile(currentUser.uid); // Refresh counts on main profile
+        loadUserProfile(currentUser.uid); // Refresh profile counts.
     } catch (error) {
         console.error("Error removing follower:", error);
-        showToast(`Failed to remove follower: ${error.message || error}`, 'error');
+        showToast(`Failed to remove follower: ${error.message || 'Unknown error'}`, 'error');
     }
 }
 
 
-// View Followers/Following Lists
+// Display followers/following lists in a modal
 document.querySelectorAll('.clickable-stat').forEach(stat => {
     stat.addEventListener('click', (e) => {
         const statType = e.currentTarget.dataset.stat; // 'followers' or 'following'
-        const userId = currentProfileViewingId; // The user whose profile is currently open
+        const userId = currentProfileViewingId; // Use the ID of the user whose profile is currently open
         if (userId) {
             showFollowList(userId, statType);
         }
@@ -2388,9 +2481,14 @@ document.querySelectorAll('.clickable-stat').forEach(stat => {
 });
 
 async function showFollowList(userId, type) {
-    followListContent.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>';
+    if (!currentUser) {
+        showToast("Please log in to view this list.", 'info');
+        return;
+    }
+
+    followListContent.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show loader
     followListTitle.textContent = type === 'followers' ? 'Followers' : 'Following';
-    followListModal.classList.remove('hidden');
+    followListModal.classList.remove('hidden'); // Show modal
 
     try {
         const userDoc = await db.collection('users').doc(userId).get();
@@ -2399,29 +2497,33 @@ async function showFollowList(userId, type) {
             return;
         }
 
-        const userRefs = userDoc.data()[type] || []; // Array of UIDs
+        const userRefs = userDoc.data()[type] || []; // Get array of UIDs for followers or following.
         if (userRefs.length === 0) {
             followListContent.innerHTML = `<p style="text-align: center;">No ${type} found.</p>`;
             return;
         }
 
         const usersData = [];
-        for (const uid of userRefs) {
-            const refDoc = await db.collection('users').doc(uid).get();
-            if (refDoc.exists) {
-                usersData.push({ id: refDoc.id, ...refDoc.data() });
+        // Fetch details for each user in the list (Firestore 'in' query limited to 10. Handle larger lists in batches).
+        // For simplicity, here we'll just fetch first 10-20 to display.
+        const fetchedUserDocs = await Promise.all(userRefs.slice(0, 20).map(id => db.collection('users').doc(id).get()));
+
+        fetchedUserDocs.forEach(doc => {
+            if (doc.exists) {
+                usersData.push({ id: doc.id, ...doc.data() });
             }
-        }
+        });
 
-        usersData.sort((a,b) => (a.username || '').localeCompare(b.username || '')); // Sort by username
+        usersData.sort((a,b) => (a.username || '').localeCompare(b.username || '')); // Sort display by username.
 
 
-        followListContent.innerHTML = '';
-        for (const user of usersData) {
+        followListContent.innerHTML = ''; // Clear loader and content.
+        for (const user of usersData) { // Iterate over fetched user data to build list.
             const userItem = document.createElement('li');
             userItem.className = 'search-user-item';
-            userItem.dataset.userId = user.id; // Store user ID
+            userItem.dataset.userId = user.id;
 
+            // Determine user avatar (direct URL vs. emoji logo)
             let userAvatarHtml;
             if (user.profilePicUrl) {
                 userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${user.profilePicUrl}');"></div>`;
@@ -2438,17 +2540,18 @@ async function showFollowList(userId, type) {
             followListContent.appendChild(userItem);
 
             const actionBtn = userItem.querySelector('.follow-btn');
-            if (currentUser.uid === user.id) { // If it's the current user themselves
+            // Logic to determine button text and action ('Follow', 'Following', 'Remove').
+            if (currentUser.uid === user.id) { // Hide button if it's the current user themselves.
                 actionBtn.classList.add('hidden');
-            } else if (type === 'followers' && userId === currentUser.uid) { // If viewing OWN followers list
+            } else if (type === 'followers' && userId === currentUser.uid) { // If viewing own followers list.
                 actionBtn.textContent = 'Remove';
                 actionBtn.classList.add('danger-btn');
                 actionBtn.classList.remove('primary-btn');
                 actionBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Prevent opening profile when clicking button.
                     await removeFollower(user.id);
                 });
-            } else { // Standard follow/unfollow for other users in the list
+            } else { // For other users in the list, determine follow/unfollow status.
                 const currentUserFollowingDoc = await db.collection('users').doc(currentUser.uid).get();
                 const followingList = currentUserFollowingDoc.data().following || [];
                 if (followingList.includes(user.id)) {
@@ -2461,10 +2564,11 @@ async function showFollowList(userId, type) {
                     actionBtn.classList.remove('secondary-btn');
                 }
                 actionBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Prevent opening profile when clicking button.
                     const targetId = e.target.dataset.targetId;
                     if (e.target.textContent === 'Follow') {
                         await handleFollow(targetId);
+                        // Update button text/style without full list reload for performance.
                         e.target.textContent = 'Following';
                         e.target.classList.add('secondary-btn');
                         e.target.classList.remove('primary-btn');
@@ -2477,10 +2581,10 @@ async function showFollowList(userId, type) {
                 });
             }
 
-            // Make the entire list item clickable to open profile
+            // Make the entire list item clickable to open the user's profile.
             userItem.addEventListener('click', () => {
-                followListModal.classList.add('hidden'); // Close modal
-                openUserProfile(user.id); // Open clicked user's profile
+                followListModal.classList.add('hidden'); // Close current modal.
+                openUserProfile(user.id); // Navigate to clicked user's profile.
             });
         }
     } catch (error) {
@@ -2494,20 +2598,20 @@ closeFollowListModalBtn.addEventListener('click', () => {
     followListModal.classList.add('hidden');
 });
 
-// Navigate to another user's profile
+// Navigate to another user's profile (or own if userId matches)
 function openUserProfile(userId) {
     if (userId === currentUser.uid) {
-        showScreen('profile-screen'); // If clicking on own profile, just navigate
-        loadUserProfile(currentUser.uid);
+        showScreen('profile-screen'); // If clicking on own profile, just navigate.
+        loadUserProfile(currentUser.uid); // Load own profile data.
     } else {
-        showScreen('profile-screen');
-        loadUserProfile(userId); // Load specific user's profile
+        showScreen('profile-screen'); // Go to profile screen to display others' profile.
+        loadUserProfile(userId); // Load data for the specified user ID.
     }
 }
 
-// --- Messaging ---
+// --- Messaging Feature ---
 messageUserBtn.addEventListener('click', () => {
-    if (!currentUser || !currentProfileViewingId) { // Check both logged in and a target profile
+    if (!currentUser || !currentProfileViewingId) {
         showToast("Select a user to message or log in first.", 'info');
         return;
     }
@@ -2519,21 +2623,25 @@ async function loadRecentChats() {
     recentChatsList.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>';
 
     try {
-        // Listen for messages involving the current user
+        // Real-time listener for messages involving the current user to display recent chats.
+        // It fetches messages where the current user is either the sender or receiver,
+        // ordered by timestamp to get the latest conversations.
         db.collection('messages')
             .where('participants', 'array-contains', currentUser.uid)
             .orderBy('timestamp', 'desc')
             .onSnapshot(async (snapshot) => {
-                const updatedChats = {};
+                const updatedChats = {}; // To store unique chat partners with their latest message.
                 snapshot.docs.forEach(doc => {
                     const data = doc.data();
                     let partnerId;
+                    // Determine the other participant's ID.
                     if (data.senderId === currentUser.uid) {
                         partnerId = data.receiverId;
                     } else {
                         partnerId = data.senderId;
                     }
 
+                    // Keep only the latest message for each chat partner.
                     if (!updatedChats[partnerId] || data.timestamp.toMillis() > updatedChats[partnerId].timestamp) {
                         updatedChats[partnerId] = {
                             partnerId: partnerId,
@@ -2543,6 +2651,7 @@ async function loadRecentChats() {
                     }
                 });
 
+                // Sort chat partners by their latest message timestamp.
                 const chatPartners = Object.values(updatedChats).sort((a, b) => b.timestamp - a.timestamp);
 
                 if (chatPartners.length === 0) {
@@ -2550,7 +2659,8 @@ async function loadRecentChats() {
                     return;
                 }
 
-                recentChatsList.innerHTML = '';
+                recentChatsList.innerHTML = ''; // Clear previous chat list.
+                // Fetch and display details for each chat partner.
                 for (const chat of chatPartners) {
                     const partnerDoc = await db.collection('users').doc(chat.partnerId).get();
                     if (partnerDoc.exists) {
@@ -2559,6 +2669,7 @@ async function loadRecentChats() {
                         chatItem.className = 'chat-item';
                         chatItem.dataset.userId = partnerData.uid;
 
+                        // Determine partner's avatar (direct URL or emoji logo).
                         let partnerAvatarHtml;
                         if (partnerData.profilePicUrl) {
                             partnerAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${partnerData.profilePicUrl}');"></div>`;
@@ -2574,34 +2685,36 @@ async function loadRecentChats() {
                                 <span class="last-message">${chat.lastMessage}</span>
                             </div>
                         `;
-                        chatItem.addEventListener('click', () => openChatWindow(partnerData.uid));
+                        chatItem.addEventListener('click', () => openChatWindow(partnerData.uid)); // Open chat window on click.
                         recentChatsList.appendChild(chatItem);
                     }
                 }
             }, error => {
                 console.error("Error loading recent chats listener:", error);
-                showToast("Error loading chats.", 'error');
+                showToast("Error loading chats. Please check console.", 'error');
                 recentChatsList.innerHTML = '<p style="text-align: center; color: red;">Error loading chats.</p>';
             });
     } catch (error) {
         console.error("Error setting up recent chats listener:", error);
-        showToast("Error setting up chat listener.", 'error');
+        showToast("Error setting up chat listener. Please try again.", 'error');
     }
 }
 
-
 async function openChatWindow(partnerId) {
-    if (!currentUser) return;
+    if (!currentUser) {
+        showToast("Please log in to chat.", 'info');
+        return;
+    }
     currentChatPartnerId = partnerId;
-    messageListContainer.classList.add('hidden');
-    chatWindowContainer.classList.remove('hidden');
-    chatMessages.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>';
+    messageListContainer.classList.add('hidden'); // Hide chat list.
+    chatWindowContainer.classList.remove('hidden'); // Show chat window.
+    chatMessages.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show loader for messages.
 
     try {
         const partnerDoc = await db.collection('users').doc(partnerId).get();
         if (partnerDoc.exists) {
-            chatPartnerUsername.textContent = `@${partnerDoc.data().username}`;
-
+            chatPartnerUsername.textContent = `@${partnerDoc.data().username}`; // Set chat partner's username.
+            // Set chat partner's avatar.
             if (partnerDoc.data().profilePicUrl) {
                 chatPartnerAvatar.style.backgroundImage = `url('${partnerDoc.data().profilePicUrl}')`;
                 chatPartnerAvatar.className = 'profile-avatar small';
@@ -2616,89 +2729,91 @@ async function openChatWindow(partnerId) {
             chatPartnerAvatar.className = `profile-avatar small ${getLogoCssClass('logo-1')}`;
         }
 
-        // Real-time listener for messages between these two users
+        // Real-time listener for messages between these two specific users.
         db.collection('messages')
-            .where('participants', 'array-contains', currentUser.uid) // Filter to messages involving current user
-            .orderBy('timestamp', 'asc')
+            .where('participants', 'array-contains', currentUser.uid) // Query messages where current user is a participant.
+            .orderBy('timestamp', 'asc') // Order by timestamp to show chronologically.
             .onSnapshot(snapshot => {
-                chatMessages.innerHTML = ''; // Clear existing messages
+                chatMessages.innerHTML = ''; // Clear previous messages.
                 snapshot.docs.forEach(doc => {
                     const message = doc.data();
-                    // Filter messages relevant *only* to the current chat partner in the UI
+                    // Filter messages to show ONLY those between current user and current chat partner.
                     const isRelevant = (message.senderId === currentUser.uid && message.receiverId === partnerId) ||
                                        (message.senderId === partnerId && message.receiverId === currentUser.uid);
-                    // Client-side expiry check for display only (Firestore rules handle backend expiry)
+                    // Client-side expiry check for display (Firestore rules enforce true expiry on backend).
                     const isWithin12Hours = (Date.now() - message.timestamp.toMillis()) < (12 * 60 * 60 * 1000);
 
                     if (isRelevant && isWithin12Hours) {
                         const messageBubble = document.createElement('div');
-                        messageBubble.className = `message-bubble ${message.senderId === currentUser.uid ? 'right' : 'left'}`;
+                        messageBubble.className = `message-bubble ${message.senderId === currentUser.uid ? 'right' : 'left'}`; // Align bubbles.
                         messageBubble.textContent = message.content;
                         chatMessages.appendChild(messageBubble);
                     }
                 });
-                chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+                chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to latest message.
             }, error => {
-                console.error("Error getting messages:", error);
+                console.error("Error getting chat messages:", error);
                 chatMessages.innerHTML = '<p style="text-align: center; color: red;">Error loading messages.</p>';
                 showToast("Error loading messages.", 'error');
             });
 
-        // Long press emoji picker for chat messages (similar to posts)
+        // Long press for emoji reactions in chat (similar to posts)
         const emojiPickerChat = chatWindowContainer.querySelector('.emoji-picker-chat');
         messageInput.addEventListener('touchstart', (e) => {
             clearTimeout(longPressTimer);
             longPressTimer = setTimeout(() => {
                 emojiPickerChat.classList.remove('hidden');
             }, 800);
-        }, { passive: true }); // Use passive to avoid blocking scroll
+        }, { passive: true }); // Use passive to avoid blocking native scroll behavior.
 
         messageInput.addEventListener('touchend', () => {
             clearTimeout(longPressTimer);
         });
 
-        // Hide emoji picker if clicking outside
+        // Hide emoji picker when clicking outside.
         const hideEmojiPickerChat = (e) => {
             if (!emojiPickerChat.contains(e.target) && !messageInput.contains(e.target) && !emojiPickerChat.classList.contains('hidden')) {
                 emojiPickerChat.classList.add('hidden');
             }
         };
-        document.addEventListener('click', hideEmojiPickerChat);
-        // Important: Detach previous click listener when opening a new chat window to prevent duplicates
-        // (This would need a proper cleanup mechanism in a production app for each listener)
+        document.addEventListener('click', hideEmojiPickerChat); // Listen for clicks on the document to hide picker.
 
 
         emojiPickerChat.querySelectorAll('.emoji-option').forEach(emojiOption => {
             emojiOption.addEventListener('click', (e) => {
                 const selectedEmoji = e.target.dataset.emoji;
-                messageInput.value += ` ${selectedEmoji} `; // Append emoji to input
-                emojiPickerChat.classList.add('hidden');
-                messageInput.focus();
+                messageInput.value += ` ${selectedEmoji} `; // Append emoji to input.
+                emojiPickerChat.classList.add('hidden'); // Hide picker after selection.
+                messageInput.focus(); // Keep focus on input.
             });
         });
 
     } catch (error) {
         console.error("Error opening chat window:", error);
-        showToast("Failed to open chat. Try again.", 'error');
+        showToast("Failed to open chat. Please try again.", 'error');
     }
 }
 
+// Back button in chat window to return to recent chats list.
 backToChatsBtn.addEventListener('click', () => {
-    messageListContainer.classList.remove('hidden');
-    chatWindowContainer.classList.add('hidden');
-    currentChatPartnerId = null;
-    // Potentially detach previous message listener to avoid memory leaks if you have multiple chat windows
-    // (This requires storing the listener's unsubscribe function, more advanced Firebase usage)
+    messageListContainer.classList.remove('hidden'); // Show chat list.
+    chatWindowContainer.classList.add('hidden'); // Hide chat window.
+    currentChatPartnerId = null; // Clear active chat partner.
+    // Ideally, detach Firestore snapshot listener for performance, but requires storing its unsubscribe function.
 });
 
+// Send message button in chat window.
 sendMessageBtn.addEventListener('click', async () => {
     if (!currentUser || !currentChatPartnerId) {
-        showToast("You need to be logged in and select a recipient.", 'error');
+        showToast("You need to be logged in and select a recipient to send a message.", 'error');
         return;
     }
 
     const messageContent = messageInput.value.trim();
-    if (messageContent === '') return;
+    if (messageContent === '') {
+        showToast("Message cannot be empty.", 'info');
+        return;
+    }
 
     try {
         await db.collection('messages').add({
@@ -2706,42 +2821,43 @@ sendMessageBtn.addEventListener('click', async () => {
             receiverId: currentChatPartnerId,
             content: messageContent,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            participants: [currentUser.uid, currentChatPartnerId], // For easier querying
-            read: false // Can be used for read receipts
+            participants: [currentUser.uid, currentChatPartnerId], // For efficient querying of conversations.
+            read: false // Mark as unread for the receiver.
         });
 
-        messageInput.value = ''; // Clear input
-        chatMessages.scrollTop = chatMessages.scrollHeight; // Scroll to bottom
+        messageInput.value = ''; // Clear message input after sending.
+        chatMessages.scrollTop = chatMessages.scrollHeight; // Auto-scroll to the bottom of the chat.
         showToast("Message sent!", 'success');
-
     } catch (error) {
         console.error("Error sending message:", error);
+        // Provide user-friendly error feedback.
         if (error.code === 'permission-denied' || error.message.includes('Missing or insufficient permissions')) {
-            showToast("Error sending message: Missing or insufficient permissions. Check Firebase rules.", 'error', 5000);
+            showToast("Error sending message: Missing or insufficient permissions. Please check Firebase rules.", 'error', 5000);
         } else {
-            showToast("Failed to send message. Try again.", 'error');
+            showToast("Failed to send message. Please try again.", 'error');
         }
     }
 });
 
 
-// --- Comments Functionality ---
+// --- Comments Feature ---
+// Open comments modal for a specific post.
 function openCommentsModal(postId) {
     if (!currentUser) {
-        showToast("Please log in to view/add comments.", 'info');
+        showToast("Please log in to view or add comments.", 'info');
         return;
     }
-    currentPostIdForComments = postId;
-    commentsModal.classList.remove('hidden');
-    commentsList.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>';
-    commentsModalTitle.textContent = 'Comments';
+    currentPostIdForComments = postId; // Store the ID of the post for which comments are being viewed.
+    commentsModal.classList.remove('hidden'); // Display the comments modal.
+    commentsList.innerHTML = '<div class="loader" style="margin: 20px auto;"></div>'; // Show a loading spinner.
+    commentsModalTitle.textContent = 'Comments'; // Set modal title.
 
-    // Real-time listener for comments on this post
+    // Real-time listener for comments related to this post.
     db.collection('comments')
         .where('postId', '==', postId)
-        .orderBy('timestamp', 'asc')
+        .orderBy('timestamp', 'asc') // Order comments chronologically.
         .onSnapshot(async (snapshot) => {
-            commentsList.innerHTML = ''; // Clear existing comments
+            commentsList.innerHTML = ''; // Clear existing comments.
             if (snapshot.empty) {
                 commentsList.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No comments yet. Be the first to comment!</p>';
                 return;
@@ -2750,7 +2866,7 @@ function openCommentsModal(postId) {
             for (const doc of snapshot.docs) {
                 const commentData = doc.data();
                 const commentUserDoc = await db.collection('users').doc(commentData.userId).get();
-                const username = commentUserDoc.exists ? commentUserDoc.data().username : 'Deleted User';
+                const username = commentUserDoc.exists ? commentUserDoc.data().username : 'Deleted User'; // Display username or 'Deleted User'.
 
                 const commentItem = document.createElement('div');
                 commentItem.className = 'comment-item';
@@ -2760,7 +2876,7 @@ function openCommentsModal(postId) {
                 `;
                 commentsList.appendChild(commentItem);
             }
-            commentsList.scrollTop = commentsList.scrollHeight; // Scroll to bottom
+            commentsList.scrollTop = commentsList.scrollHeight; // Auto-scroll to the bottom of the comments list.
         }, error => {
             console.error("Error loading comments:", error);
             commentsList.innerHTML = '<p style="text-align: center; color: red;">Error loading comments.</p>';
@@ -2768,8 +2884,12 @@ function openCommentsModal(postId) {
         });
 }
 
+// Add a new comment to the current post.
 addCommentBtn.addEventListener('click', async () => {
-    if (!currentUser || !currentPostIdForComments) return;
+    if (!currentUser || !currentPostIdForComments) {
+        showToast("You need to be logged in and viewing a post to comment.", 'error');
+        return;
+    }
 
     const commentContent = newCommentInput.value.trim();
     if (commentContent.length < 1 || commentContent.length > 100) {
@@ -2785,28 +2905,29 @@ addCommentBtn.addEventListener('click', async () => {
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
         });
 
-        // Increment comment count on the post
+        // Increment the comment count on the post document.
         await db.collection('posts').doc(currentPostIdForComments).update({
             commentCount: firebase.firestore.FieldValue.increment(1)
         });
 
-        newCommentInput.value = ''; // Clear input
+        newCommentInput.value = ''; // Clear comment input field.
         showToast("Comment added!", 'success');
     } catch (error) {
         console.error("Error adding comment:", error);
-        showToast("Failed to add comment. Try again.", 'error');
+        showToast("Failed to add comment. Please try again.", 'error');
     }
 });
 
+// Close comments modal.
 closeCommentsModalBtn.addEventListener('click', () => {
     commentsModal.classList.add('hidden');
-    currentPostIdForComments = null;
+    currentPostIdForComments = null; // Clear the post ID.
 });
 
 
 // --- Search Functionality ---
-searchBtn.addEventListener('click', () => performSearch());
-searchQueryInput.addEventListener('keypress', (e) => {
+searchBtn.addEventListener('click', () => performSearch()); // Trigger search on button click.
+searchQueryInput.addEventListener('keypress', (e) => { // Trigger search on Enter key press.
     if (e.key === 'Enter') {
         performSearch();
     }
@@ -2814,9 +2935,9 @@ searchQueryInput.addEventListener('keypress', (e) => {
 
 async function performSearch() {
     const query = searchQueryInput.value.trim().toLowerCase();
-    searchUserList.innerHTML = '';
-    searchPostList.innerHTML = '';
-    noSearchResults.classList.add('hidden');
+    searchUserList.innerHTML = ''; // Clear previous user results.
+    searchPostList.innerHTML = ''; // Clear previous post results.
+    noSearchResults.classList.add('hidden'); // Hide 'no results' message initially.
 
     if (query === '') {
         showToast("Please enter a search query.", 'info');
@@ -2825,12 +2946,12 @@ async function performSearch() {
 
     let foundResults = false;
 
-    // Search Users
+    // Search Users by username.
     try {
         const userSnapshot = await db.collection('users')
-            .where('username', '>=', query)
-            .where('username', '<=', query + '\uf8ff')
-            .limit(10)
+            .where('username', '>=', query) // Starts with query
+            .where('username', '<=', query + '\uf8ff') // Ends with query (approx)
+            .limit(10) // Limit results.
             .get();
 
         if (!userSnapshot.empty) {
@@ -2841,6 +2962,7 @@ async function performSearch() {
                 userItem.className = 'search-user-item';
                 userItem.dataset.userId = userData.id;
 
+                // Determine user avatar.
                 let userAvatarHtml;
                 if (userData.profilePicUrl) {
                     userAvatarHtml = `<div class="profile-avatar small" style="background-image: url('${userData.profilePicUrl}');"></div>`;
@@ -2857,9 +2979,10 @@ async function performSearch() {
                 searchUserList.appendChild(userItem);
 
                 const followBtn = userItem.querySelector('.follow-btn');
-                if (currentUser.uid === userData.id) {
+                if (currentUser.uid === userData.id) { // Hide button if it's current user's profile.
                     followBtn.classList.add('hidden');
                 } else {
+                    // Update follow button status (Follow/Following).
                     db.collection('users').doc(currentUser.uid).get().then(doc => {
                         const followingList = doc.data().following || [];
                         if (followingList.includes(userData.id)) {
@@ -2875,7 +2998,7 @@ async function performSearch() {
                 }
 
                 followBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // Prevent opening profile when clicking button.
                     const targetId = e.target.dataset.targetId;
                     if (e.target.textContent === 'Follow') {
                         await handleFollow(targetId);
@@ -2889,15 +3012,16 @@ async function performSearch() {
                         e.target.classList.remove('secondary-btn');
                     }
                 });
-                userItem.addEventListener('click', () => openUserProfile(userData.id));
+                userItem.addEventListener('click', () => openUserProfile(userData.id)); // Open user profile on click.
             });
         }
     } catch (error) {
         console.error("Error searching users:", error);
-        showToast("Error searching users.", 'error');
+        showToast("Error searching users. Please check console.", 'error');
     }
 
-    // Search Posts (by content, basic matching)
+    // Search Posts by content keyword (basic client-side match).
+    // Note: For large scale full-text search, Firebase functions + Algolia or a similar solution is recommended.
     try {
         const postSnapshot = await db.collection('posts')
             .where('expiryTime', '>', firebase.firestore.Timestamp.now())
@@ -2907,8 +3031,8 @@ async function performSearch() {
 
         postSnapshot.docs.forEach(doc => {
             const postData = { id: doc.id, ...doc.data() };
-            // Security rules handle exact read permissions based on privacy.
-            // Client-side simply attempts to match content.
+            // Client-side simple check if post content includes query (case-insensitive).
+            // Security rules will ultimately decide if user can read the private posts found.
             if (postData.content && postData.content.toLowerCase().includes(query)) {
                 foundResults = true;
                 searchPostList.appendChild(createPostElement(postData));
@@ -2916,15 +3040,15 @@ async function performSearch() {
         });
     } catch (error) {
         console.error("Error searching posts:", error);
-        showToast("Error searching posts.", 'error');
+        showToast("Error searching posts. Please check console.", 'error');
     }
 
     if (!foundResults) {
-        noSearchResults.classList.remove('hidden');
+        noSearchResults.classList.remove('hidden'); // Show 'No results' message if nothing found.
     }
 }
 
-// --- Post Options (Report/Delete/Repost) ---
+// --- Post Options (Report, Delete, Repost) ---
 async function handleReportPost(postId) {
     if (!currentUser) {
         showToast("Please log in to report posts.", 'info');
@@ -2935,12 +3059,12 @@ async function handleReportPost(postId) {
             postId: postId,
             reportedBy: currentUser.uid,
             timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending'
+            status: 'pending' // Initial status
         });
         showToast("Post reported successfully. We will review it.", 'info');
     } catch (error) {
         console.error("Error reporting post:", error);
-        showToast("Failed to report post.", 'error');
+        showToast("Failed to report post. Please try again.", 'error');
     }
 }
 
@@ -2961,54 +3085,52 @@ async function handleRepost(postId) {
         }
 
         await userDocRef.update({
-            reposts: firebase.firestore.FieldValue.arrayUnion(postId)
+            reposts: firebase.firestore.FieldValue.arrayUnion(postId) // Add post ID to user's reposts array.
         });
         showToast("Post reposted to your profile!", 'success');
     } catch (error) {
         console.error("Error reposting:", error);
-        showToast("Failed to repost. Try again.", 'error');
+        showToast("Failed to repost. Please try again.", 'error');
     }
 }
 
-
 async function handleDeletePost(postId, postElement, isMonetized) {
-    if (!currentUser) return;
+    if (!currentUser) {
+        showToast("Please log in to delete posts.", 'info');
+        return;
+    }
 
     try {
         const postRef = db.collection('posts').doc(postId);
         const postDoc = await postRef.get();
 
-        if (postDoc.exists && postDoc.data().userId === currentUser.uid) {
+        if (postDoc.exists && postDoc.data().userId === currentUser.uid) { // Only owner can delete.
             if (confirm("Are you sure you want to delete this post? This cannot be undone.")) {
-                // Delete post and associated data (likes, reactions, comments)
+                // Perform deletion in a transaction to ensure atomicity for related data.
                 await db.runTransaction(async (transaction) => {
-                    transaction.delete(postRef);
+                    transaction.delete(postRef); // Delete the main post document.
 
-                    // Delete comments related to this post (client-side cascade is not ideal, Cloud Functions better)
+                    // Delete related comments (a Cloud Function is ideal for full cascade deletion).
                     const commentsSnapshot = await db.collection('comments').where('postId', '==', postId).get();
                     commentsSnapshot.docs.forEach(commentDoc => {
                         transaction.delete(db.collection('comments').doc(commentDoc.id));
                     });
 
-                    // Delete post views record
+                    // Delete the postViews record for this post.
                     const postViewsRef = db.collection('postViews').doc(postId);
                     const postViewsDoc = await transaction.get(postViewsRef);
-                    if (postViewsDoc.exists) { // Only attempt delete if it exists
+                    if (postViewsDoc.exists) {
                          transaction.delete(postViewsRef);
                     }
 
-                    // Decrement user's post count
+                    // Decrement the user's total post count.
                     const userRef = db.collection('users').doc(currentUser.uid);
-                    const userDoc = await transaction.get(userRef);
-                    if (userDoc.exists) {
-                        let updates = {
-                            postCount: firebase.firestore.FieldValue.increment(-1)
-                        };
-                        transaction.update(userRef, updates);
-                    }
+                    transaction.update(userRef, {
+                        postCount: firebase.firestore.FieldValue.increment(-1)
+                    });
                 });
 
-                postElement.remove(); // Remove from UI
+                postElement.remove(); // Remove post from UI.
                 showToast("Post deleted successfully.", 'success');
             }
         } else {
@@ -3016,75 +3138,85 @@ async function handleDeletePost(postId, postElement, isMonetized) {
         }
     } catch (error) {
         console.error("Error deleting post:", error);
-        showToast("Failed to delete post. Try again.", 'error');
+        showToast("Failed to delete post. Please try again.", 'error');
     }
 }
 
-// --- Text-to-Speech ---
+// --- Text-to-Speech Feature ---
 function handleSpeakPost(text) {
-    if (!('speechSynthesis' in window)) {
+    if (!('speechSynthesis' in window)) { // Check if browser supports SpeechSynthesis API.
         showToast("Your browser does not support text-to-speech.", 'error');
         return;
     }
 
-    if (synth.speaking) {
-        synth.cancel(); // Stop current speech if any
+    if (synth.speaking) { // If speech is already ongoing, cancel it.
+        synth.cancel();
+        // If it was the same text, toggle off speech; otherwise, it will start new speech.
         if (currentSpeechUtterance && currentSpeechUtterance.text === text) {
-            currentSpeechUtterance = null; // Toggle off if it's the same text
+            currentSpeechUtterance = null; // Stop current reading if it's a toggle.
             showToast("Speech stopped.", 'info');
             return;
         }
     }
 
-    // Remove HTML tags for cleaner speech
-    const cleanText = text.replace(/<[^>]*>/g, '').replace(/\[.*?\]\(.*?\)/g, '');
+    // Clean HTML tags and markdown links/images for clearer speech.
+    const cleanText = text.replace(/<[^>]*>/g, '') // Remove HTML tags
+                        .replace(/\[.*?\]\(.*?\)/g, '') // Remove markdown links
+                        .replace(/!\[.*?\]\(.*?\)/g, ''); // Remove markdown images/videos
 
-    const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = 'en-US'; // Default language, you can allow user to select
-    utterance.pitch = 1;
-    utterance.rate = 1;
-    synth.speak(utterance);
-    currentSpeechUtterance = utterance; // Store the current utterance
+    const utterance = new SpeechSynthesisUtterance(cleanText); // Create a new speech utterance.
+    utterance.lang = 'en-US'; // Set language (can be dynamic).
+    utterance.pitch = 1; // Standard pitch.
+    utterance.rate = 1; // Standard speed.
 
-    utterance.onend = () => {
+    synth.speak(utterance); // Start speech.
+    currentSpeechUtterance = utterance; // Store for future reference (e.g., to stop it).
+
+    utterance.onend = () => { // Reset when speech ends.
         currentSpeechUtterance = null;
     };
     showToast("Speaking post...", 'info');
 }
 
-// --- Post Translation ---
+// --- Post Translation Feature ---
 function handleTranslatePost(text) {
     if (!currentUser) {
         showToast("Please log in to translate posts.", 'info');
         return;
     }
-    // This requires a translation API (e.g., Google Cloud Translation API)
-    // Client-side translation without an API is limited or requires large libraries.
-    // For demonstration, we'll just show a message.
+    // This functionality requires integration with a third-party translation API (e.g., Google Cloud Translation API).
+    // Client-side translation is not practical without external API due to library size and complexity.
     showToast("Translation feature coming soon! (Requires external API integration)", 'info', 4000);
 
-    // Example of how you *might* call a Cloud Function for translation:
-    /*
-    firebase.functions().httpsCallable('translateText')({ text: text, targetLanguage: 'hi' })
-        .then(result => {
-            console.log('Translated text:', result.data.translatedText);
-            showToast(`Translated to Hindi: ${result.data.translatedText}`, 'info', 5000);
-            // Update post content in UI or show in a separate modal
-        })
-        .catch(error => {
-            console.error("Translation error:", error);
-            showToast("Failed to translate post.", 'error');
-        });
+    /* Example of how you *might* call a Firebase Cloud Function for translation:
+    // Make sure you have the Firebase Cloud Functions SDK initialized if using it in JS.
+    // const functions = firebase.functions();
+    // if (location.hostname === "localhost") {
+    //     functions.useEmulator("localhost", 5001); // Use local emulator for development
+    // }
+    
+    // functions.httpsCallable('translateText')({ text: text, targetLanguage: 'hi' }) // Target language can be user-selected.
+    //     .then(result => {
+    //         console.log('Translated text:', result.data.translatedText);
+    //         showToast(`Translated to Hindi: ${result.data.translatedText}`, 'success', 5000);
+    //         // Here, you would update the post's displayed content or open a translation modal.
+    //     })
+    //     .catch(error => {
+    //         console.error("Translation error via Cloud Function:", error);
+    //         showToast(`Failed to translate post: ${error.message}`, 'error');
+    //     });
     */
 }
+
 
 // --- Earnings Screen Logic ---
 async function loadEarningsPage() {
     if (!currentUser) {
-        showToast("Please log in to view earnings.", 'info');
+        showToast("Please log in to view your earnings.", 'info');
         return;
     }
     try {
+        // Fetch current user's earning data from Firestore.
         const userDoc = await db.collection('users').doc(currentUser.uid).get();
         if (userDoc.exists) {
             const userData = userDoc.data();
@@ -3092,46 +3224,55 @@ async function loadEarningsPage() {
             const unmonetizedViews = userData.unmonetizedViewsCount || 0;
             const earnedAmount = userData.earnedAmount || 0.00;
 
+            // Update UI elements with fetched data.
             totalMonetizedViewsSpan.textContent = formatNumber(monetizedViews);
             totalUnmonetizedViewsSpan.textContent = formatNumber(unmonetizedViews);
             estimatedEarningsSpan.textContent = `${earnedAmount.toFixed(2)} $`;
 
-            const WITHDRAWAL_THRESHOLD = 100000; // 1 Lakh views
-            if (monetizedViews >= WITHDRAWAL_THRESHOLD) { // Withdrawal threshold
+            const WITHDRAWAL_THRESHOLD = 100000; // Minimum monetized views for withdrawal (1 Lakh).
+            if (monetizedViews >= WITHDRAWAL_THRESHOLD) {
                 withdrawBtn.disabled = false;
                 withdrawBtn.classList.add('primary-btn');
                 withdrawBtn.classList.remove('secondary-btn');
-                withdrawalStatusDiv.classList.add('hidden');
+                withdrawalStatusDiv.classList.add('hidden'); // Hide status if eligible.
             } else {
-                withdrawBtn.disabled = true;
+                withdrawBtn.disabled = true; // Disable button if not eligible.
                 withdrawBtn.classList.add('secondary-btn');
                 withdrawBtn.classList.remove('primary-btn');
-                withdrawalStatusDiv.classList.remove('hidden');
-                withdrawalStatusDiv.textContent = `You need ${formatNumber(WITHDRAWAL_THRESHOLD)} monetized views to withdraw. You have ${formatNumber(monetizedViews)}.`;
+                withdrawalStatusDiv.classList.remove('hidden'); // Show status message.
+                withdrawalStatusDiv.textContent = `You need ${formatNumber(WITHDRAWAL_THRESHOLD)} monetized views to withdraw. You currently have ${formatNumber(monetizedViews)}.`;
             }
+        } else {
+            showToast("Your earning data is not available. Please try again.", 'error');
         }
     } catch (error) {
-        console.error("Error loading earnings:", error);
-        showToast("Error loading earnings. Try again.", 'error');
+        console.error("Error loading earnings data:", error);
+        showToast("Error loading earnings. Please try again.", 'error');
     }
 }
 
+// Open the withdrawal modal.
 withdrawBtn.addEventListener('click', () => {
-    if (!currentUser) return;
-    withdrawalModal.classList.remove('hidden');
-    withdrawalDetailsReview.classList.add('hidden'); // Hide review section initially
+    if (!currentUser) { // Double check login status.
+        showToast("Please log in to withdraw earnings.", 'info');
+        return;
+    }
+    withdrawalModal.classList.remove('hidden'); // Show the modal.
+    withdrawalDetailsReview.classList.add('hidden'); // Ensure review section is hidden initially.
 
-    const monetizedViews = parseInt(totalMonetizedViewsSpan.textContent.replace(/[^0-9.]/g, '')) || 0; // Remove non-numeric, allow dot for thousands if used. Convert to Int.
+    // Display current monetized views in the modal.
+    const monetizedViews = parseInt(totalMonetizedViewsSpan.textContent.replace(/[^0-9.]/g, '')) || 0;
     withdrawalViewsDisplay.textContent = formatNumber(monetizedViews);
 
-    // Reset input fields
+    // Reset withdrawal form fields.
     withdrawalMethodSelect.value = 'upi';
     withdrawalIdLabel.textContent = 'UPI ID:';
     withdrawalIdInput.value = '';
     withdrawalIdInput.placeholder = 'Enter UPI ID';
-    confirmWithdrawalBtn.classList.remove('hidden');
+    confirmWithdrawalBtn.classList.remove('hidden'); // Show confirm button.
 });
 
+// Update input label and placeholder based on withdrawal method selection.
 withdrawalMethodSelect.addEventListener('change', (e) => {
     if (e.target.value === 'upi') {
         withdrawalIdLabel.textContent = 'UPI ID:';
@@ -3142,35 +3283,39 @@ withdrawalMethodSelect.addEventListener('change', (e) => {
     }
 });
 
+// Confirm withdrawal details entered by the user.
 confirmWithdrawalBtn.addEventListener('click', () => {
     const method = withdrawalMethodSelect.value;
     const id = withdrawalIdInput.value.trim();
     const views = withdrawalViewsDisplay.textContent;
 
-    if (!id) { // Check for empty string correctly
+    if (!id) { // Validate if ID field is empty.
         showToast("Please enter your UPI ID or PayPal Email.", 'error');
         return;
     }
 
+    // Populate the review section.
     reviewMethodSpan.textContent = method === 'upi' ? 'UPI' : 'PayPal';
     reviewIdSpan.textContent = id;
     reviewViewsSpan.textContent = views;
 
-    withdrawalDetailsReview.classList.remove('hidden');
-    confirmWithdrawalBtn.classList.add('hidden'); // Hide confirm button
+    withdrawalDetailsReview.classList.remove('hidden'); // Show review section.
+    confirmWithdrawalBtn.classList.add('hidden'); // Hide the "Check Details" button.
 });
 
+// Allow user to edit details after review.
 editWithdrawalBtn.addEventListener('click', () => {
-    withdrawalDetailsReview.classList.add('hidden');
-    confirmWithdrawalBtn.classList.remove('hidden'); // Show confirm button again
+    withdrawalDetailsReview.classList.add('hidden'); // Hide review section.
+    confirmWithdrawalBtn.classList.remove('hidden'); // Show "Check Details" button again.
 });
 
+// Send withdrawal request to Firestore (simulated backend call).
 sendWithdrawalRequestBtn.addEventListener('click', async () => {
-    if (!currentUser) return;
+    if (!currentUser) return; // Must be logged in.
 
     const method = withdrawalMethodSelect.value;
     const id = withdrawalIdInput.value.trim();
-    // Re-parse the current monetized views directly from data for accuracy before sending request
+    // Re-fetch current monetized views and earnings to ensure accuracy before submitting.
     const userDoc = await db.collection('users').doc(currentUser.uid).get();
     const currentMonetizedViews = userDoc.exists ? (userDoc.data().monetizedViewsCount || 0) : 0;
     const estimatedEarnings = userDoc.exists ? (userDoc.data().earnedAmount || 0.00) : 0.00;
@@ -3186,338 +3331,40 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
         return;
     }
 
-
     try {
-        // IMPORTANT: Here you would typically call a Firebase Cloud Function to handle this
-        // securely, as direct client-side email sending is not secure or feasible.
-        // For this demo, we'll simulate the request and save to Firestore.
-        // The Cloud Function would then trigger an email to apknixy@gmail.com
-
-        // --- Simulated Backend Action for Demo ---
-        console.log("Simulating withdrawal request submission...");
-        console.log({
-            userId: currentUser.uid,
-            username: myProfileUsername.textContent,
-            method: method,
-            id: id,
-            views: currentMonetizedViews,
-            amount: estimatedEarnings,
-            timestamp: new Date().toISOString()
-        });
-
-        // Store request in Firestore for admin to see
+        console.log("Simulating withdrawal request submission and saving to Firestore...");
+        
+        // Save the request in a 'withdrawalRequests' collection for admin to process.
         await db.collection('withdrawalRequests').add({
             userId: currentUser.uid,
-            username: myProfileUsername.textContent.replace('@', ''),
+            username: myProfileUsername.textContent.replace('@', ''), // Use the displayed username.
             method: method,
             id: id,
-            monetizedViewsAtRequest: currentMonetizedViews,
+            monetizedViewsAtRequest: currentMonetizedViews, // Record views at the time of request.
             estimatedAmount: estimatedEarnings,
             requestTimestamp: firebase.firestore.FieldValue.serverTimestamp(),
-            status: 'pending' // pending, approved, rejected, completed
+            status: 'pending' // Initial status for admin processing.
         });
 
-        // Reset user's monetized views and earnings AFTER the request is successfully lodged
-        // (In a real app, this reset would happen AFTER the admin marks the payment as "completed" in the admin panel,
-        // often through a Cloud Function triggered by the admin action)
+        // IMPORTANT: In a production app, the reset of `monetizedViewsCount` and `earnedAmount`
+        // should happen *only after* an admin has successfully processed and sent the payment.
+        // This is typically handled by a Firebase Cloud Function triggered by the admin marking a request as 'completed'.
+        // For this client-side demo, we reset them immediately to simulate the process.
         await db.collection('users').doc(currentUser.uid).update({
             monetizedViewsCount: 0,
             earnedAmount: 0.00
         });
 
-        withdrawalModal.classList.add('hidden');
+        withdrawalModal.classList.add('hidden'); // Hide the modal after submission.
         showToast("Withdrawal request sent! You will receive payment in 1-15 business days.", 'success', 8000);
-        loadEarningsPage(); // Refresh earnings
+        loadEarningsPage(); // Reload earnings data to reflect reset.
     } catch (error) {
         console.error("Error sending withdrawal request:", error);
-        showToast("Failed to send withdrawal request. Try again. " + (error.message || ''), 'error');
+        showToast("Failed to send withdrawal request. Please try again. Error: " + (error.message || 'Unknown error'), 'error', 6000);
     }
 });
 
+// Cancel withdrawal request.
 cancelWithdrawalBtn.addEventListener('click', () => {
-    withdrawalModal.classList.add('hidden');
+    withdrawalModal.classList.add('hidden'); // Hide the modal.
 });
-```
-
----
-
-### **`firebase.rules` (Minor update, if needed - your last error was in `script.js` not rules)**
-
-`Firebase.rules` में मुझे पिछले round में बताई गई Line 156-159 की कोई सीधे `Unexpected` parenthesis error नहीं दिख रही है क्योंकि वो `script.js` की समस्या थी। हालांकि, मैंने `reports` collection के `create` rules में एक मामूली टाइपो ठीक किया है (request.auth.data.reportedBy -> request.resource.data.reportedBy)।
-
-**यह महत्वपूर्ण है कि आप इस version को deploy करें ताकि यह Admin UID के साथ-साथ latest debugging और validation logic को प्रतिबिंबित करे।**
-
-```firestore
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-
-    // Helper function for admin role check
-    // REPLACE 'YOUR_ADMIN_UID_HERE' with the actual UID of your designated admin user from Firebase Auth
-    function isAdmin() {
-      return request.auth.uid == "TK8Cpv0eW7aanAiSDe6w5YAv1tD2"; // <---- IMPORTANT: Admin UID provided: TK8Cpv0eW7aanAiSDe6w5YAv1tD2
-    }
-
-    // Helper function to check if a document exists.
-    function userExists(userId) {
-        return exists(/databases/$(database)/documents/users/$(userId));
-    }
-    
-    // --- Users Collection ---
-    // Users can create their own profile, and read profiles of any authenticated user.
-    // Users can update specific fields of their own. Admin can delete.
-    match /users/{userId} {
-      // Read access: Any authenticated user can read user profiles.
-      // Private profiles require the requesting user to be following.
-      allow read: if request.auth != null && (
-        resource.data.isPrivate == false ||
-        request.auth.uid == userId ||
-        // Check if the current user exists and is following this resource's owner
-        (userExists(request.auth.uid) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([userId]))
-      );
-
-      // Create access: A user can create their own document on signup.
-      // Initial values must be strict to prevent malicious data.
-      allow create: if request.auth != null
-                    && request.auth.uid == userId
-                    && request.resource.data.keys().hasAll(['username', 'email', 'createdAt', 'bio', 'followers', 'following', 'followersCount', 'followingCount', 'postCount', 'monetizedViewsCount', 'unmonetizedViewsCount', 'earnedAmount', 'reposts', 'isPrivate', 'name', 'whatsapp', 'instagram', 'profileLogo', 'profilePicUrl', 'uid']) // Ensure all required fields are present and initialize correctly
-                    && request.resource.data.username is string && request.resource.data.username.size() >= 1 && request.resource.data.username.size() <= 30
-                    && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") // Valid username characters
-                    && request.resource.data.email == request.auth.token.email
-                    && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.get('followersCount', 0) == 0
-                    && request.resource.data.get('followingCount', 0) == 0
-                    && request.resource.data.get('postCount', 0) == 0
-                    && request.resource.data.get('monetizedViewsCount', 0) == 0
-                    && request.resource.data.get('unmonetizedViewsCount', 0) == 0
-                    && request.resource.data.get('earnedAmount', 0.0) == 0.0
-                    && request.resource.data.get('reposts', []).size() == 0 // Reposts is empty array
-                    && request.resource.data.isPrivate is bool // Should be bool
-                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null || request.resource.data.profilePicUrl == '')
-                    && (request.resource.data.profileLogo is string || request.resource.data.profileLogo == null || request.resource.data.profileLogo == '')
-                    && request.resource.data.name is string // Default or empty string
-                    && request.resource.data.bio is string // Default or empty string
-                    && request.resource.data.whatsapp is string // Default or empty string
-                    && request.resource.data.instagram is string // Default or empty string
-                    && request.resource.data.createdAt is timestamp;
-
-
-      // Update access: Users can update their own profile, with specific field validations.
-      allow update: if request.auth != null && request.auth.uid == userId && (
-        // 1. Username field validation (must be string, valid format, unique if changed)
-        (request.resource.data.username is string && request.resource.data.username.size() >= 1 && request.resource.data.username.size() <= 30 &&
-           request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") &&
-           (resource.data.username == request.resource.data.username || !exists(get(/databases/$(database)/documents/users).where('username', '==', request.resource.data.username).limit(1)))
-        )
-        // 2. Other simple string/boolean fields can be updated (type checking ensures data validity)
-        && ((request.resource.data.get('name', null) is string) || (request.resource.data.name == null)) // name can be string or null
-        && ((request.resource.data.get('bio', null) is string) || (request.resource.data.bio == null))
-        && ((request.resource.data.get('whatsapp', null) is string) || (request.resource.data.whatsapp == null))
-        && ((request.resource.data.get('instagram', null) is string) || (request.resource.data.instagram == null))
-        && ((request.resource.data.get('profileLogo', null) is string) || (request.resource.data.profileLogo == null))
-        && ((request.resource.data.get('profilePicUrl', null) is string) || (request.resource.data.profilePicUrl == null))
-        && (request.resource.data.isPrivate is bool)
-
-        // 3. System-controlled counters. These are generally managed via specific write ops.
-        // Client can only cause them to increase (+1) or decrease (-1 for postCount on deletion)
-        && (request.resource.data.postCount >= resource.data.postCount -1) // allows decrease of 1 on delete or stays same/increase
-        && (request.resource.data.monetizedViewsCount >= resource.data.monetizedViewsCount) // allows only increases
-        && (request.resource.data.unmonetizedViewsCount >= resource.data.unmonetizedViewsCount) // allows only increases
-        && (request.resource.data.earnedAmount >= resource.data.earnedAmount - 0.001) // allows increases for earned amount (float comparison tolerance)
-
-        // 4. Reposts array. Client can only add or remove elements, not overwrite the whole list arbitrarily.
-        // Assuming client uses FieldValue.arrayUnion / arrayRemove.
-        && (request.resource.data.reposts is list)
-
-        // 5. Followers/Following lists: Updated through separate transactional logic by `arrayUnion`/`arrayRemove`.
-        // Validate type for safe access.
-        && (request.resource.data.following is list)
-        && (request.resource.data.followers is list)
-      );
-
-
-      // Deny direct deletion of user profiles from client-side for security.
-      allow delete: if isAdmin();
-    }
-
-
-    // --- Posts Collection ---
-    // Anyone authenticated can read active posts. Users can create, update, and delete their own posts.
-    // Other users can like/react to posts.
-    match /posts/{postId} {
-      // Read access: Allow read if user is authenticated AND post is not expired AND (post is public OR requesting user is owner OR requesting user is follower if private)
-      allow read: if request.auth != null
-                  && request.time < resource.data.expiryTime // Post must not be expired (24-hour limit in this case)
-                  && (resource.data.isPrivate == false || // Public post can always be read
-                      request.auth.uid == resource.data.userId || // Owner of private post can always read
-                      // If private, reader must exist and be following the owner of this post
-                      (userExists(request.auth.uid) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([resource.data.userId]))
-                    );
-
-
-      // Create access: Only post owner can create, with initial values locked down and required fields.
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.get('likes', 0) == 0
-                    && request.resource.data.get('views', 0) == 0
-                    && request.resource.data.get('commentCount', 0) == 0
-                    && request.resource.data.get('reactions', {}).size() == 0 // Check if map is empty
-                    && request.resource.data.get('userReactions', {}).size() == 0 // Check if map is empty
-                    && request.resource.data.username is string && request.resource.data.username.size() > 0 // Username required
-                    && (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == '') // Either logo class or empty
-                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == '') // Either URL or empty
-                    && request.resource.data.content is string && request.resource.data.content.size() >= 60 && request.resource.data.content.size() <= 10000
-                    && request.resource.data.category is string
-                    && request.resource.data.isMonetized is bool
-                    && request.resource.data.isPrivate is bool // Post inherits privacy from user profile at creation
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.expiryTime is timestamp;
-
-
-      // Update access: Strict rules for specific updates. Content is largely immutable once created.
-      allow update: if request.auth != null && (
-        // Scenario 1: Post owner updates their own post. Limited fields only.
-        (request.auth.uid == resource.data.userId &&
-         // Check that ONLY allowed fields are being modified by the owner.
-         request.resource.data.keys().hasOnly(['commentCount', 'isPrivate', 'username', 'userProfileLogo', 'profilePicUrl']) &&
-         // `commentCount` must be incrementing or unchanged
-         (request.resource.data.commentCount == resource.data.commentCount || request.resource.data.commentCount == resource.data.commentCount + 1) &&
-         // `isPrivate` must be boolean (updated from user profile, if user changes their overall profile private status)
-         (request.resource.data.isPrivate is bool) &&
-         // Propagated profile info from user document
-         (request.resource.data.username is string || request.resource.data.username == null) &&
-         (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == null) &&
-         (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null)
-        )
-        // Scenario 2: Another authenticated user (not the owner) interacts (likes, reacts, views).
-        || (request.auth.uid != resource.data.userId &&
-            (
-                // For likes and unlikes
-                (request.resource.data.keys().hasOnly(['likes', 'likedBy']) &&
-                 request.resource.data.likes >= 0 &&
-                 request.resource.data.likedBy is list
-                )
-                // For emoji reactions
-                || (request.resource.data.keys().hasOnly(['reactions', 'userReactions']) &&
-                    request.resource.data.reactions is map &&
-                    request.resource.data.userReactions is map
-                )
-                // For view count increments (often paired with postViews transaction)
-                || (request.resource.data.keys().hasOnly(['views']) &&
-                    request.resource.data.views == resource.data.views + 1 && // Must strictly increment by 1
-                    request.resource.data.views > resource.data.views // And new value must be greater
-                )
-            )
-           )
-      );
-
-      // Delete access: Only post owner or Admin can delete a post.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
-    }
-
-    // --- Comments Collection ---
-    // Users can read all comments on a post. Users can add comments, and delete their own. Admin can delete.
-    match /comments/{commentId} {
-      allow read: if request.auth != null;
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid
-                    && request.resource.data.postId is string
-                    && request.resource.data.content is string && request.resource.data.content.size() >= 1 && request.resource.data.content.size() <= 100
-                    && request.resource.data.timestamp is timestamp;
-
-      allow update: if false; // Comments are immutable.
-      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
-    }
-
-    // --- Messages Collection ---
-    // Users can only read/write messages in conversations they are part of.
-    // Messages also have a client-side expiration. Firestore rule enforces 12h visibility.
-    match /messages/{messageId} {
-      // Read access: Sender or receiver can read if message is still within 12 hours.
-      allow read: if request.auth != null
-                  && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid)
-                  && (request.time < resource.data.timestamp + duration('12h')); // Messages visible for 12 hours from timestamp
-
-      // Create access: Only if sender is the current authenticated user and both parties are in 'participants' array.
-      allow create: if request.auth != null
-                    && request.resource.data.senderId == request.auth.uid
-                    && request.resource.data.receiverId is string
-                    && request.resource.data.content is string
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.participants is list
-                    && request.resource.data.participants.size() == 2
-                    && request.resource.data.participants.hasAll([request.auth.uid, request.resource.data.receiverId])
-                    && request.resource.data.get('read', false) == false; // New messages start as unread
-
-      // No direct updates or deletes via client. Messages are immutable after creation.
-      allow update: if false;
-      allow delete: if false;
-    }
-
-    // --- Post Views Collection ---
-    // This collection is used internally to track unique views per user per post.
-    // It should only be updated in a specific transactional way.
-    match /postViews/{postId} {
-        // Read access: No direct public read of internal view records. These are system managed.
-        allow read: if false;
-
-        // Write access: Allows creation or update for logging views.
-        // Requires authentication, ensures totalViews increments by 1, and the current user's ID is set to true in viewedBy.
-        allow write: if request.auth != null && (
-          // Creation (first view for this post ID)
-          (request.resource.data.keys().hasAll(['totalViews', 'viewedBy']) &&
-           request.resource.data.totalViews == 1 && // Initial totalViews must be 1
-           request.resource.data.viewedBy is map &&
-           request.resource.data.viewedBy.keys().size() == 1 && // Only one key, the current user
-           request.resource.data.viewedBy.get(request.auth.uid) == true
-          )
-          ||
-          // Update (subsequent views for this post ID)
-          (request.resource.data.keys().hasAll(['totalViews', 'viewedBy']) && // Only these keys should be affected
-           request.resource.data.totalViews == resource.data.totalViews + 1 && // totalViews increments by 1
-           resource.data.viewedBy.get(request.auth.uid) != true && // User has NOT viewed before (must be false or non-existent)
-           request.resource.data.viewedBy.get(request.auth.uid) == true && // Now user's viewedBy is true
-           request.resource.data.viewedBy is map // Must remain a map
-          )
-        );
-
-        // Delete access: Only by admin, usually in conjunction with post deletion.
-        allow delete: if isAdmin();
-    }
-
-    // --- Reports Collection ---
-    // Authenticated users can create reports. Read/Update/Delete only for admin.
-    match /reports/{reportId} {
-      allow read: if isAdmin(); // Only Admin can read reports.
-      allow create: if request.auth != null
-                    && request.resource.data.reportedBy == request.auth.uid // User reports their own UID
-                    && request.resource.data.postId is string // Report linked to a postId
-                    && request.resource.data.timestamp is timestamp
-                    && request.resource.data.get('status', 'pending') == 'pending'; // New reports always start as 'pending'
-
-      allow update: if isAdmin(); // Only Admin can update (e.g., status: resolved)
-      allow delete: if isAdmin(); // Only Admin can delete reports.
-    }
-
-    // --- Withdrawal Requests Collection ---
-    // Users can create their own withdrawal requests. Read/Update/Delete only for admin.
-    match /withdrawalRequests/{requestId} {
-      allow read: if isAdmin(); // Only Admin can read withdrawal requests.
-      allow create: if request.auth != null
-                    && request.resource.data.userId == request.auth.uid // Request from current user
-                    && request.resource.data.username is string
-                    && request.resource.data.method is string
-                    && request.resource.data.id is string
-                    && request.resource.data.monetizedViewsAtRequest is int
-                    && request.resource.data.monetizedViewsAtRequest >= 100000 // Enforce withdrawal threshold at request time
-                    && request.resource.data.estimatedAmount is float
-                    && request.resource.data.estimatedAmount >= 0 // Should be non-negative
-                    && request.resource.data.requestTimestamp is timestamp
-                    && request.resource.data.get('status', 'pending') == 'pending'; // New requests start as 'pending'
-
-      allow update: if isAdmin(); // Only Admin can update (e.g., status: completed/rejected)
-      allow delete: if isAdmin(); // Only Admin can delete.
-    }
-  }
-}
-
