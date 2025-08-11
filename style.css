@@ -321,7 +321,6 @@ input[type="text"], input[type="email"], input[type="password"], textarea, selec
     position: relative;
     border: 2px solid var(--highlight-color-main);
     flex-shrink: 0;
-    box-shadow: 0 0 8px var(--shadow-color-strong);
     background-size: cover; /* For direct pic link */
     background-position: center; /* For direct pic link */
 }
