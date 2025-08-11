@@ -209,7 +209,7 @@ body.light-mode {
 .auth-screen {
     display: none; /* Hide by default */
     width: 100%; /* Take full width of parent .auth-content */
-    flex-direction: column; /* Inner flex for content */
+    flex-direction: column; /* Inner flex for form elements */
     align-items: center; /* Center form elements horizontally */
 }
 .auth-screen.active {
@@ -886,6 +886,13 @@ input[type="file"] {
     transform: translateY(-2px);
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.6);
 }
+.btn.primary-btn:disabled, .btn.secondary-btn:disabled, .btn.danger-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: translateY(0);
+    box-shadow: none;
+}
+
 
 .btn.secondary-btn {
     background-color: var(--button-secondary-bg);
@@ -1787,4 +1794,3 @@ input[type="file"] {
         padding: 15px;
         height: calc(100vh - 140px); /* Adjust height for smaller headers/footers */
     }
-}
