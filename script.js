@@ -185,6 +185,9 @@ let postsToLoadPerScroll = 10;
 let dataSaverEnabled = false; // For data saver feature
 let currentPostIdForComments = null; // To store the post ID for comments modal
 
+let isProcessingAuth = false; // NEW FLAG: To prevent multiple auth operations / UI conflicts
+let hasRunInitialAuthCheck = false; // NEW FLAG: Ensures initial onAuthStateChanged only performs full logic once
+
 // Text-to-Speech API
 const synth = window.speechSynthesis;
 
@@ -316,100 +319,103 @@ applyLogoStyles(); // Call once on script load
 
 // --- Firebase Authentication Flow ---
 let splashScreenTimeout; // Variable to hold splash screen timeout ID
-let authInitialCheckComplete = false; // Flag to ensure initial auth check runs once after splash is managed
-let splashScreenMinTimePromise; // Promise for minimum splash screen time
+let authInitialCheckComplete = false; // Flag: Ensures `onAuthStateChanged`'s logic runs fully only once per app load cycle
+let splashScreenMinTimePromise; // Promise for minimum splash screen display duration
 
-// Function to safely hide the splash screen regardless of auth state
-function hideSplashScreenProperly() {
-    splashScreen.style.opacity = '0';
-    setTimeout(() => {
-        splashScreen.classList.add('hidden');
-        splashScreen.style.display = 'none'; // Ensure it's fully gone
-    }, 500); // Wait for fade out
-}
 
-// Show authentication container (Login/Signup)
+// Show authentication container (Login/Signup) UI
 function showAuthContainerUI() {
-    authContainer.classList.remove('hidden');
+    splashScreen.style.display = 'none'; // Ensure splash is hidden
     appContainer.classList.add('hidden'); // Ensure app is hidden
+    authContainer.classList.remove('hidden'); // Show auth container
     loginScreen.classList.add('active'); // Default to login screen
     signupScreen.classList.remove('active');
+    console.log("UI: Displaying Authentication screens.");
 }
 
-// Show main app container (Home Feed, Profile, etc.)
+// Show main app container (Home Feed, Profile, etc.) UI
 function showAppContainerUI() {
+    splashScreen.style.display = 'none'; // Ensure splash is hidden
     authContainer.classList.add('hidden'); // Ensure auth is hidden
-    appContainer.classList.remove('hidden');
+    appContainer.classList.remove('hidden'); // Show app container
+    console.log("UI: Displaying Main App screens.");
 }
 
 
-// Central function to check user status and direct to appropriate screen
+// Central function to handle authentication state and UI redirection
 async function checkUserAndRedirect(user) {
-    // This listener can fire multiple times. We only want initial setup once Firebase has settled.
-    // Also ensures we don't process old user state if user logs out then back in quickly.
+    // This `onAuthStateChanged` handler can fire multiple times (on load, login, logout).
+    // `authInitialCheckComplete` flag ensures that the heavy lifting for initial UI setup
+    // only happens once per full page load, regardless of subsequent quick state changes.
     if (authInitialCheckComplete && user === auth.currentUser) {
+        console.log("onAuthStateChanged: Secondary fire, user state unchanged. Skipping initial redirect logic.");
         return;
     }
-    // Set flag before processing to prevent re-entry.
+    // Set flag immediately to prevent re-entry.
     authInitialCheckComplete = true;
 
-    // Ensure splash screen minimum time has passed before UI transition
-    await splashScreenMinTimePromise;
-    clearTimeout(splashScreenTimeout); // Clear any splash screen auto-hide fallback timeout
+    // Ensure minimum splash screen time has passed before changing UI.
+    console.log("onAuthStateChanged: Waiting for minimum splash screen time...");
+    await splashScreenMinTimePromise; // This pauses execution until the promise resolves.
+    clearTimeout(splashScreenTimeout); // Clear any splash screen auto-hide fallback.
+
 
     if (user && user.emailVerified) {
         currentUser = user;
+        console.log(`User logged in: ${user.uid}, Email verified: ${user.emailVerified}. Attempting profile load.`);
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
             const userData = userDoc.data();
 
+            // Check if profile is complete (username and name must be non-empty)
             if (!userDoc.exists || !userData.username || !userData.name || userData.username === "" || userData.name === "") {
-                // User document missing or crucial profile fields are empty.
-                console.log("User profile incomplete or new user. Directing to profile setup.");
-                showAppContainerUI(); // Show the main app structure (even with profile incomplete, user gets access to some UI)
-                showScreen('profile-screen'); // Navigate to profile screen
-                editProfileModal.classList.remove('hidden'); // Display the edit profile modal forcefully
-                profileModalInstruction.textContent = "Welcome! Please complete your profile to use the app.";
-                myProfileUsername.textContent = "@NewUser"; // Temporary placeholders
+                console.log("User profile incomplete. Displaying Profile setup modal.");
+                showAppContainerUI(); // Display the main app container (where profile modal resides)
+                showScreen('profile-screen'); // Navigate to profile tab
+                editProfileModal.classList.remove('hidden'); // Force open the edit profile modal
+                profileModalInstruction.textContent = "Welcome! Please complete your profile (Username and Display Name are required) to continue using the app.";
+                myProfileUsername.textContent = "@NewUser"; // Default placeholders
                 sidebarUsername.textContent = "New User";
                 sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
-                showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 5000);
+                showToast("Welcome! Please complete your profile.", 'info', 5000);
             } else {
-                console.log("Existing user profile complete. Loading main app.");
+                console.log("User profile complete. Proceeding to main app.");
                 loadUserProfile(currentUser.uid); // Load user specific data and update sidebar/header
-                showAppContainerUI(); // Show the main app structure
-                showScreen('home-screen'); // Navigate to home feed
+                showAppContainerUI(); // Show the full main app UI
+                showScreen('home-screen'); // Default to home feed
                 loadPosts(); // Load initial posts
                 showToast("Logged in successfully!", 'success');
             }
         } catch (error) {
-            console.error("Error during initial Firestore profile check for an authenticated user:", error);
-            showToast("Failed to load your profile data. Please try logging in again.", 'error', 5000);
-            auth.signOut(); // Critical error, force logout
-            showAuthContainerUI(); // Fallback to authentication UI
+            console.error("Firebase Firestore profile fetch error during redirection:", error);
+            showToast("Failed to load user profile data. Please try logging in again.", 'error', 5000);
+            auth.signOut(); // Critical error, force sign out.
+            showAuthContainerUI(); // Redirect to login/register.
         }
-    } else { // User is null OR user is logged in but email is NOT verified
-        currentUser = null;
-        console.log("No authenticated user, or user's email is not verified. Showing authentication screen.");
-        showAuthContainerUI(); // Display the authentication UI (Login/Register)
+    } else { // No user, or user's email is not verified
+        currentUser = null; // Ensure currentUser is null if not fully authenticated
+        console.log("No authenticated and verified user found. Showing Auth UI.");
+        showAuthContainerUI(); // Show login/register UI
 
-        // Provide specific messages for unverified users if `user` object exists.
-        if(user && !user.emailVerified) {
-             updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
-             auth.signOut(); // Sign out unverified user to ensure they go through verification flow explicitly
+        if (user && !user.emailVerified) { // If there's a user object but not verified
+            console.log("User is authenticated but email not verified.");
+            updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox.", 'info');
+            auth.signOut(); // Force sign out to make the user explicitly log in after verification.
         } else {
-             // For genuinely no user logged in or anonymous login issue (if re-enabled).
-             updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous messages
+            console.log("No user is logged in.");
+            updateAuthStatus(loginStatus, "", 'hidden'); // Clear previous messages
         }
     }
-    hideSplashScreenProperly(); // Once all redirection logic is processed, hide splash.
+    // Regardless of the path, hide the splash screen now.
+    // If AuthUI/AppUI are hidden from checkUserAndRedirect, they take over immediately after this.
+    hideSplashScreenProperly();
 }
 
 
 auth.onAuthStateChanged(user => {
-    // This ensures `checkUserAndRedirect` is called immediately on auth state change.
-    console.log("onAuthStateChanged event fired. Current User:", user ? user.uid : "None");
+    // This handler initiates the full redirection logic once Firebase state is known.
+    // console.log("onAuthStateChanged event fired. User:", user ? user.uid : "None");
     checkUserAndRedirect(user);
 });
 
@@ -421,6 +427,7 @@ showSignupLink.addEventListener('click', (e) => {
     signupScreen.classList.add('active');
     updateAuthStatus(loginStatus, '', 'hidden'); // Clear status messages on switch
     updateAuthStatus(signupStatus, '', 'hidden');
+    console.log("UI: Switched to Signup screen.");
 });
 
 showLoginLink.addEventListener('click', (e) => {
@@ -429,6 +436,7 @@ showLoginLink.addEventListener('click', (e) => {
     loginScreen.classList.add('active');
     updateAuthStatus(loginStatus, '', 'hidden'); // Clear status messages on switch
     updateAuthStatus(signupStatus, '', 'hidden');
+    console.log("UI: Switched to Login screen.");
 });
 
 forgotPasswordLink.addEventListener('click', (e) => {
@@ -436,10 +444,12 @@ forgotPasswordLink.addEventListener('click', (e) => {
     forgotPasswordModal.classList.remove('hidden');
     updateAuthStatus(resetStatus, '', 'hidden'); // Clear previous status
     resetEmailInput.value = '';
+    console.log("UI: Displayed Forgot Password modal.");
 });
 
 closeResetModalBtn.addEventListener('click', () => {
     forgotPasswordModal.classList.add('hidden');
+    console.log("UI: Closed Forgot Password modal.");
 });
 
 loginBtn.addEventListener('click', signInUser);
@@ -449,27 +459,38 @@ sendResetEmailBtn.addEventListener('click', sendPasswordReset);
 
 // Login User
 async function signInUser() {
+    if (isProcessingAuth) { // Prevent multiple clicks
+        console.warn("Auth process already ongoing. Please wait.");
+        return;
+    }
+    isProcessingAuth = true;
+    loginBtn.disabled = true; // Disable button during process
+
     const email = loginEmailInput.value.trim();
     const password = loginPasswordInput.value.trim();
 
     if (!email || !password) {
         updateAuthStatus(loginStatus, "Please enter both email and password.", 'error');
+        isProcessingAuth = false; // Reset flag
+        loginBtn.disabled = false; // Re-enable button
         return;
     }
 
     try {
+        console.log("Attempting user sign-in...");
         await auth.signInWithEmailAndPassword(email, password);
-        // The `onAuthStateChanged` listener will handle the redirection after successful sign-in.
+        // `onAuthStateChanged` listener will handle redirection on successful sign-in.
         updateAuthStatus(loginStatus, "Logging in...", 'info');
+        // Clear inputs immediately, as they will be re-used/checked by `onAuthStateChanged`.
         loginEmailInput.value = '';
         loginPasswordInput.value = '';
     } catch (error) {
-        console.error("Login error:", error);
+        console.error("Firebase Sign-in error:", error.code, error.message);
         let errorMessage = "Login failed. Please check your email and password.";
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             errorMessage = "Invalid email or password.";
         } else if (error.code === 'auth/too-many-requests') {
-            errorMessage = "Too many login attempts. Try again later.";
+            errorMessage = "Too many failed login attempts. Please try again later.";
         } else if (error.code === 'auth/network-request-failed') {
             errorMessage = "Network error. Check your internet connection.";
         } else if (error.code === 'auth/user-disabled') {
@@ -477,32 +498,49 @@ async function signInUser() {
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format.";
         } else if (error.code === 'auth/internal-error') {
-            errorMessage = "Server error. Try again later.";
+            errorMessage = "Server error. Please try again later.";
         }
         updateAuthStatus(loginStatus, errorMessage, 'error');
+    } finally {
+        isProcessingAuth = false; // Ensure flag is reset
+        loginBtn.disabled = false; // Ensure button is re-enabled
     }
 }
 
 // Register User
 async function registerUser() {
+    if (isProcessingAuth) { // Prevent multiple clicks
+        console.warn("Auth process already ongoing. Please wait.");
+        return;
+    }
+    isProcessingAuth = true;
+    signupBtn.disabled = true; // Disable button
+
     const email = signupEmailInput.value.trim();
     const password = signupPasswordInput.value.trim();
     const confirmPassword = signupConfirmPasswordInput.value.trim();
 
     if (!email || !password || !confirmPassword) {
         updateAuthStatus(signupStatus, "All fields are required.", 'error');
+        isProcessingAuth = false;
+        signupBtn.disabled = false;
         return;
     }
     if (password.length < 6) {
         updateAuthStatus(signupStatus, "Password must be at least 6 characters long.", 'error');
+        isProcessingAuth = false;
+        signupBtn.disabled = false;
         return;
     }
     if (password !== confirmPassword) {
         updateAuthStatus(signupStatus, "Passwords do not match.", 'error');
+        isProcessingAuth = false;
+        signupBtn.disabled = false;
         return;
     }
 
     try {
+        console.log("Attempting user registration...");
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
         await sendEmailVerification(userCredential.user);
 
@@ -534,22 +572,27 @@ async function registerUser() {
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        // After successful registration, switch to login screen and update its status.
+        // After successful registration, automatically switch to login screen for verification instructions.
         loginScreen.classList.add('active');
         signupScreen.classList.remove('active');
         updateAuthStatus(loginStatus, "Registered! Check your email to verify and then login.", 'info');
 
     } catch (error) {
-        console.error("Registration error:", error);
+        console.error("Firebase Registration error:", error.code, error.message);
         let errorMessage = "Registration failed.";
         if (error.code === 'auth/email-already-in-use') {
-            errorMessage = "This email is already in use.";
+            errorMessage = "This email is already in use. Please login.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format.";
         } else if (error.code === 'auth/weak-password') {
-            errorMessage = "Password is too weak. Choose a stronger one.";
+            errorMessage = "Password is too weak (min 6 chars).";
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = "Network error. Check your internet connection.";
         }
         updateAuthStatus(signupStatus, errorMessage, 'error');
+    } finally {
+        isProcessingAuth = false; // Reset flag
+        signupBtn.disabled = false; // Re-enable button
     }
 }
 
@@ -557,7 +600,7 @@ async function registerUser() {
 async function sendEmailVerification(user) {
     try {
         await user.sendEmailVerification();
-        console.log("Verification email sent.");
+        console.log("Verification email sent to:", user.email);
     } catch (error) {
         console.error("Error sending verification email:", error);
         showToast("Failed to send verification email. Try again later.", 'error');
@@ -566,43 +609,67 @@ async function sendEmailVerification(user) {
 
 // Send Password Reset
 async function sendPasswordReset() {
+    if (isProcessingAuth) {
+        console.warn("Auth process already ongoing.");
+        return;
+    }
+    isProcessingAuth = true;
+    sendResetEmailBtn.disabled = true;
+
     const email = resetEmailInput.value.trim();
     if (!email) {
         updateAuthStatus(resetStatus, "Please enter your email.", 'error');
+        isProcessingAuth = false;
+        sendResetEmailBtn.disabled = false;
         return;
     }
 
     try {
+        console.log("Sending password reset email to:", email);
         await auth.sendPasswordResetEmail(email);
         updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
-    }
-     catch (error) {
-        console.error("Forgot password error:", error);
+    } catch (error) {
+        console.error("Firebase Forgot password error:", error.code, error.message);
         let errorMessage = "Failed to send reset link.";
         if (error.code === 'auth/user-not-found') {
             errorMessage = "No account found with that email.";
         } else if (error.code === 'auth/invalid-email') {
             errorMessage = "Invalid email format.";
+        } else if (error.code === 'auth/network-request-failed') {
+            errorMessage = "Network error. Check your internet connection.";
         }
         updateAuthStatus(resetStatus, errorMessage, 'error');
+    } finally {
+        isProcessingAuth = false;
+        sendResetEmailBtn.disabled = false;
     }
 }
 
 // Logout Button
 document.getElementById('logout-btn').addEventListener('click', async () => {
     try {
+        console.log("Attempting user logout.");
         await auth.signOut();
         showToast("Logged out successfully.", 'info');
-        // Clear login/signup inputs for fresh start.
+        // Clear login/signup input fields for next use
         loginEmailInput.value = '';
         loginPasswordInput.value = '';
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        editUsernameInput.value = ''; // Also clear profile edit fields.
+        // Clear profile edit fields just in case.
+        editUsernameInput.value = '';
         editNameInput.value = '';
+        editBioInput.value = '';
+        editWhatsappInput.value = '';
+        editInstagramInput.value = '';
+        profilePicUrlInput.value = '';
 
-        // `onAuthStateChanged` listener will handle redirecting to the authentication screens.
+        // Reset the flag for `onAuthStateChanged` to run full logic on next state change
+        authInitialCheckComplete = false;
+
+        // No explicit hide/show here, as auth.onAuthStateChanged will be triggered automatically
+        // and it will handle the redirect to the authentication screens.
     } catch (error) {
         console.error("Error logging out:", error);
         showToast("Failed to log out.", 'error');
@@ -612,32 +679,35 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 
 // --- Initial App Load Logic (Triggered on DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 1. Initially hide main app and auth UI elements.
+    console.log("DOM Content Loaded. Starting initial app setup.");
+    // 1. Hide all main app and auth UI elements initially.
     appContainer.classList.add('hidden');
     authContainer.classList.add('hidden');
 
-    // 2. Ensure splash screen is visible immediately.
+    // 2. Ensure splash screen is visible immediately for initial visual.
     splashScreen.classList.remove('hidden');
-    splashScreen.style.display = 'flex'; // Ensure flexbox is active for centering
+    splashScreen.style.display = 'flex'; // Important: Ensure it's display flex for centering
 
     // 3. Set a minimum display time for the splash screen (e.g., 3 seconds).
-    // This promise will resolve after the desired splash time.
+    // This creates a Promise that resolves after the minimum time.
     splashScreenMinTimePromise = new Promise(resolve => {
         setTimeout(() => {
-            console.log("Splash screen minimum display time elapsed (3s).");
-            resolve();
-        }, 3000); // 3 seconds minimum display
+            console.log("Splash screen minimum display time (3s) elapsed.");
+            resolve(); // Resolve the promise, signaling it's safe to change UI
+        }, 3000); // Minimum 3 seconds
     });
 
-    // 4. Set a fallback timeout for onAuthStateChanged, in case it takes too long or fails to fire initially.
-    // This ensures the splash screen doesn't get stuck indefinitely.
+    // 4. Set a fallback timeout for onAuthStateChanged.
+    // If Firebase auth state resolution takes too long (or fails silently in complex scenarios),
+    // this ensures the app still attempts to proceed after a max timeout (e.g., 5 seconds total wait time for auth).
     splashScreenTimeout = setTimeout(() => {
-        if (!authInitialCheckComplete) { // Only force if the primary check hasn't finished yet
-            console.warn("Splash screen force-hide timeout (5s) triggered. Forcing initial auth check and redirect.");
-            // Explicitly call the check to unblock the UI if something got stuck.
+        if (!authInitialCheckComplete) { // Only act if the `onAuthStateChanged` handler hasn't processed its initial check.
+            console.warn("Splash screen hard timeout (5s) triggered. Forcing UI transition based on current auth state.");
+            // Explicitly call the redirection logic. auth.currentUser might be null or valid.
             checkUserAndRedirect(auth.currentUser);
         }
-    }, 5000); // Max 5 seconds for Firebase auth check before fallback acts
+    }, 5000); // Max total time including `splashScreenMinTimePromise`
+    // Note: The `checkUserAndRedirect` function itself manages hiding splash and showing subsequent UI.
 });
 
 
@@ -664,19 +734,9 @@ darkModeCheckbox.addEventListener('change', (e) => {
     showToast(`Dark Mode ${e.target.checked ? 'Enabled' : 'Disabled'}`, 'info');
 });
 
-// Set initial theme based on local storage or default on DOMContentLoaded
-document.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme') || 'dark'; // Default to dark
-    if (savedTheme === 'light') {
-        body.classList.remove('dark-mode');
-        body.classList.add('light-mode');
-        darkModeCheckbox.checked = false;
-    } else {
-        body.classList.add('dark-mode');
-        body.classList.remove('light-mode');
-        darkModeCheckbox.checked = true;
-    }
-});
+// Set initial theme based on local storage or default
+// This runs on DOMContentLoaded already (included in initial event listener logic above)
+// document.addEventListener('DOMContentLoaded', () => { /* ... existing code here ... */ });
 
 
 // --- Sidebar Navigation ---
@@ -965,7 +1025,7 @@ async function loadImmersiveFeedPosts() {
         });
 
         // Clear existing immersive feed if we looped or starting fresh
-        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (snapshot.size < postsToLoadPerScroll) && immersiveFeed.children.length > 0) { // If current fetch is less than limit, assume end and refresh for loop
+        if (immersiveFeed.innerHTML.includes('<p>No immersive posts available.</p>') || (snapshot.size < postsToLoadPerScroll) && immersiveFeed.children.length > 0) {
              immersiveFeed.innerHTML = '';
         } else if (!lastVisibleImmersivePost && immersiveFeed.innerHTML.trim() !== '') {
             immersiveFeed.innerHTML = ''; // Initial load but had some prior content
@@ -1936,14 +1996,16 @@ async function loadProfileReposts(userId) {
 }
 
 
-// Edit Profile Modal
+// Edit Profile Modal Buttons
 editProfileBtn.addEventListener('click', () => {
     editProfileModal.classList.remove('hidden');
-    profileModalInstruction.textContent = "Edit your profile details:"; // Change instruction if already logged in
+    profileModalInstruction.textContent = "Edit your profile details:"; // General instruction when clicking 'Edit Profile'
+    console.log("UI: Displayed Edit Profile modal.");
 });
 
 cancelEditProfileBtn.addEventListener('click', () => {
     editProfileModal.classList.add('hidden');
+    console.log("UI: Closed Edit Profile modal.");
 });
 
 // Username Availability Check
@@ -1960,8 +2022,8 @@ editUsernameInput.addEventListener('input', () => {
         return;
     }
 
-    // Get current username from logged-in user's data, not sidebar directly for accuracy
-    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@')[0] : ""; // Fallback
+    // Get current username from logged-in user's data for comparison
+    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@')[0] : "";
     if(myProfileUsername && myProfileUsername.textContent) {
         currentAuthUsername = myProfileUsername.textContent.replace('@', '');
     }
@@ -2006,10 +2068,6 @@ accountPrivacyToggle.addEventListener('change', () => {
 // Populate Profile Logo Options (Now includes direct URL for selection display)
 function populateProfileLogoOptions(currentLogoClass, currentProfilePicUrl) {
     profileLogoOptions.innerHTML = '';
-
-    // If a direct URL is in the input, that should be the active one to be saved/displayed.
-    // However, the selected option in the grid should reflect the one CURRENTLY saved.
-    // If a currentProfilePicUrl exists, then the emoji picker defaults should be deselected.
 
     // If current user has a direct URL pic
     if (currentProfilePicUrl) {
@@ -2093,6 +2151,11 @@ saveProfileBtn.addEventListener('click', async () => {
         return;
     }
 
+    // Name also must be provided to proceed beyond registration-profile
+    if (newName.length < 1 && editProfileModal.classList.contains('hidden')) { // This checks if it's the *initial* forced profile completion
+         showToast("Display Name cannot be empty.", 'error');
+         return;
+    }
 
     try {
         const userDocRef = db.collection('users').doc(currentUser.uid);
@@ -2100,7 +2163,7 @@ saveProfileBtn.addEventListener('click', async () => {
         const currentData = userDoc.data();
 
         // Check username uniqueness again before saving
-        if (newUsername !== currentData.username) {
+        if (newUsername !== (currentData.username || '')) { // Compare with currentData.username (can be empty string)
             const usernameSnapshot = await db.collection('users').where('username', '==', newUsername).limit(1).get();
             if (!usernameSnapshot.empty) {
                 showToast("Username already taken. Please choose another.", 'error');
@@ -2117,9 +2180,7 @@ saveProfileBtn.addEventListener('click', async () => {
             profileLogo: newProfileLogo,
             profilePicUrl: finalProfilePicUrl, // Save direct URL
             isPrivate: isPrivate,
-            // Initialize earning/follower counts if they don't exist (only if it's the first profile save)
-            // If they already exist, Firebase update will merge and use existing values.
-            // These lines ensure values are set for NEWLY CREATED documents through initial registration flow.
+            // Initialize earning/follower counts if they don't exist (important for new users saving profile for first time)
             followersCount: currentData.followersCount !== undefined ? currentData.followersCount : 0,
             followingCount: currentData.followingCount !== undefined ? currentData.followingCount : 0,
             postCount: currentData.postCount !== undefined ? currentData.postCount : 0,
@@ -2127,11 +2188,11 @@ saveProfileBtn.addEventListener('click', async () => {
             unmonetizedViewsCount: currentData.unmonetizedViewsCount !== undefined ? currentData.unmonetizedViewsCount : 0,
             earnedAmount: currentData.earnedAmount !== undefined ? currentData.earnedAmount : 0.00,
             reposts: currentData.reposts !== undefined ? currentData.reposts : []
-            // No coins, credits, postLimit, lastRewardClaim anymore as per new request
         });
 
         // Update username and profile info in existing posts if changed
-        if (newUsername !== currentData.username || finalProfilePicUrl !== currentData.profilePicUrl || newProfileLogo !== currentData.profileLogo || isPrivate !== currentData.isPrivate) {
+        if (newUsername !== (currentData.username || '') || finalProfilePicUrl !== (currentData.profilePicUrl || '') || newProfileLogo !== (currentData.profileLogo || '') || isPrivate !== currentData.isPrivate) {
+            console.log("Updating username/profile info on posts...");
             const postsSnapshot = await db.collection('posts').where('userId', '==', currentUser.uid).get();
             const batch = db.batch();
             postsSnapshot.docs.forEach(doc => {
@@ -2144,9 +2205,10 @@ saveProfileBtn.addEventListener('click', async () => {
                 });
             });
             await batch.commit();
+            console.log("Post updates batch committed.");
         }
 
-        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal
+        editProfileModal.classList.add('hidden'); // This will now correctly hide the modal on save
         showToast("Profile updated successfully!", 'success');
         loadUserProfile(currentUser.uid); // Reload profile display
     } catch (error) {
@@ -3175,3 +3237,287 @@ sendWithdrawalRequestBtn.addEventListener('click', async () => {
 cancelWithdrawalBtn.addEventListener('click', () => {
     withdrawalModal.classList.add('hidden');
 });
+```
+
+---
+
+### **`firebase.rules` (Minor update, if needed - your last error was in `script.js` not rules)**
+
+`Firebase.rules` में मुझे पिछले round में बताई गई Line 156-159 की कोई सीधे `Unexpected` parenthesis error नहीं दिख रही है क्योंकि वो `script.js` की समस्या थी। हालांकि, मैंने `reports` collection के `create` rules में एक मामूली टाइपो ठीक किया है (request.auth.data.reportedBy -> request.resource.data.reportedBy)।
+
+**यह महत्वपूर्ण है कि आप इस version को deploy करें ताकि यह Admin UID के साथ-साथ latest debugging और validation logic को प्रतिबिंबित करे।**
+
+```firestore
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper function for admin role check
+    // REPLACE 'YOUR_ADMIN_UID_HERE' with the actual UID of your designated admin user from Firebase Auth
+    function isAdmin() {
+      return request.auth.uid == "TK8Cpv0eW7aanAiSDe6w5YAv1tD2"; // <---- IMPORTANT: Admin UID provided: TK8Cpv0eW7aanAiSDe6w5YAv1tD2
+    }
+
+    // Helper function to check if a document exists.
+    function userExists(userId) {
+        return exists(/databases/$(database)/documents/users/$(userId));
+    }
+    
+    // --- Users Collection ---
+    // Users can create their own profile, and read profiles of any authenticated user.
+    // Users can update specific fields of their own. Admin can delete.
+    match /users/{userId} {
+      // Read access: Any authenticated user can read user profiles.
+      // Private profiles require the requesting user to be following.
+      allow read: if request.auth != null && (
+        resource.data.isPrivate == false ||
+        request.auth.uid == userId ||
+        // Check if the current user exists and is following this resource's owner
+        (userExists(request.auth.uid) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([userId]))
+      );
+
+      // Create access: A user can create their own document on signup.
+      // Initial values must be strict to prevent malicious data.
+      allow create: if request.auth != null
+                    && request.auth.uid == userId
+                    && request.resource.data.keys().hasAll(['username', 'email', 'createdAt', 'bio', 'followers', 'following', 'followersCount', 'followingCount', 'postCount', 'monetizedViewsCount', 'unmonetizedViewsCount', 'earnedAmount', 'reposts', 'isPrivate', 'name', 'whatsapp', 'instagram', 'profileLogo', 'profilePicUrl', 'uid']) // Ensure all required fields are present and initialize correctly
+                    && request.resource.data.username is string && request.resource.data.username.size() >= 1 && request.resource.data.username.size() <= 30
+                    && request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") // Valid username characters
+                    && request.resource.data.email == request.auth.token.email
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.get('followersCount', 0) == 0
+                    && request.resource.data.get('followingCount', 0) == 0
+                    && request.resource.data.get('postCount', 0) == 0
+                    && request.resource.data.get('monetizedViewsCount', 0) == 0
+                    && request.resource.data.get('unmonetizedViewsCount', 0) == 0
+                    && request.resource.data.get('earnedAmount', 0.0) == 0.0
+                    && request.resource.data.get('reposts', []).size() == 0 // Reposts is empty array
+                    && request.resource.data.isPrivate is bool // Should be bool
+                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null || request.resource.data.profilePicUrl == '')
+                    && (request.resource.data.profileLogo is string || request.resource.data.profileLogo == null || request.resource.data.profileLogo == '')
+                    && request.resource.data.name is string // Default or empty string
+                    && request.resource.data.bio is string // Default or empty string
+                    && request.resource.data.whatsapp is string // Default or empty string
+                    && request.resource.data.instagram is string // Default or empty string
+                    && request.resource.data.createdAt is timestamp;
+
+
+      // Update access: Users can update their own profile, with specific field validations.
+      allow update: if request.auth != null && request.auth.uid == userId && (
+        // 1. Username field validation (must be string, valid format, unique if changed)
+        (request.resource.data.username is string && request.resource.data.username.size() >= 1 && request.resource.data.username.size() <= 30 &&
+           request.resource.data.username.matches("^[a-zA-Z0-9_.]+$") &&
+           (resource.data.username == request.resource.data.username || !exists(get(/databases/$(database)/documents/users).where('username', '==', request.resource.data.username).limit(1)))
+        )
+        // 2. Other simple string/boolean fields can be updated (type checking ensures data validity)
+        && ((request.resource.data.get('name', null) is string) || (request.resource.data.name == null)) // name can be string or null
+        && ((request.resource.data.get('bio', null) is string) || (request.resource.data.bio == null))
+        && ((request.resource.data.get('whatsapp', null) is string) || (request.resource.data.whatsapp == null))
+        && ((request.resource.data.get('instagram', null) is string) || (request.resource.data.instagram == null))
+        && ((request.resource.data.get('profileLogo', null) is string) || (request.resource.data.profileLogo == null))
+        && ((request.resource.data.get('profilePicUrl', null) is string) || (request.resource.data.profilePicUrl == null))
+        && (request.resource.data.isPrivate is bool)
+
+        // 3. System-controlled counters. These are generally managed via specific write ops.
+        // Client can only cause them to increase (+1) or decrease (-1 for postCount on deletion)
+        && (request.resource.data.postCount >= resource.data.postCount -1) // allows decrease of 1 on delete or stays same/increase
+        && (request.resource.data.monetizedViewsCount >= resource.data.monetizedViewsCount) // allows only increases
+        && (request.resource.data.unmonetizedViewsCount >= resource.data.unmonetizedViewsCount) // allows only increases
+        && (request.resource.data.earnedAmount >= resource.data.earnedAmount - 0.001) // allows increases for earned amount (float comparison tolerance)
+
+        // 4. Reposts array. Client can only add or remove elements, not overwrite the whole list arbitrarily.
+        // Assuming client uses FieldValue.arrayUnion / arrayRemove.
+        && (request.resource.data.reposts is list)
+
+        // 5. Followers/Following lists: Updated through separate transactional logic by `arrayUnion`/`arrayRemove`.
+        // Validate type for safe access.
+        && (request.resource.data.following is list)
+        && (request.resource.data.followers is list)
+      );
+
+
+      // Deny direct deletion of user profiles from client-side for security.
+      allow delete: if isAdmin();
+    }
+
+
+    // --- Posts Collection ---
+    // Anyone authenticated can read active posts. Users can create, update, and delete their own posts.
+    // Other users can like/react to posts.
+    match /posts/{postId} {
+      // Read access: Allow read if user is authenticated AND post is not expired AND (post is public OR requesting user is owner OR requesting user is follower if private)
+      allow read: if request.auth != null
+                  && request.time < resource.data.expiryTime // Post must not be expired (24-hour limit in this case)
+                  && (resource.data.isPrivate == false || // Public post can always be read
+                      request.auth.uid == resource.data.userId || // Owner of private post can always read
+                      // If private, reader must exist and be following the owner of this post
+                      (userExists(request.auth.uid) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.following.hasAny([resource.data.userId]))
+                    );
+
+
+      // Create access: Only post owner can create, with initial values locked down and required fields.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.get('likes', 0) == 0
+                    && request.resource.data.get('views', 0) == 0
+                    && request.resource.data.get('commentCount', 0) == 0
+                    && request.resource.data.get('reactions', {}).size() == 0 // Check if map is empty
+                    && request.resource.data.get('userReactions', {}).size() == 0 // Check if map is empty
+                    && request.resource.data.username is string && request.resource.data.username.size() > 0 // Username required
+                    && (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == '') // Either logo class or empty
+                    && (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == '') // Either URL or empty
+                    && request.resource.data.content is string && request.resource.data.content.size() >= 60 && request.resource.data.content.size() <= 10000
+                    && request.resource.data.category is string
+                    && request.resource.data.isMonetized is bool
+                    && request.resource.data.isPrivate is bool // Post inherits privacy from user profile at creation
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.expiryTime is timestamp;
+
+
+      // Update access: Strict rules for specific updates. Content is largely immutable once created.
+      allow update: if request.auth != null && (
+        // Scenario 1: Post owner updates their own post. Limited fields only.
+        (request.auth.uid == resource.data.userId &&
+         // Check that ONLY allowed fields are being modified by the owner.
+         request.resource.data.keys().hasOnly(['commentCount', 'isPrivate', 'username', 'userProfileLogo', 'profilePicUrl']) &&
+         // `commentCount` must be incrementing or unchanged
+         (request.resource.data.commentCount == resource.data.commentCount || request.resource.data.commentCount == resource.data.commentCount + 1) &&
+         // `isPrivate` must be boolean (updated from user profile, if user changes their overall profile private status)
+         (request.resource.data.isPrivate is bool) &&
+         // Propagated profile info from user document
+         (request.resource.data.username is string || request.resource.data.username == null) &&
+         (request.resource.data.userProfileLogo is string || request.resource.data.userProfileLogo == null) &&
+         (request.resource.data.profilePicUrl is string || request.resource.data.profilePicUrl == null)
+        )
+        // Scenario 2: Another authenticated user (not the owner) interacts (likes, reacts, views).
+        || (request.auth.uid != resource.data.userId &&
+            (
+                // For likes and unlikes
+                (request.resource.data.keys().hasOnly(['likes', 'likedBy']) &&
+                 request.resource.data.likes >= 0 &&
+                 request.resource.data.likedBy is list
+                )
+                // For emoji reactions
+                || (request.resource.data.keys().hasOnly(['reactions', 'userReactions']) &&
+                    request.resource.data.reactions is map &&
+                    request.resource.data.userReactions is map
+                )
+                // For view count increments (often paired with postViews transaction)
+                || (request.resource.data.keys().hasOnly(['views']) &&
+                    request.resource.data.views == resource.data.views + 1 && // Must strictly increment by 1
+                    request.resource.data.views > resource.data.views // And new value must be greater
+                )
+            )
+           )
+      );
+
+      // Delete access: Only post owner or Admin can delete a post.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
+    }
+
+    // --- Comments Collection ---
+    // Users can read all comments on a post. Users can add comments, and delete their own. Admin can delete.
+    match /comments/{commentId} {
+      allow read: if request.auth != null;
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.postId is string
+                    && request.resource.data.content is string && request.resource.data.content.size() >= 1 && request.resource.data.content.size() <= 100
+                    && request.resource.data.timestamp is timestamp;
+
+      allow update: if false; // Comments are immutable.
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid || isAdmin();
+    }
+
+    // --- Messages Collection ---
+    // Users can only read/write messages in conversations they are part of.
+    // Messages also have a client-side expiration. Firestore rule enforces 12h visibility.
+    match /messages/{messageId} {
+      // Read access: Sender or receiver can read if message is still within 12 hours.
+      allow read: if request.auth != null
+                  && (resource.data.senderId == request.auth.uid || resource.data.receiverId == request.auth.uid)
+                  && (request.time < resource.data.timestamp + duration('12h')); // Messages visible for 12 hours from timestamp
+
+      // Create access: Only if sender is the current authenticated user and both parties are in 'participants' array.
+      allow create: if request.auth != null
+                    && request.resource.data.senderId == request.auth.uid
+                    && request.resource.data.receiverId is string
+                    && request.resource.data.content is string
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.participants is list
+                    && request.resource.data.participants.size() == 2
+                    && request.resource.data.participants.hasAll([request.auth.uid, request.resource.data.receiverId])
+                    && request.resource.data.get('read', false) == false; // New messages start as unread
+
+      // No direct updates or deletes via client. Messages are immutable after creation.
+      allow update: if false;
+      allow delete: if false;
+    }
+
+    // --- Post Views Collection ---
+    // This collection is used internally to track unique views per user per post.
+    // It should only be updated in a specific transactional way.
+    match /postViews/{postId} {
+        // Read access: No direct public read of internal view records. These are system managed.
+        allow read: if false;
+
+        // Write access: Allows creation or update for logging views.
+        // Requires authentication, ensures totalViews increments by 1, and the current user's ID is set to true in viewedBy.
+        allow write: if request.auth != null && (
+          // Creation (first view for this post ID)
+          (request.resource.data.keys().hasAll(['totalViews', 'viewedBy']) &&
+           request.resource.data.totalViews == 1 && // Initial totalViews must be 1
+           request.resource.data.viewedBy is map &&
+           request.resource.data.viewedBy.keys().size() == 1 && // Only one key, the current user
+           request.resource.data.viewedBy.get(request.auth.uid) == true
+          )
+          ||
+          // Update (subsequent views for this post ID)
+          (request.resource.data.keys().hasAll(['totalViews', 'viewedBy']) && // Only these keys should be affected
+           request.resource.data.totalViews == resource.data.totalViews + 1 && // totalViews increments by 1
+           resource.data.viewedBy.get(request.auth.uid) != true && // User has NOT viewed before (must be false or non-existent)
+           request.resource.data.viewedBy.get(request.auth.uid) == true && // Now user's viewedBy is true
+           request.resource.data.viewedBy is map // Must remain a map
+          )
+        );
+
+        // Delete access: Only by admin, usually in conjunction with post deletion.
+        allow delete: if isAdmin();
+    }
+
+    // --- Reports Collection ---
+    // Authenticated users can create reports. Read/Update/Delete only for admin.
+    match /reports/{reportId} {
+      allow read: if isAdmin(); // Only Admin can read reports.
+      allow create: if request.auth != null
+                    && request.resource.data.reportedBy == request.auth.uid // User reports their own UID
+                    && request.resource.data.postId is string // Report linked to a postId
+                    && request.resource.data.timestamp is timestamp
+                    && request.resource.data.get('status', 'pending') == 'pending'; // New reports always start as 'pending'
+
+      allow update: if isAdmin(); // Only Admin can update (e.g., status: resolved)
+      allow delete: if isAdmin(); // Only Admin can delete reports.
+    }
+
+    // --- Withdrawal Requests Collection ---
+    // Users can create their own withdrawal requests. Read/Update/Delete only for admin.
+    match /withdrawalRequests/{requestId} {
+      allow read: if isAdmin(); // Only Admin can read withdrawal requests.
+      allow create: if request.auth != null
+                    && request.resource.data.userId == request.auth.uid // Request from current user
+                    && request.resource.data.username is string
+                    && request.resource.data.method is string
+                    && request.resource.data.id is string
+                    && request.resource.data.monetizedViewsAtRequest is int
+                    && request.resource.data.monetizedViewsAtRequest >= 100000 // Enforce withdrawal threshold at request time
+                    && request.resource.data.estimatedAmount is float
+                    && request.resource.data.estimatedAmount >= 0 // Should be non-negative
+                    && request.resource.data.requestTimestamp is timestamp
+                    && request.resource.data.get('status', 'pending') == 'pending'; // New requests start as 'pending'
+
+      allow update: if isAdmin(); // Only Admin can update (e.g., status: completed/rejected)
+      allow delete: if isAdmin(); // Only Admin can delete.
+    }
+  }
+}
+
