@@ -17,10 +17,9 @@ const db = firebase.firestore();
 const storage = firebase.storage();
 
 // --- DOM Elements ---
-// const splashScreen = document.getElementById('splash-screen'); // Splash screen is now removed from HTML.
+const jsLoadIndicator = document.getElementById('js-load-indicator'); // Diagnostic element
 const authContainer = document.getElementById('auth-container'); // Container for login/signup screens
 const appContainer = document.getElementById('app-container'); // Main application container
-const loadTestMessage = document.getElementById('load-test-message'); // Element for debugging basic JS load
 
 
 // Auth Screens Elements
@@ -194,6 +193,9 @@ let currentPostIdForComments = null; // Stores post ID when comments modal is op
 let isProcessingAuth = false; // Prevents multiple rapid authentication requests
 let hasRunInitialAuthCheck = false; // Ensures the `onAuthStateChanged` block runs its full logic only once per app load cycle
 
+let uiInitializationDone = false; // Flag to control initial UI display after Firebase SDK is ready.
+
+
 // Text-to-Speech API
 const synth = window.speechSynthesis;
 
@@ -307,7 +309,7 @@ function showScreen(screenId) {
 // Generate a random logo class from PROFILE_LOGOS
 function getRandomLogoClass() {
     const randomIndex = Math.floor(Math.random() * PROFILE_LOGOS.length);
-    return PROFILE_LOGOS[randomIndex].class;
+    return PROFILE_LOGOS[randomIndex].class; // Return just the class name
 }
 
 // Get the full CSS class name for a given logo name (e.g., 'logo-1' -> 'user-logo-1')
@@ -337,30 +339,23 @@ applyLogoStyles(); // Call once when the script loads.
 
 // Show authentication container (Login/Signup) UI
 function showAuthContainerUI() {
-    console.log("Entering showAuthContainerUI()");
-    // Set explicit display to flex to correctly handle visibility AND layout
-    authContainer.style.display = 'flex';
-    authContainer.classList.remove('hidden'); // Ensure it's not marked as 'hidden' anymore
-    
-    appContainer.style.display = 'none'; // Ensure app container is hidden
-    appContainer.classList.add('hidden'); 
+    console.log("Entering showAuthContainerUI(). Setting auth-container display to flex.");
+    appContainer.style.display = 'none'; // Hide main app
+    authContainer.style.display = 'flex'; // Show auth container using flex
+    authContainer.classList.remove('hidden'); // Ensure .hidden is removed
     
     loginScreen.classList.add('active'); // Default to login screen active
     signupScreen.classList.remove('active'); // Ensure signup is inactive
-    console.log("UI: Displaying Authentication screens.");
+    console.log("UI: Authentication screens are now visible.");
 }
 
 // Show main app container (Home Feed, Profile, etc.) UI
 function showAppContainerUI() {
-    console.log("Entering showAppContainerUI()");
-    // Set explicit display to flex to correctly handle visibility AND layout
-    appContainer.style.display = 'flex';
-    appContainer.classList.remove('hidden'); // Ensure it's not marked as 'hidden' anymore
-
-    authContainer.style.display = 'none'; // Ensure auth container is hidden
-    authContainer.classList.add('hidden'); 
-    
-    console.log("UI: Displaying Main App screens.");
+    console.log("Entering showAppContainerUI(). Setting app-container display to flex.");
+    authContainer.style.display = 'none'; // Hide auth
+    appContainer.style.display = 'flex'; // Show app container using flex
+    appContainer.classList.remove('hidden'); // Ensure .hidden is removed
+    console.log("UI: Main App screens are now visible.");
 }
 
 
@@ -368,75 +363,76 @@ function showAppContainerUI() {
 async function checkUserAndRedirect(user) {
     console.log(`checkUserAndRedirect called. User: ${user ? user.uid : "None"}. Email Verified: ${user ? user.emailVerified : "N/A"}.`);
     
-    // Only process this flow once per full page load, regardless of subsequent quick state changes.
-    // This is crucial to prevent re-rendering/re-initialization bugs on multiple onAuthStateChanged firings.
+    // This `onAuthStateChanged` listener can fire multiple times. We want initial setup once.
+    // If hasRunInitialAuthCheck is true AND current Firebase user matches global `currentUser` (stable state)
+    // then skip re-initialization logic to prevent unnecessary re-renders.
     if (hasRunInitialAuthCheck && user === auth.currentUser) {
-        console.log("checkUserAndRedirect: Already performed initial check, skipping.");
+        console.log("checkUserAndRedirect: Already performed initial check for this state, skipping.");
         return;
     }
-    hasRunInitialAuthCheck = true; // Mark as started immediately to prevent other runs.
+    hasRunInitialAuthCheck = true; // Mark as having started processing the initial auth state.
 
-    // Show the small test message if JavaScript is loading correctly.
-    if (loadTestMessage) {
-        loadTestMessage.style.display = 'block'; // Make the test message visible
-        console.log("Test message should be visible: JavaScript is loading!");
+    // Immediately hide the JS load indicator once we start processing auth, as we're about to show the main UI.
+    if (jsLoadIndicator) {
+        jsLoadIndicator.style.display = 'none';
+        console.log("Diagnostic: JavaScript load indicator hidden.");
     }
-
 
     if (user && user.emailVerified) {
         currentUser = user; // Set global current user
-        console.log(`User ${user.uid} is authenticated and verified. Attempting to load user profile.`);
+        console.log(`User ${user.uid} is authenticated and verified. Attempting to load user profile from Firestore.`);
         try {
             const userDocRef = db.collection('users').doc(currentUser.uid);
             const userDoc = await userDocRef.get();
             const userData = userDoc.data();
 
-            // If user document is missing OR username/name are not set, force profile setup.
+            // Check if user document exists AND if username and name fields are properly set (not empty strings).
             if (!userDoc.exists || !userData.username || userData.username === "" || !userData.name || userData.name === "") {
-                console.log("User profile incomplete (missing username or display name). Forcing profile setup.");
-                showAppContainerUI(); // Transition to the main app container.
-                showScreen('profile-screen'); // Navigate to the profile screen.
+                console.log("User profile incomplete (missing username/name/doc). Forcing profile setup flow.");
+                showAppContainerUI(); // Display the main app container where profile modal will live.
+                showScreen('profile-screen'); // Navigate to the profile tab.
                 editProfileModal.classList.remove('hidden'); // Automatically open the edit profile modal.
                 profileModalInstruction.textContent = "Welcome! Please complete your profile (Username and Display Name are required) to continue using the app.";
-                myProfileUsername.textContent = "@NewUser"; // Placeholder for UI
-                sidebarUsername.textContent = "New User"; // Placeholder for UI
-                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`; // Default logo
+                myProfileUsername.textContent = "@NewUser"; // Temporary UI placeholders.
+                sidebarUsername.textContent = "New User";
+                sidebarProfileAvatar.className = `profile-avatar-small ${getLogoCssClass('logo-1')}`;
                 showToast("Welcome! Please complete your profile (Username and Display Name are required).", 'info', 5000);
             } else {
-                console.log("User profile is complete. Loading main application UI.");
-                loadUserProfile(currentUser.uid); // Load full profile details, update sidebar, etc.
-                showAppContainerUI(); // Transition to the main app container.
+                console.log("User profile is complete. Displaying main application UI.");
+                loadUserProfile(currentUser.uid); // Load all user-specific data and update sidebar/header.
+                showAppContainerUI(); // Display the full main app UI.
                 showScreen('home-screen'); // Default to home feed.
-                loadPosts(); // Start loading content.
+                loadPosts(); // Start loading content for the feed.
                 showToast("Logged in successfully!", 'success');
             }
         } catch (firestoreError) {
-            console.error("Firebase Firestore error while loading user profile:", firestoreError);
-            showToast("Error loading user profile. Please try logging in again.", 'error', 7000);
-            auth.signOut(); // Critical error, force logout.
+            console.error("Firebase Firestore error while loading user profile (check rules or data structure):", firestoreError);
+            showToast("Error loading user profile. Please check your internet or try logging in again.", 'error', 7000);
+            auth.signOut(); // Critical error here, forcing logout.
             showAuthContainerUI(); // Fallback to authentication UI.
         }
-    } else { // No user is logged in OR user's email is not verified
+    } else { // No user is logged in (user is null) OR user is logged in but email is NOT verified
         currentUser = null; // Ensure global user object is null.
-        console.log("No authenticated and verified user found. Displaying Authentication UI.");
-        showAuthContainerUI(); // Display the Login/Register screens.
+        console.log("No authenticated and verified user. Displaying Authentication UI.");
+        showAuthContainerUI(); // Display Login/Register screens.
 
-        if (user && !user.emailVerified) { // If there's a user object but not verified
-            console.log("User is authenticated but email not verified. Instructing verification.");
+        if (user && !user.emailVerified) { // If there's a user object, but their email is unverified
+            console.log(`User ${user.uid} is authenticated but email is NOT verified. Instructing user for verification.`);
             updateAuthStatus(loginStatus, "Please verify your email to continue. Check your inbox (or spam folder) for a verification link.", 'info');
-            auth.signOut(); // Sign out unverified users to streamline verification flow.
+            auth.signOut(); // Best practice: sign out unverified users to streamline verification flow on next login attempt.
         } else {
             console.log("No active user session found. Showing login form.");
-            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous messages.
+            updateAuthStatus(loginStatus, "", 'hidden'); // Clear any previous login status messages.
         }
     }
 }
 
 
 // Attach the main authentication state listener to Firebase
+// This listener fires whenever the user's sign-in state changes (on app load, login, logout).
 auth.onAuthStateChanged(user => {
-    // console.log("onAuthStateChanged event fired. Current User:", user ? user.uid : "None");
-    checkUserAndRedirect(user); // Calls our central handler
+    console.log("onAuthStateChanged event fired by Firebase SDK. User status detected.");
+    checkUserAndRedirect(user); // Call our central handler function.
 });
 
 
@@ -479,62 +475,63 @@ sendResetEmailBtn.addEventListener('click', sendPasswordReset);
 
 // Handle user sign-in process
 async function signInUser() {
-    if (isProcessingAuth) { // Prevent multiple clicks/requests
+    if (isProcessingAuth) { // Prevent multiple clicks/requests if auth is already in progress.
         console.warn("Authentication process already ongoing. Please wait.");
         return;
     }
-    isProcessingAuth = true; // Set flag
-    loginBtn.disabled = true; // Disable button during process
+    isProcessingAuth = true; // Set flag to true.
+    loginBtn.disabled = true; // Disable login button.
 
     const email = loginEmailInput.value.trim();
     const password = loginPasswordInput.value.trim();
 
     if (!email || !password) {
         updateAuthStatus(loginStatus, "Please enter both email and password.", 'error');
-        isProcessingAuth = false; // Reset flag
-        loginBtn.disabled = false; // Re-enable button
+        isProcessingAuth = false; // Reset flag.
+        loginBtn.disabled = false; // Re-enable button.
         return;
     }
 
     try {
-        console.log("Attempting user sign-in for:", email);
+        console.log(`Attempting user sign-in for: ${email}`);
         updateAuthStatus(loginStatus, "Logging in...", 'info');
         await auth.signInWithEmailAndPassword(email, password);
-        // Success: `onAuthStateChanged` listener will pick this up and redirect UI.
-        loginEmailInput.value = ''; // Clear inputs after successful attempt.
+        // Success: The `onAuthStateChanged` listener will automatically pick this up and handle UI redirection.
+        console.log("Firebase signInWithEmailAndPassword succeeded.");
+        loginEmailInput.value = ''; // Clear inputs after attempt (whether success or fail).
         loginPasswordInput.value = '';
     } catch (error) {
-        console.error("Firebase Sign-in error:", error.code, error.message);
+        console.error("Firebase Sign-in error caught:", error.code, error.message);
         let errorMessage = "Login failed. Please check your email and password.";
-        // Friendly error messages based on Firebase error codes
+        // Provide user-friendly error messages based on Firebase error codes.
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-            errorMessage = "Invalid email or password.";
+            errorMessage = "Invalid email or password. Please try again.";
         } else if (error.code === 'auth/too-many-requests') {
-            errorMessage = "Too many failed login attempts. Please try again later.";
+            errorMessage = "Too many failed login attempts. Please try again later (rate limit).";
         } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = "Network error. Check your internet connection.";
+            errorMessage = "Network error. Please check your internet connection.";
         } else if (error.code === 'auth/user-disabled') {
-            errorMessage = "Your account has been disabled.";
+            errorMessage = "Your account has been disabled. Please contact support.";
         } else if (error.code === 'auth/invalid-email') {
-            errorMessage = "Invalid email format.";
+            errorMessage = "Invalid email format. Please check.";
         } else if (error.code === 'auth/internal-error') {
-            errorMessage = "Server error. Please try again later.";
+            errorMessage = "Server error during login. Please try again later.";
         }
         updateAuthStatus(loginStatus, errorMessage, 'error');
     } finally {
-        isProcessingAuth = false; // Always reset flag
-        loginBtn.disabled = false; // Always re-enable button
+        isProcessingAuth = false; // Always reset the flag.
+        loginBtn.disabled = false; // Always re-enable the button.
     }
 }
 
 // Handle user registration process
 async function registerUser() {
-    if (isProcessingAuth) { // Prevent multiple clicks/requests
+    if (isProcessingAuth) { // Prevent multiple clicks/requests if auth is already in progress.
         console.warn("Authentication process already ongoing. Please wait.");
         return;
     }
-    isProcessingAuth = true; // Set flag
-    signupBtn.disabled = true; // Disable button
+    isProcessingAuth = true; // Set flag.
+    signupBtn.disabled = true; // Disable signup button.
 
     const email = signupEmailInput.value.trim();
     const password = signupPasswordInput.value.trim();
@@ -563,14 +560,14 @@ async function registerUser() {
         console.log("Attempting user registration for:", email);
         updateAuthStatus(signupStatus, "Registering user...", 'info');
         const userCredential = await auth.createUserWithEmailAndPassword(email, password);
-        await sendEmailVerification(userCredential.user); // Send verification email immediately
+        await sendEmailVerification(userCredential.user); // Send email verification immediately.
 
         // Create initial user document in Firestore with placeholder data.
         await db.collection('users').doc(userCredential.user.uid).set({
             uid: userCredential.user.uid,
             email: userCredential.user.email,
-            username: "", // Will be set in profile edit
-            name: "",     // Will be set in profile edit
+            username: "", // To be set in profile edit
+            name: "",     // To be set in profile edit
             bio: "",
             whatsapp: "",
             instagram: "",
@@ -589,32 +586,33 @@ async function registerUser() {
             createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        console.log("User registered and profile doc created. Showing verification message.");
+        console.log("User registered and initial profile document created. Displaying verification message.");
         updateAuthStatus(signupStatus, "Registration successful! Please verify your email.", 'success');
         signupEmailInput.value = '';
         signupPasswordInput.value = '';
         signupConfirmPasswordInput.value = '';
-        // Automatically switch to login screen and update its status.
+        // After successful registration, switch to login screen for verification instructions.
         loginScreen.classList.add('active');
         signupScreen.classList.remove('active');
         updateAuthStatus(loginStatus, "Registered! Check your inbox (or spam) to verify email, then login.", 'info');
 
     } catch (error) {
-        console.error("Firebase Registration error:", error.code, error.message);
+        console.error("Firebase Registration error caught:", error.code, error.message);
         let errorMessage = "Registration failed.";
+        // Friendly error messages.
         if (error.code === 'auth/email-already-in-use') {
             errorMessage = "This email is already in use. Please log in instead.";
         } else if (error.code === 'auth/invalid-email') {
-            errorMessage = "Invalid email format. Please check and retry.";
+            errorMessage = "Invalid email format. Please check.";
         } else if (error.code === 'auth/weak-password') {
-            errorMessage = "Password is too weak (min 6 chars).";
+            errorMessage = "Password is too weak. Please choose a stronger one (min 6 characters).";
         } else if (error.code === 'auth/network-request-failed') {
-            errorMessage = "Network error during registration. Check internet.";
+            errorMessage = "Network error during registration. Check internet connection.";
         }
         updateAuthStatus(signupStatus, errorMessage, 'error');
     } finally {
-        isProcessingAuth = false; // Always reset flag
-        signupBtn.disabled = false; // Always re-enable button
+        isProcessingAuth = false; // Always reset flag.
+        signupBtn.disabled = false; // Always re-enable button.
     }
 }
 
@@ -626,7 +624,7 @@ async function sendEmailVerification(user) {
         console.log("Verification email sent successfully.");
     } catch (error) {
         console.error("Error sending verification email:", error);
-        showToast("Failed to send verification email. Try again later.", 'error');
+        showToast("Failed to send verification email. Please try again later.", 'error');
     }
 }
 
@@ -637,7 +635,7 @@ async function sendPasswordReset() {
         return;
     }
     isProcessingAuth = true;
-    sendResetEmailBtn.disabled = true; // Disable button
+    sendResetEmailBtn.disabled = true; // Disable button.
 
     const email = resetEmailInput.value.trim();
     if (!email) {
@@ -650,7 +648,7 @@ async function sendPasswordReset() {
     try {
         console.log("Sending password reset email for:", email);
         await auth.sendPasswordResetEmail(email);
-        updateAuthStatus(resetStatus, "Password reset link sent to your email!", 'success');
+        updateAuthStatus(resetStatus, "Password reset link sent to your email! Please check your inbox.", 'success');
     } catch (error) {
         console.error("Firebase Forgot password error:", error.code, error.message);
         let errorMessage = "Failed to send reset link.";
@@ -664,7 +662,7 @@ async function sendPasswordReset() {
         updateAuthStatus(resetStatus, errorMessage, 'error');
     } finally {
         isProcessingAuth = false;
-        sendResetEmailBtn.disabled = false; // Re-enable button
+        sendResetEmailBtn.disabled = false; // Re-enable button.
     }
 }
 
@@ -675,7 +673,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         await auth.signOut();
         showToast("Logged out successfully.", 'info');
 
-        // Clear input fields and reset state for new login/registration.
+        // Clear all input fields for security and a fresh start for the next user.
         loginEmailInput.value = '';
         loginPasswordInput.value = '';
         signupEmailInput.value = '';
@@ -688,56 +686,56 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         editInstagramInput.value = '';
         profilePicUrlInput.value = '';
         
-        // Reset flag so onAuthStateChanged will perform full check next time.
+        // Reset the flag so that onAuthStateChanged will perform its full check next time.
         hasRunInitialAuthCheck = false; 
 
-        // UI redirection will be handled by `onAuthStateChanged` listener.
-        // This ensures the correct UI (login/register) is shown based on Firebase's confirmed state.
+        // UI redirection will be automatically handled by the `onAuthStateChanged` listener.
+        // It will detect the user as logged out and redirect to authentication screens.
     } catch (error) {
         console.error("Error during logout:", error);
-        showToast("Failed to log out.", 'error');
+        showToast("Failed to log out. Please try again.", 'error');
     }
 });
 
 
 // --- Initial App Load Logic (Triggered on DOMContentLoaded) ---
 document.addEventListener('DOMContentLoaded', () => {
-    console.log("DOMContentLoaded event fired. Initializing app UI states.");
+    console.log("DOMContentLoaded event fired. Beginning app initialization sequence.");
     
-    // 1. Initially hide main app and authentication UI elements to control visibility from JS.
-    // CSS's .hidden class will ensure they are initially display:none.
+    // 1. Initially hide both main app and authentication UI elements using CSS .hidden.
+    // This prevents any "flash of unstyled content" or incorrect UI appearing before JS is ready.
     appContainer.classList.add('hidden'); 
     authContainer.classList.add('hidden'); 
 
-    // 2. Make the load test message visible. If this is not seen on screen, JS is failing to load/execute.
-    if (loadTestMessage) {
-        loadTestMessage.style.display = 'block'; 
-        console.log("Diagnostic: 'load-test-message' is now displayed. JavaScript should be running.");
+    // 2. Make the `js-load-indicator` visible. This is your immediate confirmation that JS has loaded and is running.
+    if (jsLoadIndicator) {
+        jsLoadIndicator.style.display = 'block'; 
+        console.log("Diagnostic: 'js-load-indicator' is now visible. JavaScript is running.");
     } else {
-        console.warn("Diagnostic: 'load-test-message' element not found in DOM.");
+        console.warn("Diagnostic: 'js-load-indicator' element not found in DOM. Cannot confirm JS execution visually.");
     }
 
-
-    // 3. Create a promise that resolves after a short, fixed delay (e.g., 50ms).
-    // This provides a tiny buffer to allow browser rendering to catch up, improving smooth UI transitions.
-    splashScreenMinTimePromise = new Promise(resolve => {
+    // 3. Create a promise that resolves after a tiny, fixed delay (e.g., 50ms).
+    // This provides a small buffer time for the browser's initial rendering and CSS application.
+    const initialRenderDelayPromise = new Promise(resolve => {
         setTimeout(() => {
-            console.log("UI readiness buffer (50ms) resolved. Proceeding with auth check.");
-            resolve();
-        }, 50); // Minimal delay
+            console.log("Initial render delay (50ms) resolved. Proceeding to authentication check.");
+            resolve(); // Fulfills the promise.
+        }, 50); 
     });
 
-    // 4. Set a fallback timeout for onAuthStateChanged listener.
-    // In rare cases (e.g., severe network issues, Firebase SDK failing), `onAuthStateChanged` might not fire quickly.
-    // This ensures UI still proceeds after a fixed max delay, preventing a completely blank/stuck screen.
+    // 4. Set a final fallback timeout for authentication state resolution.
+    // If Firebase SDK's `onAuthStateChanged` doesn't fire, or is too slow (e.g., due to network issues),
+    // this ensures the UI still transitions after a fixed maximum delay (e.g., 2 seconds from DOMContentLoad).
+    // It prevents the app from being stuck on a blank/loading screen indefinitely.
     splashScreenTimeout = setTimeout(() => {
-        if (!hasRunInitialAuthCheck) { // Only force the check if it hasn't run already via the primary listener.
-            console.warn("Fallback: Forced authentication check triggered due to timeout. Proceeding with UI.");
+        if (!hasRunInitialAuthCheck) { // Only if `onAuthStateChanged` handler hasn't processed its initial check.
+            console.warn("Fallback: Authentication state check timed out (2s total). Forcing UI transition based on current Firebase state.");
             // Explicitly call the `checkUserAndRedirect` handler.
-            // At this point, `auth.currentUser` will represent whatever state Firebase was able to determine.
+            // At this point, `auth.currentUser` will be either a User object or null, reflecting Firebase's best known state.
             checkUserAndRedirect(auth.currentUser);
         }
-    }, 2000); // 2 seconds total max initial wait time for any UI to appear. (Adjust as needed, shorter if possible).
+    }, 2000); // 2 seconds total max wait time.
 });
 
 
@@ -764,7 +762,7 @@ darkModeCheckbox.addEventListener('change', (e) => {
 });
 
 // Load and apply initial theme setting from local storage.
-document.addEventListener('DOMContentLoaded', () => { // Already in the primary DOMContentLoaded listener.
+document.addEventListener('DOMContentLoaded', () => { // Already handled within the primary DOMContentLoaded listener.
     const savedTheme = localStorage.getItem('theme') || 'dark';
     if (savedTheme === 'light') {
         body.classList.remove('dark-mode');
@@ -881,9 +879,9 @@ async function loadPosts() {
 
     try {
         let postsBaseRef = db.collection('posts')
-                                .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active posts
-                                .orderBy('expiryTime', 'desc') // Newer expire dates first (effectively newer posts)
-                                .orderBy('timestamp', 'desc'); // Then by creation timestamp
+                         .where('expiryTime', '>', firebase.firestore.Timestamp.now()) // Only active (not expired) posts
+                         .orderBy('expiryTime', 'desc') // Newer expire dates first (effectively newer posts)
+                         .orderBy('timestamp', 'desc'); // Then by creation timestamp
 
 
         const selectedCategory = postCategoryFilter.value;
@@ -1018,7 +1016,7 @@ async function loadPosts() {
                 }
                 postsFeed.appendChild(horizontalContainer);
             } else if (randomLayout === 2 && tempPostsForRendering.length >= 4) { // Table (4-6 posts)
-                const numTable = Math.min(tempPostsForRendering.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
+                const numTable = Math.min(postsToLoadPerScroll.length, Math.floor(Math.random() * 3) + 4); // 4, 5, or 6
                 const tableContainer = document.createElement('div');
                 tableContainer.className = 'table-post-container';
                 for (let i = 0; i < numTable; i++) {
@@ -1911,8 +1909,8 @@ async function loadUserProfile(userId) {
                 messageUserBtn.classList.add('hidden');
                 profileWhatsappLink.classList.add('hidden');
                 profileInstagramLink.classList.add('hidden');
-                profilePostTabs[0].textContent = 'My Posts';
-                profilePostTabs[1].textContent = 'My Reposts';
+                profilePostTabs.textContent = 'My Posts';
+                profilePostTabs.textContent = 'My Reposts';
             } else {
                 editProfileBtn.classList.add('hidden');
                 messageUserBtn.classList.remove('hidden'); // Always allow messaging
@@ -1931,19 +1929,19 @@ async function loadUserProfile(userId) {
                 if (userData.whatsapp) profileWhatsappLink.classList.remove('hidden'); else profileWhatsappLink.classList.add('hidden');
                 if (userData.instagram) profileInstagramLink.classList.remove('hidden'); else profileInstagramLink.classList.add('hidden');
 
-                profilePostTabs[0].textContent = `${userData.username}'s Posts`;
-                profilePostTabs[1].textContent = `${userData.username}'s Reposts`;
+                profilePostTabs.textContent = `${userData.username}'s Posts`;
+                profilePostTabs.textContent = `${userData.username}'s Reposts`;
 
                 // If target user's account is private and current user is not following,
                 // hide their posts and show a message.
                 if (userData.isPrivate && !(currentUserData.following && currentUserData.following.includes(userId))) {
                     profilePostsFeed.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">This account is private. Follow to view posts.</p>';
                     profileRepostsFeed.innerHTML = '';
-                    profilePostTabs[0].classList.add('hidden');
-                    profilePostTabs[1].classList.add('hidden');
+                    profilePostTabs.classList.add('hidden');
+                    profilePostTabs.classList.add('hidden');
                 } else {
-                    profilePostTabs[0].classList.remove('hidden');
-                    profilePostTabs[1].classList.remove('hidden');
+                    profilePostTabs.classList.remove('hidden');
+                    profilePostTabs.classList.remove('hidden');
                 }
 
             }
@@ -2111,7 +2109,7 @@ editUsernameInput.addEventListener('input', () => {
     }
 
     // Get current username from logged-in user's data for comparison
-    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@')[0] : "";
+    let currentAuthUsername = (currentUser && currentUser.email) ? currentUser.email.split('@') : "";
     if(myProfileUsername && myProfileUsername.textContent) {
         currentAuthUsername = myProfileUsername.textContent.replace('@', '');
     }
@@ -2333,7 +2331,7 @@ async function handleFollow(targetUserId) {
                 return; // Exit transaction if already following.
             }
 
-            // If target user is private, direct follow is not allowed (would need a follow request system).
+            // If target user is private, cannot follow directly. Need a request system.
             if (targetUserData.isPrivate) {
                 showToast("This account is private. Cannot follow directly.", 'info', 4000);
                 throw new Error("Private account, direct follow not allowed."); // Abort transaction.
@@ -2538,7 +2536,7 @@ async function showFollowList(userId, type) {
 
             const actionBtn = userItem.querySelector('.follow-btn');
             // Logic to determine button text and action ('Follow', 'Following', 'Remove').
-            if (currentUser.uid === user.id) { // Hide button if it's the current user themselves.
+            if (currentUser.uid === user.id) { // Hide button if it's current user's profile.
                 actionBtn.classList.add('hidden');
             } else if (type === 'followers' && userId === currentUser.uid) { // If viewing own followers list.
                 actionBtn.textContent = 'Remove';
@@ -2639,6 +2637,7 @@ async function loadRecentChats() {
                     }
 
                     // Keep only the latest message for each chat partner.
+                    // This handles potential multiple messages from same partner, keeps only the newest.
                     if (!updatedChats[partnerId] || data.timestamp.toMillis() > updatedChats[partnerId].timestamp) {
                         updatedChats[partnerId] = {
                             partnerId: partnerId,
@@ -2718,7 +2717,7 @@ async function openChatWindow(partnerId) {
             } else {
                 chatPartnerAvatar.style.backgroundImage = 'none';
                 const partnerLogoClass = getLogoCssClass(partnerDoc.data().profileLogo || 'logo-1');
-                chatPartnerAvatar.className = `profile-avatar small ${partnerLogoClass}`;
+                partnerAvatarHtml = `<div class="profile-avatar small ${partnerLogoClass}"></div>`;
             }
         } else {
             chatPartnerUsername.textContent = "@UnknownUser";
