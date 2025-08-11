@@ -80,10 +80,10 @@ body.light-mode {
 }
 
 .hidden {
-    display: none !important;
+    display: none !important; /* !important to override other display properties */
 }
 
-/* Splash Screen - Adjusted display and opacity for smooth removal by JS */
+/* Splash Screen (removed from HTML, styling is minimal for historical consistency if somehow rendered) */
 .splash-screen {
     position: fixed;
     top: 0;
@@ -91,36 +91,34 @@ body.light-mode {
     width: 100%;
     height: 100%;
     background: linear-gradient(135deg, #0f3460, #16213e); /* Gradient background */
-    display: flex; /* Kept flex here to center contents until removed */
+    display: none; /* Ensure it's not displayed initially */
     justify-content: center;
     align-items: center;
     flex-direction: column;
     z-index: 1000;
     color: white;
     text-align: center;
-    opacity: 1;
+    opacity: 0; /* Starts hidden and JS controls visibility */
     transition: opacity 0.5s ease-out; /* Smooth fade-out */
 }
+/* No more splash-specific content, logo, h1 etc. */
 
-/* Centering the content within splash and auth containers */
-.splash-content, .auth-content { /* Applied to both to center them */
-    display: flex;
+/* Centering for auth container */
+.auth-content { /* Applied to both to center them */
+    display: flex; /* Changed from original .splash-content flex setup to accommodate new initial logic */
     flex-direction: column;
     justify-content: center;
     align-items: center; /* This is key for horizontal centering of block content in a flex container */
     animation: fadeIn 1s ease-out forwards;
     width: 100%; /* Ensure it takes full width for alignment */
-    /* Removed fixed height for dynamic content; rely on parent for total height or overflow */
-    padding: 20px; /* Add some padding around content */
+    padding: 20px;
     box-sizing: border-box;
-    text-align: center; /* Re-center text explicitly */
-}
-.splash-content { /* Specific padding/margin adjustments */
-    height: 100%; /* Make splash content take full height to center logo */
+    text-align: center;
+    height: auto; /* Allow height to adjust */
 }
 
 
-.app-logo-splash {
+.app-logo-splash { /* Used by auth-content h1 */
     width: 100px;
     height: 100px;
     background: linear-gradient(45deg, #00ffff, #ff00ff); /* Neon gradient */
@@ -142,20 +140,10 @@ body.light-mode {
     left: 50%;
     transform: translate(-50%, -50%);
 }
+/* Removed other splash-specific text/styles as these were inside .splash-content which is no longer the primary content display for splash screen. */
 
-.splash-screen h1 {
-    font-size: 2.8em;
-    margin-bottom: 10px;
-    color: var(--highlight-color-main);
-    text-shadow: 0 0 10px var(--highlight-color-main), 0 0 20px var(--highlight-color-main);
-}
 
-.splash-screen p {
-    font-size: 1.2em;
-    color: #88d4d4;
-}
-
-.loader {
+.loader { /* Used elsewhere too */
     border: 4px solid rgba(255, 255, 255, 0.3);
     border-top: 4px solid var(--highlight-color-main);
     border-radius: 50%;
@@ -170,57 +158,56 @@ body.light-mode {
     width: 100%;
     max-width: 420px;
     height: 100vh;
-    display: flex;
+    display: flex; /* Changed from hidden in HTML to controlled by JS via .hidden */
     justify-content: center;
-    align-items: center; /* Vertically centers the .auth-content */
+    align-items: center;
     background-color: var(--bg-color-lighter);
     box-shadow: 0 0 30px var(--shadow-color-main);
     border-radius: 12px;
     overflow: hidden;
     border: 1px solid var(--border-color-main);
     padding: 20px;
-    box-sizing: border-box; /* Include padding in width/height */
+    box-sizing: border-box;
     flex-direction: column;
     text-align: center;
 }
-.auth-content { /* Adjust padding for better look on small screens */
+.auth-content { /* Main content area for forms */
     width: 100%;
     background-color: var(--bg-color-main);
-    padding: 30px 20px; /* Reduced side padding slightly */
+    padding: 30px 20px;
     border-radius: 8px;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.1);
     border: 1px solid var(--border-color-main);
-    /* For Auth Screens within */
-    display: flex; /* Make it a flex container to manage children */
+    display: flex; /* Inner flex to arrange children vertically */
     flex-direction: column;
-    align-items: center; /* Center children horizontally */
+    align-items: center; /* Center login/signup forms */
 }
-.auth-content .auth-logo {
+.auth-content .auth-logo { /* Specific for auth page logo */
     width: 80px;
     height: 80px;
     margin: 0 auto 15px auto;
 }
-.auth-content h1 {
+.auth-content h1 { /* Specific for auth page title */
     font-size: 2.2em;
     color: var(--highlight-color-main);
     margin-bottom: 25px;
     text-shadow: 0 0 5px var(--highlight-color-main);
 }
-.auth-screen {
-    display: none; /* Hide by default */
-    width: 100%; /* Take full width of parent .auth-content */
-    flex-direction: column; /* Inner flex for form elements */
-    align-items: center; /* Center form elements horizontally */
+.auth-screen { /* Login/Signup specific screen container */
+    display: none; /* Initially hidden, made visible by JS 'active' class */
+    width: 100%;
+    flex-direction: column; /* Ensure child form groups stack vertically */
+    align-items: center; /* Center contents within form */
 }
 .auth-screen.active {
-    display: flex; /* Show active screen with flex */
+    display: flex; /* Only active screen is displayed as flex */
 }
-.auth-text {
+.auth-text { /* Text for links */
     font-size: 0.9em;
     margin-top: 15px;
     color: var(--text-color-light);
 }
-.auth-text a {
+.auth-text a { /* Link styling */
     color: var(--highlight-color-main);
     text-decoration: none;
     font-weight: bold;
@@ -228,23 +215,23 @@ body.light-mode {
 .auth-text a:hover {
     text-decoration: underline;
 }
-.status-message {
+.status-message { /* Feedback messages */
     margin-top: 15px;
     padding: 8px 10px;
     border-radius: 5px;
     font-size: 0.9em;
 }
-.status-message.error {
+.status-message.error { /* Error color */
     background-color: rgba(231, 76, 60, 0.2);
     color: #e74c3c;
     border: 1px solid #e74c3c;
 }
-.status-message.success {
+.status-message.success { /* Success color */
     background-color: rgba(51, 255, 87, 0.2);
     color: #33ff57;
     border: 1px solid #33ff57;
 }
-.status-message.info {
+.status-message.info { /* Info color */
     background-color: rgba(0, 255, 255, 0.1);
     color: #00ffff;
     border: 1px solid #00ffff;
@@ -557,7 +544,7 @@ h2 {
 }
 .profile-avatar::before {
     content: '👤'; /* Default placeholder emoji */
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Font Awesome 6 Free'; font-weight: 900;
     font-size: 24px;
     position: absolute;
     top: 50%; left: 50%;
@@ -1036,7 +1023,7 @@ input[type="file"] {
 }
 .logo-option-item::before {
     content: '👤'; /* Default placeholder emoji */
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Font Awesome 6 Free'; font-weight: 900;
     font-size: 28px;
     position: absolute;
     top: 50%; left: 50%;
@@ -1793,4 +1780,4 @@ input[type="file"] {
     .immersive-feed .post-card {
         padding: 15px;
         height: calc(100vh - 140px); /* Adjust height for smaller headers/footers */
-    }
+}
