@@ -2,269 +2,225 @@
 <html lang="en">
 <head>
 <meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>AddMint — Mobile Social (Single File)</title>
-
-<!-- ====================================================
- Single-file AddMint SPA
- - Vanilla JS + Firebase (modular v9)
- - Mobile-first, dark theme, feature-rich
-==================================================== -->
-
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1" />
+<title>AddMint — mobile social (single file)</title>
+<!-- Minimal favicon using CSS logo (you asked not to use image logos) -->
 <style>
-:root{
-  --bg-color-main: #1a1a2e;
-  --bg-color-lighter: #16213e;
-  --bg-color-darker: #0d2a4a;
-  --text-color-main: #e0e0e0;
-  --text-color-light: #bbb;
-  --border-color-main: #0f3460;
-  --highlight-color-main: #00ffff;
-  --highlight-color-secondary: #ff00ff;
-  --button-primary-bg: #00ffff;
-  --button-primary-text: #1a1a2e;
+  :root{
+    --bg-color-main:#1a1a2e;
+    --bg-color-lighter:#16213e;
+    --bg-color-darker:#0d2a4a;
+    --text-color-main:#e0e0e0;
+    --text-color-light:#bbb;
+    --border-color-main:#0f3460;
+    --highlight-color-main:#00ffff;
+    --highlight-color-secondary:#ff00ff;
+    --button-primary-bg:#00ffff;
+    --button-primary-text:#1a1a2e;
+    --max-width:420px;
+  }
+  html,body{
+    margin:0;padding:0;height:100%;background:var(--bg-color-main);color:var(--text-color-main);
+    font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial;
+    -webkit-font-smoothing:antialiased;
+    -moz-osx-font-smoothing:grayscale;
+  }
+  .app {
+    max-width:var(--max-width);margin:0 auto;min-height:100vh;display:flex;flex-direction:column;
+    border-left:1px solid rgba(255,255,255,0.02);border-right:1px solid rgba(255,255,255,0.02);
+  }
 
-  --max-width: 420px;
-  --safe-pad: env(safe-area-inset-bottom, 12px);
-}
+  /* Header */
+  header.app-header{
+    position:fixed;left:0;right:0;top:0;height:60px;background:linear-gradient(180deg,var(--bg-color-darker),transparent);
+    display:flex;align-items:center;justify-content:space-between;padding:10px 14px;z-index:50;border-bottom:1px solid rgba(255,255,255,0.03);
+  }
+  .logo {
+    display:flex;align-items:center;gap:10px;
+    font-weight:700;letter-spacing:0.6px;font-size:18px;
+  }
+  .logo .logo-mark{
+    width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;
+    background:conic-gradient(from 90deg,var(--highlight-color-main),var(--highlight-color-secondary));color:var(--button-primary-text);
+    font-weight:800;font-size:16px;
+  }
+  .header-actions{display:flex;gap:10px;align-items:center;}
+  .btn {
+    background:transparent;border:1px solid rgba(255,255,255,0.04);padding:8px 10px;border-radius:10px;color:var(--text-color-main);font-size:14px;
+  }
+  .btn.primary{background:var(--button-primary-bg);color:var(--button-primary-text);border:none}
+  /* Content container (space for header & footer) */
+  main.app-main{padding-top:74px;padding-bottom:74px;flex:1;overflow:auto;}
+  .center-wrap{max-width:420px;margin:0 auto;padding:0 12px;}
 
-*{box-sizing:border-box}
-html,body{height:100%;margin:0;background:var(--bg-color-main);color:var(--text-color-main);font-family:Inter,system-ui,Segoe UI,Roboto,'Helvetica Neue',Arial;}
-a{color:var(--highlight-color-main);text-decoration:none}
-.container{max-width:var(--max-width);margin:0 auto;min-height:100vh;display:flex;flex-direction:column;}
+  /* Footer navigation */
+  footer.app-footer{
+    position:fixed;left:0;right:0;bottom:0;height:60px;background:linear-gradient(0deg,var(--bg-color-darker),transparent);
+    display:flex;align-items:center;justify-content:space-around;padding:8px 12px;z-index:50;border-top:1px solid rgba(255,255,255,0.03);
+  }
+  .nav-item{display:flex;flex-direction:column;align-items:center;font-size:11px;color:var(--text-color-light)}
+  .nav-item button{background:none;border:none;color:inherit;font:inherit}
 
-/* Header | Footer */
-.header{
-  position:fixed;top:0;left:0;right:0;background:linear-gradient(180deg, rgba(13,42,74,0.9), transparent);backdrop-filter: blur(6px);
-  border-bottom:1px solid var(--border-color-main);z-index:40;padding:12px 16px;display:flex;align-items:center;gap:8px;height:58px;
-}
-.header .logo{font-weight:700;color:var(--highlight-color-main);font-size:18px;letter-spacing:0.6px;}
-.header .spacer{flex:1}
-.header button{background:transparent;border:0;color:var(--text-color-light);font-size:16px}
+  /* Auth container */
+  #auth-container{display:none;padding:20px;}
+  .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border-radius:14px;padding:16px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+  label{display:block;font-size:13px;margin-bottom:6px;color:var(--text-color-light)}
+  input[type="text"],input[type="email"],input[type="password"],textarea{
+    width:100%;box-sizing:border-box;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.04);
+    background:transparent;color:var(--text-color-main);outline:none;font-size:14px;
+  }
+  .form-row{margin-bottom:12px}
+  .muted{color:var(--text-color-light);font-size:13px}
 
-/* Content */
-.main{padding-top:70px;padding-bottom:78px;flex:1;overflow:auto}
-.screen{display:none;padding:12px}
-.screen.active{display:block}
+  /* Post card */
+  .post-card{background:linear-gradient(180deg, rgba(255,255,255,0.01), rgba(255,255,255,0.01));border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+  .post-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+  .avatar{width:44px;height:44px;border-radius:10px;background:linear-gradient(180deg,var(--bg-color-lighter),var(--bg-color-darker));display:flex;align-items:center;justify-content:center;font-weight:700}
+  .username{font-weight:700}
+  .post-content{font-size:14px;color:var(--text-color-main);margin-bottom:8px;white-space:pre-wrap}
+  .post-actions{display:flex;gap:14px;align-items:center;color:var(--text-color-light);font-size:13px}
+  .icon-btn{border:none;background:none;display:flex;gap:8px;align-items:center;cursor:pointer;color:inherit}
+  .count{font-size:12px;color:var(--text-color-light)}
 
-/* Footer nav */
-.footer{
-  position:fixed;left:0;right:0;bottom:0;background:linear-gradient(0deg, rgba(13,42,74,0.95), transparent);border-top:1px solid var(--border-color-main);
-  height:64px;padding:8px;display:flex;gap:8px;align-items:center;justify-content:space-around;z-index:40;
-  padding-bottom:calc(var(--safe-pad));
-}
+  /* Modal full screen */
+  .modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:none;align-items:center;justify-content:center;z-index:80}
+  .modal{width:100%;max-width:420px;background:var(--bg-color-lighter);border-radius:12px;padding:14px;margin:12px;border:1px solid rgba(255,255,255,0.04)}
+  .modal .modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
 
-/* Buttons & cards */
-.btn{display:inline-flex;align-items:center;gap:8px;padding:8px 12px;border-radius:12px;border:0;background:transparent;color:var(--text-color-main);cursor:pointer}
-.btn.primary{background:var(--button-primary-bg);color:var(--button-primary-text);box-shadow:0 6px 20px rgba(0,255,255,0.06);font-weight:600}
-.card{background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));border:1px solid rgba(255,255,255,0.03);border-radius:12px;padding:12px;margin-bottom:12px;box-shadow: 0 4px 10px rgba(0,0,0,0.35);}
+  /* Tiny loader */
+  .loader{width:18px;height:18px;border-radius:50%;border:3px solid rgba(255,255,255,0.06);border-top-color:var(--highlight-color-main);animation:spin 0.9s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
 
-/* post */
-.post-card{position:relative;overflow:hidden}
-.post-card .post-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
-.avatar{width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--bg-color-lighter),var(--bg-color-darker));display:flex;align-items:center;justify-content:center;color:var(--text-color-main);font-weight:700}
-.username{font-weight:600;color:var(--text-color-main);font-size:14px}
-.handle{color:var(--text-color-light);font-size:12px}
-.post-content img{max-width:100%;border-radius:8px;margin-top:8px}
-.post-actions{display:flex;align-items:center;gap:12px;margin-top:8px;color:var(--text-color-light)}
-.icon{font-size:18px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
-.icon.like.liked{color:#ff3b30;transform:scale(1.04);animation: bounceIn 420ms ease}
+  /* Neon glow animation for double-click like */
+  .neon-glow { box-shadow:0 0 10px 3px rgba(0,255,255,0.12),0 0 20px 6px rgba(255,0,255,0.04); animation:glow 700ms ease-out; }
+  @keyframes glow { from {opacity:0.0; transform:scale(0.98)} to {opacity:1; transform:scale(1)} }
 
-/* neon glow on double click */
-.neon-glow{box-shadow:0 0 24px 6px rgba(0,255,255,0.12), 0 0 60px 16px rgba(0,255,255,0.04);}
+  /* Bounce in for like icon */
+  .bounce { animation:bounceIn 420ms cubic-bezier(.2,.9,.3,1) }
+  @keyframes bounceIn { 0%{transform:scale(.6)} 60%{transform:scale(1.15)} 100%{transform:scale(1)} }
 
-/* modals */
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:60;padding:16px}
-.modal{width:100%;max-width:420px;background:var(--bg-color-lighter);border-radius:12px;padding:14px;border:1px solid var(--border-color-main);animation:fadeInScale 220ms ease}
-.input, textarea{width:100%;padding:10px;border-radius:8px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:var(--text-color-main);outline:none;margin-bottom:8px;resize:none}
-.small{font-size:12px;color:var(--text-color-light)}
-
-/* loaders */
-#load-status{position:fixed;inset:0;background:linear-gradient(180deg, rgba(10,10,20,0.8), rgba(10,10,20,0.95));display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:12px}
-.loader{width:42px;height:42px;border-radius:50%;border:4px solid rgba(255,255,255,0.06);border-top-color:var(--highlight-color-main);animation:spin 900ms linear infinite}
-
-/* subtle helpers */
-.row{display:flex;gap:8px;align-items:center}
-.kv{font-size:13px;color:var(--text-color-light)}
-
-/* animations */
-@keyframes spin{to{transform:rotate(360deg)}}
-@keyframes fadeInScale{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
-@keyframes bounceIn{0%{transform:scale(.6)}60%{transform:scale(1.07)}100%{transform:scale(1)}}
-@keyframes pulse{0%{opacity:.6}50%{opacity:1}100%{opacity:.6}}
-
-/* responsive */
-@media (min-width:421px){.container{box-shadow:0 8px 40px rgba(0,0,0,0.6);margin:18px auto;border-radius:12px}}
+  /* Responsive rules */
+  @media (min-width:420px){
+    .app{border-radius:10px;margin:10px auto;}
+  }
+  /* Loading overlay */
+  #load-status{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.6));z-index:200;backdrop-filter: blur(4px);display:none}
+  #load-status .loader-large{width:60px;height:60px;border-radius:50%;border:6px solid rgba(255,255,255,0.02);border-top-color:var(--highlight-color-main);animation:spin 1s linear infinite}
+  .muted-center{text-align:center;color:var(--text-color-light);font-size:13px;margin-top:8px}
 </style>
 </head>
 <body>
-<div class="container" role="application" aria-label="AddMint App">
-
-  <!-- Loading overlay -->
-  <div id="load-status" style="display:flex">
-    <div class="loader" aria-hidden="true"></div>
-    <div style="color:var(--text-color-light);font-weight:600">Initializing AddMint...</div>
-  </div>
-
+<div class="app" id="app">
   <!-- Header -->
-  <header class="header">
-    <div class="logo">AddMint</div>
-    <div class="spacer"></div>
-    <button id="refresh-feed" title="Refresh feed" class="btn">⟳</button>
-    <button id="open-search" class="btn">🔍</button>
+  <header class="app-header">
+    <div class="logo">
+      <div class="logo-mark">AM</div>
+      <div>
+        <div style="font-size:15px">AddMint</div>
+        <div style="font-size:11px;color:var(--text-color-light)">Anonymous vibes • Real connections</div>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button id="refresh-feed" class="btn" title="Refresh feed">⟳</button>
+      <button id="open-search" class="btn" title="Search">🔍</button>
+    </div>
   </header>
 
   <!-- Main content -->
-  <main class="main" id="main-scroll">
-    <!-- Authentication screen -->
-    <section id="auth-screen" class="screen active">
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700;font-size:18px;color:var(--highlight-color-main)">Welcome to AddMint</div>
-            <div class="small">Sign in or create an account (email verification required)</div>
-          </div>
-          <div style="font-size:22px">✨</div>
-        </div>
-        <hr style="opacity:.06;margin:10px 0" />
+  <main class="app-main" id="main">
+    <div class="center-wrap">
+      <!-- AUTH UI -->
+      <div id="auth-container" class="card">
         <div id="auth-forms">
-          <!-- Login -->
-          <div id="login-form">
-            <input id="login-email" class="input" placeholder="Email" type="email" autocomplete="email" />
-            <input id="login-pass" class="input" placeholder="Password" type="password" autocomplete="current-password" />
-            <div style="display:flex;gap:8px">
-              <button id="btn-login" class="btn primary" style="flex:1">Login</button>
-              <button id="show-signup" class="btn" style="flex:1">Sign up</button>
+          <div id="login-view">
+            <h3>Login</h3>
+            <div class="form-row">
+              <label>Email</label><input id="login-email" type="email" placeholder="you@example.com">
             </div>
-            <div id="login-msg" class="small"></div>
-          </div>
-
-          <!-- Signup -->
-          <div id="signup-form" style="display:none">
-            <input id="signup-email" class="input" placeholder="Email" type="email" />
-            <input id="signup-pass" class="input" placeholder="Password (min 6)" type="password" />
-            <input id="signup-pass2" class="input" placeholder="Confirm Password" type="password" />
-            <div style="display:flex;gap:8px">
-              <button id="btn-signup" class="btn primary" style="flex:1">Create account</button>
-              <button id="show-login" class="btn" style="flex:1">Back to Login</button>
+            <div class="form-row">
+              <label>Password</label><input id="login-password" type="password" placeholder="6+ characters">
             </div>
-            <div id="signup-msg" class="small"></div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-login" class="btn primary">Login</button>
+              <button id="show-signup" class="btn">Sign up</button>
+            </div>
+            <div class="muted" style="margin-top:8px">You must verify your email to log in.</div>
+          </div>
+
+          <div id="signup-view" style="display:none">
+            <h3>Sign up</h3>
+            <div class="form-row">
+              <label>Email</label><input id="signup-email" type="email" placeholder="you@example.com">
+            </div>
+            <div class="form-row">
+              <label>Password</label><input id="signup-password" type="password" placeholder="6+ characters">
+            </div>
+            <div class="form-row">
+              <label>Confirm Password</label><input id="signup-password2" type="password" placeholder="Confirm">
+            </div>
+            <div style="display:flex;gap:8px">
+              <button id="btn-signup" class="btn primary">Create account</button>
+              <button id="show-login" class="btn">Back to login</button>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="card">
-        <div style="display:flex;justify-content:space-between;align-items:center">
-          <div>
-            <div style="font-weight:700">Why AddMint?</div>
-            <div class="small">A clean, monetizable social feed that rewards creators.</div>
-          </div>
-          <div>💸</div>
-        </div>
-      </div>
-    </section>
-
-    <!-- App screens -->
-    <section id="app-screen" class="screen" aria-hidden="true">
-      <!-- Profile preview in header area -->
-      <div class="card" style="display:flex;align-items:center;gap:10px;margin-bottom:6px">
-        <div id="me-avatar" class="avatar">A</div>
-        <div style="flex:1">
-          <div id="me-name" style="font-weight:700">Your Name</div>
-          <div id="me-handle" class="small">@username</div>
-        </div>
-        <div style="display:flex;flex-direction:column;gap:6px">
-          <button id="open-create" class="btn">＋ Post</button>
-        </div>
-      </div>
-
-      <!-- Home feed -->
-      <div id="home-screen" class="screen active">
-        <div id="feed" aria-live="polite"></div>
-        <div id="feed-end" class="small" style="text-align:center;padding:12px;color:var(--text-color-light)">Loading more...</div>
-      </div>
-
-      <!-- Profile screen -->
-      <div id="profile-screen" class="screen" style="display:none">
-        <div id="profile-card" class="card">
-          <div style="display:flex;gap:12px;align-items:center">
-            <div id="profile-avatar" class="avatar large">U</div>
+      <!-- APP SCREEN: HOME FEED -->
+      <div id="app-screen" style="display:none">
+        <!-- Compose box -->
+        <div class="card" id="compose-card">
+          <div style="display:flex;gap:8px;align-items:flex-start">
+            <div class="avatar" id="compose-avatar">A</div>
             <div style="flex:1">
-              <div id="profile-name" style="font-weight:800;font-size:18px">Display Name</div>
-              <div id="profile-username" class="small">@username</div>
-              <div id="profile-bio" class="small" style="margin-top:8px">User bio goes here.</div>
-            </div>
-            <div>
-              <button id="btn-edit-profile" class="btn">Edit</button>
-              <button id="btn-follow" class="btn primary" style="display:none">Follow</button>
-            </div>
-          </div>
-
-          <div style="display:flex;gap:12px;margin-top:12px">
-            <div>
-              <div id="stat-posts" style="font-weight:700">0</div>
-              <div class="small">Posts</div>
-            </div>
-            <div>
-              <div id="stat-followers" style="font-weight:700;cursor:pointer">0</div>
-              <div class="small">Followers</div>
-            </div>
-            <div>
-              <div id="stat-following" style="font-weight:700;cursor:pointer">0</div>
-              <div class="small">Following</div>
+              <textarea id="compose-text" placeholder="Share something..." rows="3" style="resize:none;border-radius:10px;padding:10px;width:100%"></textarea>
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+                <div><label style="font-size:12px" class="muted">Expiry: 24h • Monetize?<input type="checkbox" id="compose-monetize" style="margin-left:8px"></label></div>
+                <div><button id="btn-post" class="btn primary">Post</button></div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div id="profile-posts" class="card">
-          <div style="font-weight:700;margin-bottom:8px">Posts by user</div>
-          <div id="profile-post-list"></div>
-        </div>
+        <!-- feed list -->
+        <div id="feed" style="margin-top:12px"></div>
+
+        <!-- "load more" sentinel (for infinite scroll) -->
+        <div id="feed-end" style="text-align:center;padding:12px;color:var(--text-color-light)"></div>
       </div>
-
-      <!-- Monetization screen -->
-      <div id="monetization-screen" class="screen" style="display:none">
-        <div class="card">
-          <div style="font-weight:700">Monetization</div>
-          <div class="small" style="margin-top:6px">Total monetized views: <span id="monetized-views">0</span></div>
-          <div style="margin-top:10px">
-            <button id="withdraw-btn" class="btn primary">Request Withdrawal</button>
-          </div>
-        </div>
-      </div>
-    </section>
-
+    </div>
   </main>
 
   <!-- Footer nav -->
-  <footer class="footer">
-    <button id="nav-home" class="btn">🏠 Home</button>
-    <button id="nav-profile" class="btn">👤 Profile</button>
-    <button id="nav-monetize" class="btn">💰 Monetize</button>
-    <button id="nav-logout" class="btn">⎋</button>
+  <footer class="app-footer">
+    <div class="nav-item"><button id="nav-home">🏠</button><div>Home</div></div>
+    <div class="nav-item"><button id="nav-profile">👤</button><div>Profile</div></div>
+    <div class="nav-item"><button id="nav-monet">💰</button><div>Monetize</div></div>
+    <div class="nav-item"><button id="nav-search">🔎</button><div>Search</div></div>
   </footer>
-
-  <!-- Modal placeholders -->
-  <div id="modal-root" style="display:none"></div>
-
 </div>
 
-<!-- ============================
-  Firebase 9 modular SDK (CDN)
-  v9+ (compat-free modular)
-============================= -->
+<!-- Modal backdrop -->
+<div class="modal-backdrop" id="modal-backdrop">
+  <div class="modal" id="modal-inner">
+    <!-- content injected -->
+  </div>
+</div>
+
+<!-- Loading overlay -->
+<div id="load-status"><div style="text-align:center"><div class="loader-large"></div><div class="muted-center">Loading AddMint…</div></div></div>
+
+<!-- Firebase SDKs (modular v9+) -->
 <script type="module">
-/* ================= SETUP =================
-   AddMint single-file app
-   - Paste your firebaseConfig below (you supplied it).
-   - Ensure Firestore & Auth are enabled in Firebase Console.
-==========================================*/
+/* ==========================
+   Firebase + App Logic
+   ==========================
+   NOTE: this is a single-file SPA. Replace firebaseConfig fields with your own if needed.
+*/
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
+import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendEmailVerification, updateProfile } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
+import { getFirestore, doc, getDoc, setDoc, updateDoc, addDoc, collection, query, where, orderBy, limit, getDocs, serverTimestamp, onSnapshot, arrayUnion, arrayRemove, runTransaction, writeBatch } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js";
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, sendEmailVerification, signOut, updateProfile } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth.js";
-import { getFirestore, doc, setDoc, getDoc, updateDoc, serverTimestamp, collection, query, where, orderBy, limit, startAfter, getDocs, addDoc, onSnapshot, arrayUnion, arrayRemove, runTransaction, writeBatch, deleteDoc } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-/* --------- Your Firebase config (provided) ---------- */
 const firebaseConfig = {
   apiKey: "AIzaSyDlZA4grzF3fx95-11E4s7ASXwkIij1k1w",
   authDomain: "addmint-7ab6b.firebaseapp.com",
@@ -275,921 +231,600 @@ const firebaseConfig = {
   appId: "1:504015450137:web:694b176313582cce1e7a88",
   measurementId: "G-H7J7M23Z82"
 };
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
-/* =========== UI references =========== */
-const loadStatus = document.getElementById('load-status');
-const authScreen = document.getElementById('auth-screen');
-const appScreen = document.getElementById('app-screen');
-const mainScroll = document.getElementById('main-scroll');
+/* ---------- UI helpers ---------- */
+const $ = (id)=>document.getElementById(id);
+const show = (el)=>el.style.display='';
+const hide = (el)=>el.style.display='none';
+const modal = {
+  open(html){ $('modal-inner').innerHTML = html; show($('modal-backdrop')); },
+  close(){ hide($('modal-backdrop')); $('modal-inner').innerHTML = ''; }
+};
+const setLoading = (v) => { if(v) show($('load-status')); else hide($('load-status')); };
 
-const loginForm = document.getElementById('login-form');
-const signupForm = document.getElementById('signup-form');
-const showSignup = document.getElementById('show-signup');
-const showLogin = document.getElementById('show-login');
-const btnLogin = document.getElementById('btn-login');
-const btnSignup = document.getElementById('btn-signup');
-const loginMsg = document.getElementById('login-msg');
-const signupMsg = document.getElementById('signup-msg');
+/* ---------- App state ---------- */
+let currentUser = null;
+let userDoc = null;
+let feedBatchSize = 6;
+let feedLastVisible = null;
+let feedAllShownOnce = false;
+let feedCache = []; // local buffer for never-ending loop
 
-const meAvatar = document.getElementById('me-avatar');
-const meName = document.getElementById('me-name');
-const meHandle = document.getElementById('me-handle');
+/* ---------- DOM refs ---------- */
+const authContainer = $('auth-container');
+const appScreen = $('app-screen');
+const feedEl = $('feed');
+const composeAvatar = $('compose-avatar');
+const composeText = $('compose-text');
+const composeMonetize = $('compose-monetize');
+const btnPost = $('btn-post');
+const btnLogin = $('btn-login');
+const btnSignup = $('btn-signup');
+const showSignup = $('show-signup');
+const showLogin = $('show-login');
+const loginView = $('login-view');
+const signupView = $('signup-view');
+const refreshFeedBtn = $('refresh-feed');
 
-const feedEl = document.getElementById('feed');
-const feedEnd = document.getElementById('feed-end');
-const refreshFeedBtn = document.getElementById('refresh-feed');
-
-const navHome = document.getElementById('nav-home');
-const navProfile = document.getElementById('nav-profile');
-const navMonetize = document.getElementById('nav-monetize');
-const navLogout = document.getElementById('nav-logout');
-
-const profileScreen = document.getElementById('profile-screen');
-const profileAvatar = document.getElementById('profile-avatar');
-const profileName = document.getElementById('profile-name');
-const profileUsername = document.getElementById('profile-username');
-const profileBio = document.getElementById('profile-bio');
-const statPosts = document.getElementById('stat-posts');
-const statFollowers = document.getElementById('stat-followers');
-const statFollowing = document.getElementById('stat-following');
-const btnEditProfile = document.getElementById('btn-edit-profile');
-const btnFollow = document.getElementById('btn-follow');
-
-const monetizedViewsEl = document.getElementById('monetized-views');
-const withdrawBtn = document.getElementById('withdraw-btn');
-
-const modalRoot = document.getElementById('modal-root');
-
-/* ========== App state ========== */
-let currentUser = null;     // firebase Auth user object
-let currentUserDoc = null;  // Firestore users/{uid}
-let pageSize = 8;
-let lastVisible = null;
-let isLoadingFeed = false;
-let feedBuffer = []; // temporary buffer
-let shownPostIds = new Set(); // for looping logic
-
-/* ---------- Utility functions ---------- */
-function showLoading(text = 'Loading...') {
-  loadStatus.style.display = 'flex';
-  loadStatus.querySelector('div:nth-child(2)').textContent = text;
+/* ---------- Helpers: user doc management ---------- */
+async function createUserDocument(uid, email){
+  const uRef = doc(db, 'users', uid);
+  const now = serverTimestamp();
+  await setDoc(uRef, {
+    uid,
+    username: '',
+    name: '',
+    email,
+    bio: '',
+    profilePicUrl: '',
+    createdAt: now,
+    postCount: 0,
+    totalMonetizedViews: 0,
+    followers: [],
+    following: [],
+    followersCount: 0,
+    followingCount: 0
+  });
 }
-function hideLoading() { loadStatus.style.display = 'none'; }
-function formatTime(ts) {
-  if (!ts) return '';
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
-  return d.toLocaleString();
-}
-function makeId(len=12){ const chars='abcdefghijklmnopqrstuvwxyz0123456789'; let s=''; for(let i=0;i<len;i++) s+=chars[Math.floor(Math.random()*chars.length)]; return s; }
 
-/* ---------- Modal helpers ---------- */
-function openModal(innerHTML, {dismissible=true}={}){
-  modalRoot.innerHTML = '';
-  modalRoot.style.display = 'block';
-  const backdrop = document.createElement('div');
-  backdrop.className = 'modal-backdrop';
-  backdrop.innerHTML = `<div class="modal">${innerHTML}</div>`;
-  backdrop.onclick = (e) => { if(e.target===backdrop && dismissible) closeModal(); };
-  modalRoot.appendChild(backdrop);
-  return backdrop.querySelector('.modal');
-}
-function closeModal(){ modalRoot.innerHTML=''; modalRoot.style.display='none'; }
-
-/* ===========================
-   Authentication flows
-   ===========================*/
-showSignup.addEventListener('click', ()=>{ loginForm.style.display='none'; signupForm.style.display='block'; });
-showLogin.addEventListener('click', ()=>{ signupForm.style.display='none'; loginForm.style.display='block'; });
+/* ---------- Auth flows ---------- */
+showSignup.addEventListener('click', ()=>{ hide(loginView); show(signupView); });
+showLogin.addEventListener('click', ()=>{ hide(signupView); show(loginView); });
 
 btnSignup.addEventListener('click', async ()=>{
-  const email = document.getElementById('signup-email').value.trim();
-  const pass = document.getElementById('signup-pass').value;
-  const pass2 = document.getElementById('signup-pass2').value;
-  signupMsg.textContent = '';
-  if(!email || pass.length < 6){ signupMsg.textContent = 'Please enter a valid email and password (min 6).'; return; }
-  if(pass !== pass2){ signupMsg.textContent = 'Passwords do not match.'; return; }
-  showLoading('Creating account...');
   try{
-    const cred = await createUserWithEmailAndPassword(auth, email, pass);
-    // Send verification email
+    const email = $('signup-email').value.trim();
+    const pw = $('signup-password').value;
+    const pw2 = $('signup-password2').value;
+    if(!email || pw.length < 6){ alert('Provide valid email and password (6+ chars)'); return; }
+    if(pw !== pw2){ alert('Passwords do not match'); return; }
+    setLoading(true);
+    const cred = await createUserWithEmailAndPassword(auth, email, pw);
+    // create firestore user doc
+    await createUserDocument(cred.user.uid, email);
     await sendEmailVerification(cred.user);
-    // Create user doc skeleton
-    const userDocRef = doc(db, 'users', cred.user.uid);
-    await setDoc(userDocRef, {
-      uid: cred.user.uid,
-      username: '', // force edit on first login
-      name: '',
-      email: email,
-      bio: '',
-      profilePicUrl: '',
-      createdAt: serverTimestamp(),
-      postCount: 0,
-      totalMonetizedViews: 0,
-      followers: [],
-      following: [],
-      followersCount: 0,
-      followingCount: 0
-    });
-    signupMsg.textContent = 'Account created. Verification email sent. Verify before login.';
-  }catch(err){
-    signupMsg.textContent = 'Error: ' + (err.message || err.code);
-  }finally{ hideLoading(); }
+    alert('Account created. Verification email sent. Please verify your email then login.');
+    hide(signupView); show(loginView);
+  }catch(e){ console.error(e); alert('Signup error: '+e.message); }
+  setLoading(false);
 });
 
 btnLogin.addEventListener('click', async ()=>{
-  const email = document.getElementById('login-email').value.trim();
-  const pass = document.getElementById('login-pass').value;
-  loginMsg.textContent = '';
-  if(!email || !pass){ loginMsg.textContent = 'Please enter email and password.'; return;}
-  showLoading('Signing in...');
   try{
-    const cred = await signInWithEmailAndPassword(auth, email, pass);
+    const email = $('login-email').value.trim();
+    const pw = $('login-password').value;
+    setLoading(true);
+    const cred = await signInWithEmailAndPassword(auth, email, pw);
     if(!cred.user.emailVerified){
-      loginMsg.textContent = 'Please verify your email before logging in. Verification link was sent earlier.';
       await signOut(auth);
-    } else {
-      loginMsg.textContent = '';
-      // onAuthStateChanged will handle UI switch
-    }
-  }catch(err){
-    loginMsg.textContent = 'Login failed: ' + (err.message || err.code);
-  }finally{ hideLoading(); }
-});
-
-/* Auth state observer */
-onAuthStateChanged(auth, async (user)=>{
-  currentUser = user;
-  if(user){
-    showLoading('Loading your profile...');
-    try{
-      // fetch user doc
-      const udocRef = doc(db,'users',user.uid);
-      const udocSnap = await getDoc(udocRef);
-      if(!udocSnap.exists()){
-        // create skeleton (in case signup used different path)
-        await setDoc(udocRef, {
-          uid: user.uid, username:'', name:'', email:user.email, bio:'', profilePicUrl:'',
-          createdAt: serverTimestamp(), postCount:0, totalMonetizedViews:0,
-          followers:[], following:[], followersCount:0, followingCount:0
-        });
-        currentUserDoc = (await getDoc(udocRef)).data();
-      } else currentUserDoc = udocSnap.data();
-
-      // Update UI
-      authScreen.style.display = 'none';
-      appScreen.style.display = 'block';
-      navLogout.style.display = 'inline-flex';
-      refreshProfileUI();
-
-      // If first-time (username empty) force Edit Profile modal (cancel hidden)
-      if(!currentUserDoc.username || currentUserDoc.username.trim()===''){
-        await openEditProfile({force:true});
-      }
-
-      // initialize feed
-      resetFeed();
-      loadFeed();
-    }catch(err){
-      console.error('Auth load error',err);
-      alert('Error loading profile: '+(err.message||err));
-      await signOut(auth);
-      authScreen.style.display='block';
-      appScreen.style.display='none';
-    }finally{ hideLoading(); }
-  } else {
-    // logged out
-    currentUserDoc = null;
-    authScreen.style.display = 'block';
-    appScreen.style.display = 'none';
-    hideLoading();
-  }
-});
-
-/* ============= Profile UI ============== */
-function refreshProfileUI(){
-  if(!currentUserDoc) return;
-  meAvatar.textContent = (currentUserDoc.name || currentUser.email || 'U')[0].toUpperCase();
-  meName.textContent = currentUserDoc.name || 'Your Name';
-  meHandle.textContent = currentUserDoc.username ? '@'+currentUserDoc.username : '@set-username';
-  // Monetized views
-  monetizedViewsEl.textContent = currentUserDoc.totalMonetizedViews || 0;
-}
-
-/* ============= Edit Profile ============== */
-async function openEditProfile({force=false, targetUid=null}={}){
-  // if targetUid provided, open that user's profile editing? We assume editing current user only.
-  const isFirstTime = force;
-  const modal = openModal(`
-    <div style="font-weight:700">Edit Profile</div>
-    <input id="edit-username" class="input" placeholder="Username (unique, no spaces)" />
-    <input id="edit-name" class="input" placeholder="Display name" />
-    <input id="edit-pic" class="input" placeholder="Profile picture URL (optional)" />
-    <textarea id="edit-bio" class="input" placeholder="Bio (max 150 chars)" rows="3"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="save-profile" class="btn primary" style="flex:1">Save</button>
-      ${isFirstTime ? '' : '<button id="cancel-profile" class="btn" style="flex:1">Cancel</button>'}
-    </div>
-    <div id="edit-msg" class="small" style="margin-top:8px"></div>
-  `, {dismissible: !isFirstTime});
-  // populate
-  document.getElementById('edit-username').value = currentUserDoc.username || '';
-  document.getElementById('edit-name').value = currentUserDoc.name || '';
-  document.getElementById('edit-pic').value = currentUserDoc.profilePicUrl || '';
-  document.getElementById('edit-bio').value = currentUserDoc.bio || '';
-
-  const saveBtn = document.getElementById('save-profile');
-  if(!isFirstTime) document.getElementById('cancel-profile').addEventListener('click', closeModal);
-
-  // username uniqueness realtime check as user types
-  const usernameInput = document.getElementById('edit-username');
-  const editMsg = document.getElementById('edit-msg');
-  let lastCheck = 0;
-  usernameInput.addEventListener('input', async ()=>{
-    const v = usernameInput.value.trim().toLowerCase();
-    editMsg.textContent = '';
-    if(!v) return;
-    if(/\s/.test(v)){ editMsg.textContent = 'Username cannot contain spaces'; return; }
-    // debounce check
-    lastCheck++;
-    const thisCheck = lastCheck;
-    if(v.length < 3){ editMsg.textContent = 'Username too short'; return; }
-    // Query users collection for username
-    const q = query(collection(db,'users'), where('username','==',v), limit(1));
-    const docs = await getDocs(q);
-    if(thisCheck !== lastCheck) return; // stale
-    if(!docs.empty){
-      // if doc found but is current user's doc (same uid), allow
-      const docData = docs.docs[0].data();
-      if(docData.uid !== currentUser.uid) editMsg.textContent = 'Username already taken';
-      else editMsg.textContent = '';
-    } else editMsg.textContent = 'Username available';
-  });
-
-  saveBtn.addEventListener('click', async ()=>{
-    const username = usernameInput.value.trim().toLowerCase();
-    const name = document.getElementById('edit-name').value.trim();
-    const pic = document.getElementById('edit-pic').value.trim();
-    const bio = document.getElementById('edit-bio').value.trim().slice(0,150);
-    editMsg.textContent = '';
-    if(!username || /\s/.test(username) || username.length<3){ editMsg.textContent = 'Invalid username'; return; }
-    if(!name){ editMsg.textContent = 'Display name required'; return; }
-    showLoading('Saving profile...');
-    try{
-      // ensure username still unique (transaction)
-      // Simple check: query for username and ensure either not found or belongs to current user
-      const q = query(collection(db,'users'), where('username','==',username), limit(1));
-      const docs = await getDocs(q);
-      if(!docs.empty){
-        const docData = docs.docs[0].data();
-        if(docData.uid !== currentUser.uid){
-          editMsg.textContent = 'Username taken. Try another.';
-          hideLoading();
-          return;
-        }
-      }
-      const uRef = doc(db,'users',currentUser.uid);
-      await updateDoc(uRef, { username, name, profilePicUrl:pic, bio, updatedAt: serverTimestamp() });
-      currentUserDoc = (await getDoc(uRef)).data();
-      // update display name in Firebase Auth profile
-      try{ await updateProfile(currentUser, { displayName: name, photoURL: pic || null }); }catch(e){}
-      refreshProfileUI();
-      closeModal();
-    }catch(err){ editMsg.textContent = 'Save failed: '+(err.message||err); }
-    finally{ hideLoading(); }
-  });
-}
-
-/* Edit Profile button */
-btnEditProfile.addEventListener('click', ()=>openEditProfile({force:false}));
-
-/* ============= Feed logic ============== */
-
-/**
- Load feed posts. Logic:
-  - Fetch posts by user.following (if any) plus some public posts.
-  - Pagination with lastVisible reference.
-  - When end reached -> reset lastVisible to null and loop back.
-*/
-async function resetFeed(){
-  feedEl.innerHTML = '';
-  lastVisible = null;
-  shownPostIds.clear();
-  feedEnd.textContent = 'Loading more...';
-}
-
-async function loadFeed(){
-  if(!currentUser || isLoadingFeed) return;
-  isLoadingFeed = true;
-  feedEnd.textContent = 'Loading more...';
-  try{
-    // Build a query: posts from following or public (isMonetized true is public)
-    const followingList = currentUserDoc.following || [];
-    let postsQuery;
-    const postsCol = collection(db,'posts');
-
-    if(followingList.length > 0){
-      // Firestore 'in' supports up to 10 values; we handle by taking up to 10 followings or fetch public posts separately
-      const slice = followingList.slice(0,10);
-      postsQuery = query(postsCol, where('userId','in', slice), orderBy('timestamp','desc'), limit(pageSize));
-      // We will later append some public posts to the feed if results < pageSize
-    } else {
-      // no following -> show public monetized posts primarily + latest posts
-      postsQuery = query(postsCol, orderBy('timestamp','desc'), limit(pageSize));
-    }
-
-    if(lastVisible){
-      // get next page startAfter lastVisible.timestamp
-      postsQuery = query(postsQuery, startAfter(lastVisible));
-    }
-
-    const snapshot = await getDocs(postsQuery);
-    if(snapshot.empty && !lastVisible){
-      feedEnd.textContent = 'No posts yet.';
-      isLoadingFeed = false;
+      alert('Email not verified. Please verify your email first.');
+      setLoading(false);
       return;
     }
+    // onAuthStateChanged will handle UI
+  }catch(e){ console.error(e); alert('Login error: '+e.message); setLoading(false); }
+});
 
-    // Append posts
-    let count = 0;
-    snapshot.forEach(docSnap => {
-      const p = docSnap.data();
-      p._id = docSnap.id;
-      // Avoid duplicate display if looping
-      if(!shownPostIds.has(p._id)){
-        renderPostCard(p, false);
-        shownPostIds.add(p._id);
-        count++;
-      }
-    });
-
-    // Update lastVisible
-    if(!snapshot.empty){
-      lastVisible = snapshot.docs[snapshot.docs.length -1];
+/* ---------- onAuthStateChanged ---------- */
+onAuthStateChanged(auth, async (u)=>{
+  if(u){
+    setLoading(true);
+    currentUser = u;
+    // load or create user doc
+    const uRef = doc(db, 'users', u.uid);
+    const snap = await getDoc(uRef);
+    if(!snap.exists()){
+      await createUserDocument(u.uid, u.email || '');
+      userDoc = (await getDoc(uRef)).data();
     } else {
-      // reached the end: loop back
-      lastVisible = null;
-      feedEnd.textContent = 'Reached end — looping...';
-      // After a short timeout, continue loading to loop
-      setTimeout(()=>{ loadFeed(); }, 700);
+      userDoc = snap.data();
     }
-
-    if(count === 0 && lastVisible === null){
-      // no new posts to show — loop feed
-      feedEnd.textContent = 'Looping feed...';
-      setTimeout(()=>{ resetFeed(); loadFeed(); }, 600);
-    } else {
-      feedEnd.textContent = 'Scroll for more';
+    // If username empty => force edit profile (no cancel)
+    if(!userDoc.username){
+      // force edit profile modal
+      openEditProfile(true);
     }
-  }catch(err){
-    console.error('Load feed error',err);
-    feedEnd.textContent = 'Load failed';
-  } finally { isLoadingFeed = false; }
-}
-
-/* infinite scroll */
-mainScroll.addEventListener('scroll', ()=>{
-  const el = mainScroll;
-  if(el.scrollHeight - (el.scrollTop + el.clientHeight) < 220){
-    if(!isLoadingFeed) loadFeed();
+    // show app UI
+    hide(authContainer);
+    show(appScreen);
+    renderComposeAvatar();
+    await loadInitialFeed(true);
+    setLoading(false);
+  } else {
+    currentUser = null;
+    userDoc = null;
+    // show auth UI
+    show(authContainer);
+    hide(appScreen);
+    feedEl.innerHTML = '';
   }
 });
 
-/* refresh button */
-refreshFeedBtn.addEventListener('click', ()=>{ resetFeed(); loadFeed(); });
-
-/* Post card renderer */
-function renderPostCard(p, prepend=true){
-  // Template
-  const card = document.createElement('div');
-  card.className = 'card post-card';
-  card.dataset.postId = p._id;
-  card.innerHTML = `
-    <div class="post-header">
-      <div class="avatar" data-userid="${p.userId}">${(p.username? p.username[0].toUpperCase() : (p.username||'U')[0])}</div>
-      <div style="flex:1">
-        <div class="username" data-userid="${p.userId}">${p.name || p.username || 'Unknown'}</div>
-        <div class="handle">@${p.username || 'unknown' } · <span class="small">${formatTime(p.timestamp)}</span></div>
+/* ---------- Force Edit Profile (modal) ---------- */
+function openEditProfile(isMandatory=false){
+  const html = `
+    <div class="modal-header"><strong>Edit profile</strong>${!isMandatory?'<button id="close-edit" class="btn">✕</button>':''}</div>
+    <div>
+      <label>Username (no spaces)</label>
+      <input id="ep-username" type="text" placeholder="uniqueusername">
+      <div id="username-check" class="muted" style="margin:6px 0"></div>
+      <label>Display name</label>
+      <input id="ep-name" type="text" placeholder="Your name">
+      <label>Bio (max 150)</label>
+      <textarea id="ep-bio" rows="3"></textarea>
+      <label>Profile letter (single char shown in avatar)</label>
+      <input id="ep-pic" type="text" maxlength="1" placeholder="A">
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <button id="save-profile" class="btn primary">Save</button>
+        ${isMandatory?'': '<button id="cancel-profile" class="btn">Cancel</button>'}
       </div>
-      <div style="display:flex;align-items:center;gap:10px">
-        <button class="btn post-options">⋯</button>
-      </div>
-    </div>
-    <div class="post-content small">${renderRichContent(p.content || '')}</div>
-    <div class="post-actions">
-      <div class="icon like ${ (p.likes && p.likes.includes(currentUser.uid)) ? 'liked' : '' }" data-postid="${p._id}">♥ <span class="kv">${p.likesCount || 0}</span></div>
-      <div class="icon comment" data-postid="${p._id}">💬 <span class="kv">${p.commentCount || 0}</span></div>
-      <div class="icon views">👁️ <span class="kv">${p.views || 0}</span></div>
     </div>
   `;
+  modal.open(html);
 
-  // Double-click like + neon glow
-  card.addEventListener('dblclick', (e)=>{
-    card.classList.add('neon-glow');
-    setTimeout(()=>card.classList.remove('neon-glow'), 900);
-    toggleLike(p._id, card.querySelector('.icon.like'));
-  });
-
-  // Like click
-  card.querySelector('.icon.like').addEventListener('click', (e)=>{
-    toggleLike(p._id, e.currentTarget);
-  });
-
-  // Comment click
-  card.querySelector('.icon.comment').addEventListener('click',(e)=>{
-    openCommentsModal(p._id);
-  });
-
-  // Options
-  card.querySelector('.post-options').addEventListener('click', async (e)=>{
-    const menu = document.createElement('div');
-    menu.style.display = 'flex'; menu.style.flexDirection='column';
-    const isOwner = (p.userId === currentUser.uid);
-    menu.innerHTML = `
-      <button class="btn" style="width:100%">Report Post</button>
-      ${isOwner ? '<button class="btn" style="width:100%">Delete Post</button>' : ''}
-      <button class="btn" style="width:100%">Repost (placeholder)</button>
-    `;
-    const modal = openModal(`<div style="font-weight:700">Post Options</div><div style="margin-top:8px"></div>`);
-    modal.querySelector('div:nth-child(2)').appendChild(menu);
-    // Attach handlers
-    menu.querySelector('button:nth-child(1)').addEventListener('click', async ()=>{
-      // create report doc
-      try{
-        await addDoc(collection(db,'reports'), {
-          postId: p._id, reportedBy: currentUser.uid, reportedAt: serverTimestamp(), reason: 'User reported via app'
-        });
-        alert('Reported. Thank you.');
-      }catch(err){ alert('Report failed: '+err.message); }
-      closeModal();
-    });
-    if(isOwner){
-      const delBtn = menu.querySelector('button:nth-child(2)');
-      delBtn.addEventListener('click', async ()=>{
-        if(!confirm('Delete this post? This will remove post and all comments.')) return;
-        showLoading('Deleting post...');
-        try{
-          // delete post document and all comments subcollection
-          // fetch comments and delete in batch (note: for many comments, use Cloud Functions)
-          const postRef = doc(db,'posts',p._id);
-          // delete comments
-          const commentsSnap = await getDocs(collection(db,'posts',p._id,'comments'));
-          const batch = writeBatch(db);
-          commentsSnap.forEach(c => batch.delete(doc(db, 'posts', p._id, 'comments', c.id)));
-          batch.delete(postRef);
-          await batch.commit();
-          // remove UI
-          const el = document.querySelector(`[data-postid="${p._id}"]`);
-          if(el) el.remove();
-        }catch(err){ alert('Delete failed: '+err.message); }
-        finally{ hideLoading(); closeModal(); }
-      });
-    }
-  });
-
-  // view tracking: increment views with per-user guard (subcollection 'views' under post)
-  card.querySelector('.icon.views').addEventListener('click', async ()=>{
-    await incrementViewIfNeeded(p._id, card.querySelector('.icon.views span.kv'));
-  });
-
-  // Place into feed
-  if(prepend) feedEl.prepend(card); else feedEl.appendChild(card);
-}
-
-/* Render simple rich text: support **bold**, *italic*, links, image URL, youtube URL */
-function renderRichContent(raw){
-  if(!raw) return '';
-  // Escape HTML
-  const esc = (s)=> s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-  // Split paragraphs
-  const paragraphs = raw.split(/\n+/).map(p=>p.trim()).filter(Boolean);
-  const htmlParts = [];
-  let wordAccumulator = 0;
-  let adInserted = 0;
-
-  for(let i=0;i<paragraphs.length;i++){
-    let p = paragraphs[i];
-    // detect image URL (simple)
-    const imgMatch = p.match(/\b(https?:\/\/\S+\.(?:png|jpe?g|gif|webp))\b/);
-    const ytMatch = p.match(/\b(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu.be\/)([A-Za-z0-9_\-]{6,})/);
-    // format bold **text**, italic *text*
-    let formatted = esc(p).replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\*(.*?)\*/g,'<em>$1</em>');
-    // links
-    formatted = formatted.replace(/\b(https?:\/\/[^\s<]+)\b/g, (m)=>`<a href="${m}" target="_blank" rel="noopener noreferrer">${m}</a>`);
-    if(ytMatch){
-      const vid = ytMatch[1];
-      htmlParts.push(`<div style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${vid}" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:8px"></iframe></div>`);
-    } else if(imgMatch){
-      htmlParts.push(`<img src="${imgMatch[1]}" alt="image" />`);
-    } else {
-      htmlParts.push(`<p>${formatted}</p>`);
-    }
-    // ad injection logic placeholder: we will insert ad placeholders if post has isMonetized/adCode when rendering at client-side where we have the post object. (Handled in renderPostCard by replacing placeholders)
-    wordAccumulator += p.split(/\s+/).length;
-  }
-  return htmlParts.join('');
-}
-
-/* Toggle like via Firestore transaction */
-async function toggleLike(postId, likeEl){
-  if(!currentUser) return alert('Login required');
-  const likeCountEl = likeEl.querySelector('.kv');
-  try{
-    await runTransaction(db, async (tx)=>{
-      const postRef = doc(db,'posts',postId);
-      const postSnap = await tx.get(postRef);
-      if(!postSnap.exists()) throw "Post not found";
-      const data = postSnap.data();
-      const likes = data.likes || [];
-      const has = likes.includes(currentUser.uid);
-      if(has){
-        tx.update(postRef, { likes: arrayRemove(currentUser.uid), likesCount: (data.likesCount || 1) - 1 });
+  // prefill if exists
+  setTimeout(()=> {
+    $('ep-username').value = userDoc?.username || '';
+    $('ep-name').value = userDoc?.name || '';
+    $('ep-bio').value = userDoc?.bio || '';
+    $('ep-pic').value = (userDoc?.profilePicUrl || '').slice(0,1) || '';
+    // Live username check
+    $('ep-username').addEventListener('input', async (e)=>{
+      const v = e.target.value.trim().toLowerCase();
+      if(!v) { $('username-check').textContent=''; return; }
+      // check uniqueness
+      const q = query(collection(db,'users'), where('username','==',v), limit(1));
+      const snaps = await getDocs(q);
+      if(!snaps.empty && snaps.docs[0].id !== currentUser.uid){
+        $('username-check').textContent = 'Username taken';
       } else {
-        tx.update(postRef, { likes: arrayUnion(currentUser.uid), likesCount: (data.likesCount || 0) + 1 });
+        $('username-check').textContent = 'Username available';
       }
     });
-    // update UI optimistically
-    const currentCount = parseInt(likeCountEl.textContent||'0');
-    if(likeEl.classList.contains('liked')){
-      likeEl.classList.remove('liked');
-      likeCountEl.textContent = Math.max(0, currentCount - 1);
-    } else {
-      likeEl.classList.add('liked');
-      likeEl.classList.add('bounce');
-      likeCountEl.textContent = currentCount + 1;
-      setTimeout(()=>likeEl.classList.remove('bounce'), 600);
+
+    $('save-profile').addEventListener('click', async ()=>{
+      const username = $('ep-username').value.trim().toLowerCase();
+      const name = $('ep-name').value.trim();
+      const bio = $('ep-bio').value.trim().slice(0,150);
+      const avatarChar = ($('ep-pic').value || name.charAt(0) || username.charAt(0) || 'A').toUpperCase();
+
+      if(!username || username.includes(' ') || !name){
+        alert('Provide a valid username (no spaces) and display name.');
+        return;
+      }
+      setLoading(true);
+      // ensure uniqueness
+      const q = query(collection(db,'users'), where('username','==',username), limit(1));
+      const snaps = await getDocs(q);
+      if(!snaps.empty && snaps.docs[0].id !== currentUser.uid){
+        setLoading(false);
+        alert('Username already taken.');
+        return;
+      }
+      // update user doc
+      const uRef = doc(db,'users',currentUser.uid);
+      await updateDoc(uRef, { username, name, bio, profilePicUrl: avatarChar });
+      // reflect to userDoc
+      userDoc = (await getDoc(uRef)).data();
+      renderComposeAvatar();
+      modal.close();
+      setLoading(false);
+    });
+
+    if(!isMandatory){
+      $('cancel-profile').addEventListener('click', ()=> modal.close());
+      $('close-edit').addEventListener('click', ()=> modal.close());
     }
-  }catch(err){
-    console.error('Like failed',err);
-    alert('Like failed: '+(err.message||err));
+  },50);
+}
+
+/* ---------- Compose / Create Post ---------- */
+btnPost.addEventListener('click', async ()=>{
+  if(!currentUser) { alert('Login to post'); return; }
+  const text = composeText.value.trim();
+  if(!text) { alert('Write something'); return; }
+  setLoading(true);
+  try{
+    // create post doc with expiry 24 hours
+    const postsCol = collection(db,'posts');
+    const now = serverTimestamp();
+    const expiry = new Date(Date.now() + 24*60*60*1000);
+    const docRef = await addDoc(postsCol, {
+      userId: currentUser.uid,
+      username: userDoc.username || '',
+      authorAvatarUrl: userDoc.profilePicUrl || '',
+      content: text,
+      timestamp: now,
+      isMonetized: !!composeMonetize.checked,
+      expiryTime: expiry,
+      likes: [],
+      likesCount: 0,
+      commentCount: 0,
+      views: 0
+    });
+    // update user postCount
+    const uRef = doc(db,'users',currentUser.uid);
+    await updateDoc(uRef, { postCount: (userDoc.postCount||0) + 1 });
+    // clear
+    composeText.value='';
+    // prepend to feed
+    feedCache.unshift({ id: docRef.id, userId: currentUser.uid, username: userDoc.username, authorAvatarUrl:userDoc.profilePicUrl, content:text, timestamp:Date.now(), isMonetized: !!composeMonetize.checked, likesCount:0, commentCount:0, views:0});
+    renderFeedItems([feedCache[0]], true);
+    alert('Posted!');
+  }catch(e){ console.error(e); alert('Post error: '+e.message); }
+  setLoading(false);
+});
+
+/* ---------- Render composition avatar ---------- */
+function renderComposeAvatar(){
+  composeAvatar.textContent = (userDoc?.profilePicUrl || userDoc?.name?.charAt(0) || 'A').toUpperCase();
+}
+
+/* ---------- Feed loading & rendering ---------- */
+async function loadInitialFeed(forceRefresh=false){
+  // resets the feed state
+  feedEl.innerHTML=''; feedCache=[]; feedLastVisible=null; feedAllShownOnce=false;
+  await loadMoreFeed();
+}
+
+async function loadMoreFeed(){
+  // fetch next batch; simple approach: get top recent posts
+  setLoading(true);
+  try{
+    const q = query(collection(db,'posts'), orderBy('timestamp','desc'), limit(feedBatchSize));
+    const snaps = await getDocs(q);
+    const items = [];
+    snaps.forEach(s => {
+      items.push({ id:s.id, ...s.data() });
+    });
+    if(items.length === 0){
+      $('feed-end').textContent = 'No posts yet';
+    } else {
+      feedCache.push(...items);
+      renderFeedItems(items, false);
+    }
+  }catch(e){ console.error(e); alert('Feed load error: '+e.message) }
+  setLoading(false);
+}
+
+function renderFeedItems(items, prepend=false){
+  const frag = document.createDocumentFragment();
+  for(const item of items){
+    const node = document.createElement('div');
+    node.className = 'post-card';
+    node.dataset.postId = item.id;
+    node.innerHTML = `
+      <div class="post-header">
+        <div class="avatar">${(item.authorAvatarUrl||'A').slice(0,1).toUpperCase()}</div>
+        <div style="flex:1">
+          <div class="username">@${(item.username||'unknown')}</div>
+          <div class="muted" style="font-size:12px">${new Date(item.timestamp?.seconds?item.timestamp.seconds*1000:item.timestamp||Date.now()).toLocaleString()}</div>
+        </div>
+        <div>
+          <button class="icon-btn post-options">⋯</button>
+        </div>
+      </div>
+      <div class="post-content">${renderContent(item.content || '')}</div>
+      <div class="post-actions">
+        <button class="icon-btn btn-like">❤ <span class="count like-count">${item.likesCount||0}</span></button>
+        <button class="icon-btn btn-comment">💬 <span class="count comment-count">${item.commentCount||0}</span></button>
+        <button class="icon-btn btn-views">👁️ <span class="count view-count">${item.views||0}</span></button>
+      </div>
+    `;
+    // double click handler for like with neon glow
+    node.addEventListener('dblclick', async ()=>{
+      node.classList.add('neon-glow');
+      setTimeout(()=>node.classList.remove('neon-glow'),700);
+      await toggleLike(item.id);
+    });
+    // like button
+    node.querySelector('.btn-like').addEventListener('click', async (e)=>{
+      e.stopPropagation();
+      await toggleLike(item.id, node);
+    });
+    // comment button
+    node.querySelector('.btn-comment').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openComments(item.id);
+    });
+    // options
+    node.querySelector('.post-options').addEventListener('click', (e)=>{
+      e.stopPropagation();
+      openPostOptions(item);
+    });
+
+    if(prepend) feedEl.insertBefore(node, feedEl.firstChild);
+    else frag.appendChild(node);
+  }
+  if(!prepend) feedEl.appendChild(frag);
+}
+
+function renderContent(text){
+  // Very simple parser supporting **bold**, *italic*, image URLs, and youtube links
+  let out = text.replace(/&/g, '&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  // bold **text**
+  out = out.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  // italics *text*
+  out = out.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  // youtube: detect youtu.be or youtube.com/watch?v=
+  out = out.replace(/https?:\/\/(www\.)?youtu\.be\/([A-Za-z0-9_-]{4,})/g, (m,p,id)=> `<div style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%"></iframe></div>`);
+  out = out.replace(/https?:\/\/(www\.)?youtube\.com\/watch\?v=([A-Za-z0-9_-]{4,})/g, (m,p,id)=> `<div style="position:relative;padding-top:56.25%"><iframe src="https://www.youtube.com/embed/${id}" frameborder="0" allowfullscreen style="position:absolute;inset:0;width:100%;height:100%"></iframe></div>`);
+  // images (very naive): link ending with jpg|png|gif
+  out = out.replace(/https?:\/\/\S+\.(png|jpg|jpeg|gif)/g, (m)=> `<img src="${m}" style="max-width:100%;border-radius:8px;margin-top:6px">`);
+  // links
+  out = out.replace(/(https?:\/\/[^\s]+)/g, (m)=> `<a href="${m}" target="_blank" rel="noopener" style="color:var(--highlight-color-main)">${m}</a>`);
+  return out;
+}
+
+/* ---------- Like toggling: Firestore transaction ---------- */
+async function toggleLike(postId, node){
+  if(!currentUser){ alert('Login to like'); return; }
+  try{
+    const postRef = doc(db,'posts',postId);
+    await runTransaction(db, async (t) => {
+      const docSnap = await t.get(postRef);
+      if(!docSnap.exists()) throw 'Post missing';
+      const data = docSnap.data();
+      let likes = data.likes || [];
+      let likesCount = data.likesCount || 0;
+      if(likes.includes(currentUser.uid)){
+        // unlike
+        likes = likes.filter(id=>id!==currentUser.uid);
+        likesCount = Math.max(0, likesCount-1);
+      } else {
+        likes.push(currentUser.uid);
+        likesCount = (likesCount||0)+1;
+      }
+      t.update(postRef, { likes, likesCount });
+    });
+    // update UI quickly
+    if(node){
+      const elCount = node.querySelector('.like-count');
+      let c = parseInt(elCount.textContent||'0',10);
+      // toggle visual (very naive)
+      elCount.textContent = (c + (elCount.dataset.liked==='1' ? -1 : 1));
+      node.querySelector('.btn-like').classList.toggle('bounce');
+      setTimeout(()=>node.querySelector('.btn-like').classList.remove('bounce'),500);
+    } else {
+      // refresh feed
+      // minimal: reload feed
+      await loadInitialFeed(true);
+    }
+  }catch(e){ console.error(e); alert('Like error: '+e); }
+}
+
+/* ---------- Comments modal (simple) ---------- */
+async function openComments(postId){
+  // Show modal with comments list and textarea
+  modal.open('<div class="modal-header"><strong>Comments</strong><button id="close-cmnt" class="btn">✕</button></div><div id="cmnt-list" style="max-height:50vh;overflow:auto"></div><div style="margin-top:8px"><textarea id="cmnt-text" rows="2" maxlength="100" placeholder="Write a comment..."></textarea><div style="display:flex;justify-content:flex-end;margin-top:6px"><button id="post-cmnt" class="btn primary">Post</button></div></div>');
+  $('close-cmnt').addEventListener('click', ()=> modal.close());
+
+  const listEl = $('cmnt-list');
+  listEl.innerHTML = '<div style="text-align:center;padding:12px"><div class="loader"></div></div>';
+
+  // load comments
+  try{
+    const cCol = collection(db,'posts',postId,'comments');
+    const snaps = await getDocs(query(cCol, orderBy('timestamp','asc')));
+    listEl.innerHTML = '';
+    snaps.forEach(s=>{
+      const d = s.data();
+      const item = document.createElement('div');
+      item.style.padding='8px';
+      item.style.borderBottom='1px solid rgba(255,255,255,0.02)';
+      item.innerHTML = `<div style="display:flex;gap:8px;align-items:center"><div class="avatar" style="width:36px;height:36px;border-radius:8px">${(d.userAvatarUrl||'U').slice(0,1)}</div><div><div style="font-weight:700">@${d.username}</div><div class="muted" style="font-size:12px">${new Date(d.timestamp?.seconds?d.timestamp.seconds*1000:Date.now()).toLocaleString()}</div></div></div><div style="margin-top:6px">${d.content}</div>`;
+      listEl.appendChild(item);
+    });
+  }catch(e){ console.error(e); listEl.innerHTML = '<div class="muted">Error loading comments</div>'; }
+
+  $('post-cmnt').addEventListener('click', async ()=>{
+    const text = $('cmnt-text').value.trim();
+    if(!text) return;
+    if(!currentUser){ alert('Login to comment'); return; }
+    setLoading(true);
+    try{
+      const cCol = collection(db,'posts',postId,'comments');
+      await addDoc(cCol, { postId, userId: currentUser.uid, username: userDoc.username || '', userAvatarUrl: userDoc.profilePicUrl || '', content: text.slice(0,100), timestamp: serverTimestamp() });
+      // update post commentCount
+      const pRef = doc(db,'posts',postId);
+      await updateDoc(pRef, { commentCount: ( (await (await getDoc(pRef)).data()?.commentCount) || 0 ) + 1 });
+      // UI: append comment locally
+      $('cmnt-text').value='';
+      modal.close();
+      alert('Comment posted');
+    }catch(e){ console.error(e); alert('Comment error: '+e.message); }
+    setLoading(false);
+  });
+}
+
+/* ---------- Post options (report/delete) ---------- */
+async function openPostOptions(item){
+  // item: post full object
+  const isOwner = currentUser && item.userId === currentUser.uid;
+  const html = `<div class="modal-header"><strong>Options</strong><button id="close-opts" class="btn">✕</button></div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${isOwner?'<button id="delete-post" class="btn">Delete post</button>':'<button id="report-post" class="btn">Report post</button>'}
+      <button id="repost" class="btn" disabled>Repost (coming soon)</button>
+    </div>`;
+  modal.open(html);
+  $('close-opts').addEventListener('click', ()=> modal.close());
+  if(isOwner){
+    $('delete-post').addEventListener('click', async ()=>{
+      if(!confirm('Delete this post? This removes all comments too.')) return;
+      setLoading(true);
+      try{
+        // delete post doc and its comments (manual approach)
+        const pRef = doc(db,'posts',item.id);
+        // delete comments subcollection: naive approach (can't batch large sets easily here)
+        const cCol = collection(db,'posts',item.id,'comments');
+        const snaps = await getDocs(cCol);
+        const batch = writeBatch(db);
+        snaps.forEach(s=>batch.delete(s.ref));
+        batch.delete(pRef);
+        await batch.commit();
+        // decrement user's postCount
+        const uRef = doc(db,'users',currentUser.uid);
+        await updateDoc(uRef, { postCount: Math.max(0,(userDoc.postCount||1)-1) });
+        modal.close();
+        // remove from UI
+        const el = document.querySelector(`[data-post-id="${item.id}"]`);
+        if(el) el.remove();
+        alert('Post deleted');
+      }catch(e){ console.error(e); alert('Delete error: '+e.message); }
+      setLoading(false);
+    });
+  } else {
+    $('report-post').addEventListener('click', async ()=>{
+      setLoading(true);
+      try{
+        await addDoc(collection(db,'reports'), { postId: item.id, reportedBy: currentUser?currentUser.uid:'anonymous', timestamp: serverTimestamp() });
+        alert('Reported — thank you.');
+        modal.close();
+      }catch(e){ console.error(e); alert('Report error: '+e.message); }
+      setLoading(false);
+    });
   }
 }
 
-/* ================= Comments Modal ================= */
-async function openCommentsModal(postId){
-  // Fetch post briefly
-  const postRef = doc(db,'posts',postId);
-  const postSnap = await getDoc(postRef);
-  if(!postSnap.exists()) return alert('Post not found');
-  const postData = postSnap.data();
-
-  // Load comments stream
-  const commentsCol = collection(db,'posts',postId,'comments');
-  const commentsSnap = await getDocs(query(commentsCol, orderBy('timestamp','asc')));
-  let commentsHTML = '';
-  commentsSnap.forEach(c => {
-    const d = c.data();
-    commentsHTML += `<div style="display:flex;gap:8px;margin-bottom:8px">
-      <div class="avatar" style="width:36px;height:36px">${(d.username||'U')[0].toUpperCase()}</div>
-      <div style="flex:1">
-        <div style="font-weight:700">${d.username || 'User'} <span class="small">${formatTime(d.timestamp)}</span></div>
-        <div class="small">${d.content}</div>
+/* ---------- Profile screen ---------- */
+$('nav-profile').addEventListener('click', async ()=>{
+  if(!currentUser){ alert('Login first'); return; }
+  setLoading(true);
+  try{
+    const uRef = doc(db,'users',currentUser.uid);
+    const snap = await getDoc(uRef);
+    const u = snap.data();
+    const html = `<div class="modal-header"><strong>${u.name||'Profile'}</strong><button id="close-profile" class="btn">✕</button></div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <div class="avatar" style="width:80px;height:80px;border-radius:12px;font-size:28px">${(u.profilePicUrl||u.name?.charAt(0)||'A').slice(0,1)}</div>
+        <div>
+          <div style="font-weight:800">@${u.username||'(not set)'}</div>
+          <div class="muted" style="font-size:13px">${u.email}</div>
+          <div style="margin-top:8px">${u.bio||''}</div>
+        </div>
       </div>
-    </div>`;
-  });
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button id="edit-profile" class="btn primary">Edit profile</button>
+        <button id="logout" class="btn">Logout</button>
+      </div>
+      <div style="margin-top:12px">
+        <div><strong>Stats</strong></div>
+        <div style="display:flex;gap:12px;margin-top:8px">
+          <div><div style="font-weight:700">${u.postCount||0}</div><div class="muted">Posts</div></div>
+          <div><div style="font-weight:700">${u.followersCount||0}</div><div class="muted">Followers</div></div>
+          <div><div style="font-weight:700">${u.followingCount||0}</div><div class="muted">Following</div></div>
+        </div>
+      </div>
+      <div style="margin-top:12px"><strong>Your posts</strong><div id="profile-posts" style="margin-top:8px"></div></div>
+    `;
+    modal.open(html);
+    $('close-profile').addEventListener('click', ()=> modal.close());
+    $('edit-profile').addEventListener('click', ()=> { modal.close(); openEditProfile(false); });
+    $('logout').addEventListener('click', async ()=> {
+      await signOut(auth);
+      modal.close();
+      alert('Signed out');
+    });
+    // load user posts (simple)
+    const pQ = query(collection(db,'posts'), where('userId','==',currentUser.uid), orderBy('timestamp','desc'));
+    const snaps = await getDocs(pQ);
+    const postsEl = $('profile-posts');
+    postsEl.innerHTML = '';
+    snaps.forEach(s=>{
+      const d = s.data();
+      const div = document.createElement('div');
+      div.className='post-card';
+      div.innerHTML = `<div class="post-content">${renderContent(d.content)}</div><div class="muted">${new Date(d.timestamp?.seconds?d.timestamp.seconds*1000:Date.now()).toLocaleString()}</div>`;
+      postsEl.appendChild(div);
+    });
+  }catch(e){ console.error(e); alert('Profile error: '+e.message); }
+  setLoading(false);
+});
 
-  const modal = openModal(`
-    <div style="display:flex;justify-content:space-between;align-items:center">
-      <div style="font-weight:700">Comments</div>
-      <div class="small">Post by @${postData.username}</div>
-    </div>
-    <div id="comments-list" style="margin-top:12px;max-height:50vh;overflow:auto">${commentsHTML}</div>
-    <textarea id="comment-input" maxlength="100" class="input" placeholder="Write a comment (max 100)"></textarea>
-    <div style="display:flex;gap:8px">
-      <button id="post-comment" class="btn primary" style="flex:1">Post</button>
-      <button id="close-comments" class="btn" style="flex:1">Close</button>
-    </div>
-  `);
-
-  modal.querySelector('#close-comments').addEventListener('click', closeModal);
-  modal.querySelector('#post-comment').addEventListener('click', async ()=>{
-    const val = modal.querySelector('#comment-input').value.trim();
-    if(!val) return;
-    try{
-      // Create comment doc and increment commentCount
-      const cRef = await addDoc(collection(db,'posts',postId,'comments'), {
-        postId, userId: currentUser.uid, username: currentUserDoc.username || currentUserDoc.name || 'user',
-        userAvatarUrl: currentUserDoc.profilePicUrl || '', content: val.slice(0,100), timestamp: serverTimestamp()
-      });
-      // increment commentCount
-      const postReference = doc(db,'posts',postId);
-      await updateDoc(postReference, { commentCount: (postData.commentCount||0) + 1 });
-      // append to UI
-      const newCommentHtml = `<div style="display:flex;gap:8px;margin-bottom:8px">
-        <div class="avatar" style="width:36px;height:36px">${(currentUserDoc.username||'U')[0].toUpperCase()}</div>
-        <div style="flex:1">
-          <div style="font-weight:700">${currentUserDoc.username || currentUserDoc.name} <span class="small">just now</span></div>
-          <div class="small">${val}</div>
+/* ---------- Monetization screen (withdrawal request) ---------- */
+$('nav-monet').addEventListener('click', async ()=>{
+  if(!currentUser){ alert('Login first'); return; }
+  setLoading(true);
+  try{
+    const uRef = doc(db,'users',currentUser.uid);
+    const snap = await getDoc(uRef);
+    const u = snap.data();
+    const html = `<div class="modal-header"><strong>Monetization</strong><button id="close-monet" class="btn">✕</button></div>
+      <div>
+        <div class="muted">Total monetized views</div>
+        <div style="font-weight:800;font-size:20px;margin-top:6px">${u.totalMonetizedViews||0}</div>
+        <div class="muted" style="margin-top:8px">Minimum for withdrawal: 100,000</div>
+        <div style="margin-top:12px">
+          <label>PayPal Email or UPI ID</label>
+          <input id="pay-id" type="text" placeholder="example@paypal.com or 9999999999@upi">
+        </div>
+        <div style="display:flex;gap:8px;margin-top:12px">
+          <button id="request-withdraw" class="btn primary" ${ (u.totalMonetizedViews||0) < 100000 ? 'disabled' : '' }>Request withdrawal</button>
+          <button id="close-monet-btn" class="btn">Close</button>
         </div>
       </div>`;
-      modal.querySelector('#comments-list').insertAdjacentHTML('beforeend', newCommentHtml);
-      modal.querySelector('#comment-input').value = '';
-    }catch(err){ alert('Comment failed: '+err.message); }
-  });
-
-}
-
-/* ================= Views handling =================
-  We create a doc at posts/{postId}/views/{userId} the first time a user views the post.
-  On create, we increment posts/{postId}.views via transaction.
-*/
-async function incrementViewIfNeeded(postId, viewCountEl){
-  if(!currentUser) return;
-  try{
-    const viewDocRef = doc(db,'posts',postId,'views',currentUser.uid);
-    const viewSnap = await getDoc(viewDocRef);
-    if(viewSnap.exists()){
-      // already viewed; just update UI maybe
-      return;
-    }
-    // create view doc and increment
-    await setDoc(viewDocRef, { userId: currentUser.uid, timestamp: serverTimestamp() });
-    // increment posts.views in transaction
-    await runTransaction(db, async (tx)=>{
-      const pRef = doc(db,'posts',postId);
-      const pSnap = await tx.get(pRef);
-      if(!pSnap.exists()) return;
-      const newViews = (pSnap.data().views || 0) + 1;
-      tx.update(pRef, { views: newViews });
+    modal.open(html);
+    $('close-monet').addEventListener('click', ()=> modal.close());
+    $('close-monet-btn').addEventListener('click', ()=> modal.close());
+    $('request-withdraw')?.addEventListener('click', async ()=>{
+      const payId = $('pay-id').value.trim();
+      if(!payId){ alert('Enter PayPal email or UPI ID'); return; }
+      setLoading(true);
+      try{
+        // create withdrawal request doc
+        await addDoc(collection(db,'withdrawalRequests'), {
+          userId: currentUser.uid,
+          username: u.username || '',
+          views: u.totalMonetizedViews || 0,
+          paymentId: payId,
+          timestamp: serverTimestamp(),
+          emailStatus: 'pending'
+        });
+        // reset user's totalMonetizedViews to 0
+        await updateDoc(doc(db,'users',currentUser.uid), { totalMonetizedViews: 0 });
+        alert('Withdrawal requested. Admin will be notified.');
+        modal.close();
+      }catch(e){ console.error(e); alert('Withdrawal error: '+e.message); }
+      setLoading(false);
     });
-    // increment local UI
-    const cur = parseInt(viewCountEl.textContent||'0'); viewCountEl.textContent = cur + 1;
-  }catch(err){ console.error('view increment',err); }
-}
 
-/* ================= Profile view (other users) ================= */
-navProfile.addEventListener('click', async ()=>{
-  showScreen('profile');
-  // load current user profile
-  if(!currentUserDoc) return;
-  profileAvatar.textContent = (currentUserDoc.name || currentUser.email || 'U')[0].toUpperCase();
-  profileName.textContent = currentUserDoc.name || 'Your Name';
-  profileUsername.textContent = '@' + (currentUserDoc.username || 'username');
-  profileBio.textContent = currentUserDoc.bio || '';
-  statPosts.textContent = currentUserDoc.postCount || 0;
-  statFollowers.textContent = currentUserDoc.followersCount || 0;
-  statFollowing.textContent = currentUserDoc.followingCount || 0;
-  btnEditProfile.style.display = 'inline-flex';
-  btnFollow.style.display = 'none';
-  // load user's posts
-  const postsSnap = await getDocs(query(collection(db,'posts'), where('userId','==', currentUser.uid), orderBy('timestamp','desc')));
-  const list = document.getElementById('profile-post-list');
-  list.innerHTML = '';
-  postsSnap.forEach(s => renderPostCard({...s.data(), _id: s.id}, false));
+  }catch(e){ console.error(e); alert('Monetize error: '+e.message); }
+  setLoading(false);
 });
 
-navHome.addEventListener('click', ()=> showScreen('home'));
+/* ---------- Refresh feed ---------- */
+refreshFeedBtn.addEventListener('click', async ()=> { await loadInitialFeed(true); });
 
-navMonetize.addEventListener('click', async ()=>{
-  showScreen('monetize');
-  monetizedViewsEl.textContent = currentUserDoc.totalMonetizedViews || 0;
-});
+/* ---------- Minimal search (placeholder) ---------- */
+$('nav-search').addEventListener('click', ()=> { alert('Search coming soon — placeholder'); });
 
-/* Logout */
-navLogout.addEventListener('click', async ()=>{
-  if(!confirm('Logout?')) return;
-  showLoading('Signing out...');
-  await signOut(auth);
-  hideLoading();
-  // reset UI
-  authScreen.style.display = 'block';
-  appScreen.style.display = 'none';
-});
+/* ---------- Start: show login screen initially ---------- */
+hide(appScreen); show(authContainer);
 
-/* show the main screens */
-function showScreen(name){
-  // hide all screens in app-screen
-  const screens = appScreen.querySelectorAll('.screen');
-  screens.forEach(s => s.style.display = 'none');
-  if(name === 'home'){ document.getElementById('home-screen').style.display = 'block'; }
-  else if(name === 'profile'){ profileScreen.style.display = 'block'; }
-  else if(name === 'monetize'){ document.getElementById('monetization-screen').style.display = 'block'; }
-}
-
-/* Withdraw button */
-withdrawBtn.addEventListener('click', async ()=>{
-  const views = currentUserDoc.totalMonetizedViews || 0;
-  if(views < 100000){
-    alert('Minimum 100,000 monetized views required to request withdrawal.');
-    return;
-  }
-  // Open modal to collect PayPal or UPI
-  const modal = openModal(`
-    <div style="font-weight:700">Withdrawal Request</div>
-    <div class="small" style="margin-top:6px">Your total monetized views: <strong>${views}</strong></div>
-    <input id="payment-id" class="input" placeholder="PayPal Email or UPI ID" />
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="send-withdraw" class="btn primary" style="flex:1">Send Request</button>
-      <button id="cancel-withdraw" class="btn" style="flex:1">Cancel</button>
-    </div>
-    <div id="withdraw-msg" class="small" style="margin-top:8px"></div>
-  `);
-  modal.querySelector('#cancel-withdraw').addEventListener('click', closeModal);
-  modal.querySelector('#send-withdraw').addEventListener('click', async ()=>{
-    const pid = modal.querySelector('#payment-id').value.trim();
-    const msgEl = modal.querySelector('#withdraw-msg');
-    msgEl.textContent = '';
-    if(!pid) { msgEl.textContent = 'Enter PayPal or UPI ID'; return; }
-    try{
-      showLoading('Creating withdrawal request...');
-      // create withdrawal request document
-      await addDoc(collection(db,'withdrawalRequests'), {
-        userId: currentUser.uid,
-        username: currentUserDoc.username || currentUserDoc.name,
-        views: views,
-        paymentId: pid,
-        timestamp: serverTimestamp(),
-        emailStatus: 'pending'
-      });
-      // reset user's totalMonetizedViews to 0
-      await updateDoc(doc(db,'users',currentUser.uid), { totalMonetizedViews: 0 });
-      currentUserDoc.totalMonetizedViews = 0;
-      monetizedViewsEl.textContent = 0;
-      msgEl.textContent = 'Request created. Admin will receive email and process it.';
-      closeModal();
-    }catch(err){ msgEl.textContent = 'Request failed: '+err.message; }
-    finally{ hideLoading(); }
-  });
-});
-
-/* =================== Create Post (simple) =================== */
-/* For demo purposes, add simple create post modal */
-document.getElementById('open-create').addEventListener('click', ()=>{
-  if(!currentUser) return alert('Login required');
-  const modal = openModal(`
-    <div style="font-weight:700">Create Post</div>
-    <textarea id="post-content" class="input" rows="5" placeholder="Write your post (You can paste image URLs or YouTube links)"></textarea>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <label style="display:flex;gap:8px;align-items:center"><input id="post-monetize" type="checkbox" /> Monetize</label>
-      <input id="post-expire-hours" class="input" placeholder="Expiry hours (24 by default)" style="flex:1" />
-    </div>
-    <div style="display:flex;gap:8px;margin-top:8px">
-      <button id="create-post" class="btn primary" style="flex:1">Post</button>
-      <button id="cancel-post" class="btn" style="flex:1">Cancel</button>
-    </div>
-    <div id="create-msg" class="small" style="margin-top:8px"></div>
-  `);
-  modal.querySelector('#cancel-post').addEventListener('click', closeModal);
-  modal.querySelector('#create-post').addEventListener('click', async ()=>{
-    const content = modal.querySelector('#post-content').value.trim();
-    const monetize = modal.querySelector('#post-monetize').checked;
-    const hours = parseInt(modal.querySelector('#post-expire-hours').value) || 24;
-    if(!content) return alert('Post content cannot be empty');
-    showLoading('Publishing post...');
-    try{
-      const postRef = await addDoc(collection(db,'posts'), {
-        userId: currentUser.uid,
-        username: currentUserDoc.username || '',
-        name: currentUserDoc.name || '',
-        authorAvatarUrl: currentUserDoc.profilePicUrl || '',
-        content: content,
-        timestamp: serverTimestamp(),
-        isMonetized: monetize,
-        expiryTime: serverTimestamp(), // we'll compute server-side ideally; for demo store now and treat as 24h by client
-        likes: [],
-        likesCount: 0,
-        commentCount: 0,
-        views: 0
-      });
-      // increment user's postCount
-      const uRef = doc(db,'users',currentUser.uid);
-      await updateDoc(uRef, { postCount: (currentUserDoc.postCount || 0) + 1 });
-      currentUserDoc.postCount = (currentUserDoc.postCount || 0) + 1;
-      // show in feed
-      renderPostCard({...{_id: postRef.id, userId: currentUser.uid, username: currentUserDoc.username, name: currentUserDoc.name, content, isMonetized: monetize, likes: [], likesCount:0, commentCount:0, views:0}});
-      closeModal();
-    }catch(err){ alert('Publish failed: '+err.message); }
-    finally{ hideLoading(); }
-  });
-});
-
-/* ================= Minimal startup ================= */
-window.addEventListener('load', ()=>{
-  // hide loading if not already
-  hideLoading();
-});
 </script>
-
-<!-- ============================
-  Firestore Security Rules (paste into Firebase Console)
-  Save this as 'firestore.rules'
-============================= -->
-<!--
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    function isAuthenticated() { return request.auth != null; }
-    function isOwner(userId) { return request.auth.uid == userId; }
-
-    match /users/{userId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAuthenticated() && isOwner(userId);
-      allow delete: if false;
-    }
-
-    match /posts/{postId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      // allow likes/commentCount/views updates via transactions from authenticated users
-      allow update: if isAuthenticated();
-    }
-
-    match /posts/{postId}/comments/{commentId} {
-      allow read: if isAuthenticated();
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
-      allow update: if false;
-    }
-
-    // per-user view docs under posts
-    match /posts/{postId}/views/{viewerId} {
-      allow create: if isAuthenticated() && request.auth.uid == viewerId;
-      allow read: if isAuthenticated();
-      allow delete: if false;
-      allow update: if false;
-    }
-
-    match /withdrawalRequests/{requestId} {
-      allow create: if isAuthenticated() && request.resource.data.userId == request.auth.uid;
-      allow read, update, delete: if false;
-    }
-
-    // reports (any authenticated user can create)
-    match /reports/{reportId} {
-      allow create: if isAuthenticated();
-      allow read, update, delete: if false;
-    }
-  }
-}
--->
-
-<!-- ============================
-  Cloud Function index.js for withdrawalRequests
-  (Deploy with Firebase Functions / GCP)
-  ============================
-  Instructions:
-  1. In your Firebase project, enable Cloud Functions (Node.js 18/20).
-  2. Place this index.js in functions/ directory.
-  3. Run `npm install nodemailer` in the functions folder.
-  4. Set environment variables via:
-     firebase functions:config:set gmail.user="your@email" gmail.pass="app-password-or-smtp-pass"
-     (or set them in Google Cloud console)
-  5. Deploy with `firebase deploy --only functions`
--->
-<!--
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-const nodemailer = require('nodemailer');
-
-admin.initializeApp();
-
-const gmailUser = functions.config().gmail.user;
-const gmailPass = functions.config().gmail.pass;
-
-if(!gmailUser || !gmailPass){
-  console.error('Missing Gmail config for functions: set functions.config().gmail.user/pass');
-}
-
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: { user: gmailUser, pass: gmailPass }
-});
-
-exports.onWithdrawalRequest = functions.firestore.document('withdrawalRequests/{reqId}')
-  .onCreate(async (snap, context) => {
-    const data = snap.data();
-    const adminEmail = 'apknixy@gmail.com';
-    const mailOptions = {
-      from: `"AddMint Notifier" <${gmailUser}>`,
-      to: adminEmail,
-      subject: `Withdrawal request from ${data.username} (${data.userId})`,
-      text: `
-Withdrawal Request Details:
-
-User: ${data.username}
-User ID: ${data.userId}
-Views: ${data.views}
-Payment ID (PayPal / UPI): ${data.paymentId}
-Timestamp: ${data.timestamp ? data.timestamp.toDate() : new Date()}
-
-Please review and process the withdrawal.
-      `
-    };
-    try{
-      await transporter.sendMail(mailOptions);
-      // Try updating the request doc status
-      await admin.firestore().doc(`withdrawalRequests/${context.params.reqId}`).update({ emailStatus: 'sent' });
-      console.log('Withdrawal email sent.');
-    }catch(err){
-      console.error('Error sending withdrawal email:', err);
-      await admin.firestore().doc(`withdrawalRequests/${context.params.reqId}`).update({ emailStatus: 'error' });
-    }
-  });
--->
-
 </body>
 </html>
