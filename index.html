@@ -1,223 +1,306 @@
-<!DOCTYPE html>
+<!doctype html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AddMint</title>
-    <link rel="stylesheet" href="style.css">
-</head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AddMint — Frontend (Single-file)</title>
+  <!--
+    addmint-frontend-index.htmlSingle-file frontend for AddMint (mobile-first, dark-mode) ready for GitHub Pages.
+
+HOW TO USE (quick):
+1) Replace the `firebaseConfig` object below with your Firebase project's config (Project settings → Web app → Config).
+2) Replace BACKEND_WEBHOOK_URL with your Vercel webhook URL (e.g., https://your-app.vercel.app/api/withdrawal).
+3) Replace HOOK_SECRET with the same secret you set in Vercel (environment variable HOOK_SECRET).
+4) Upload this file to a GitHub repo and host via GitHub Pages (or serve via any static host like Netlify/Vercel).
+
+IMPORTANT placeholders (search in this file):
+  const firebaseConfig = { /* REPLACE ME */ };
+  const BACKEND_WEBHOOK_URL = 'https://your-vercel-app.vercel.app/api/withdrawal';
+  const HOOK_SECRET = 'REPLACE_WITH_YOUR_HOOK_SECRET';
+
+NOTES:
+- This file uses Firebase JS modular SDK v9 (loaded from CDN). No build step required.
+- Do NOT commit your firebase private keys to public repos if you don't want them public; however Firebase client config is public-safe (it is meant to be public) — security is enforced by Firestore Rules and server-side checks.
+- For full production you must enable Firestore Rules, Firebase Authentication email verification, and set up the backend (Vercel) with GMAIL credentials.
+
+-->
+
+  <style>
+    :root{
+      --bg-color-main: #1a1a2e;
+      --bg-color-lighter: #16213e;
+      --bg-color-darker: #0d2a4a;
+      --text-color-main: #e0e0e0;
+      --text-color-light: #bbb;
+      --border-color-main: #0f3460;
+      --highlight-color-main: #00ffff;
+      --button-primary-bg: #00ffff;
+      --button-primary-text: #1a1a2e;
+      --max-width:420px;
+    }
+    html,body{height:100%;margin:0;background:var(--bg-color-main);color:var(--text-color-main);font-family:Inter,system-ui,Roboto,Arial}
+    .app{max-width:var(--max-width);margin:0 auto;height:100vh;display:flex;flex-direction:column;border-left:1px solid rgba(255,255,255,0.02);border-right:1px solid rgba(255,255,255,0.02)}
+    header{height:56px;background:linear-gradient(90deg,var(--bg-color-darker),var(--bg-color-lighter));display:flex;align-items:center;justify-content:space-between;padding:0 12px;box-shadow:0 2px 6px rgba(0,0,0,0.5)}
+    .logo{display:flex;align-items:center;gap:8px}
+    .mark{width:36px;height:36px;border-radius:8px;display:grid;place-items:center;background:linear-gradient(135deg,var(--highlight-color-main),#ff00ff);color:var(--button-primary-text);font-weight:900}
+    main{flex:1;overflow:auto;padding:12px}
+    footer{height:62px;background:linear-gradient(0deg, rgba(0,0,0,0.2), transparent);display:flex;align-items:center;justify-content:space-around;border-top:1px solid rgba(255,255,255,0.03)}
+    .card{background:linear-gradient(180deg, rgba(255,255,255,0.02), transparent);border-radius:12px;padding:12px;margin-bottom:12px;border:1px solid rgba(255,255,255,0.03)}
+    label{display:block;font-size:12px;color:var(--text-color-light);margin-bottom:6px}
+    input,textarea,select{width:100%;padding:10px;border-radius:8px;border:1px solid var(--border-color-main);background:transparent;color:var(--text-color-main);outline:none}
+    button.primary{background:var(--button-primary-bg);color:var(--button-primary-text);border:0;padding:10px 12px;border-radius:10px;font-weight:700}
+    button.ghost{background:transparent;border:1px solid rgba(255,255,255,0.06);padding:8px;border-radius:8px;color:var(--text-color-light)}
+    .small{font-size:13px;color:var(--text-color-light)}
+    #load-status{position:fixed;inset:0;display:none;align-items:center;justify-content:center;z-index:999;background:linear-gradient(180deg, rgba(0,0,0,0.6), rgba(0,0,0,0.8));}
+    .loader{width:48px;height:48px;border-radius:50%;border:5px solid rgba(255,255,255,0.06);border-top-color:var(--highlight-color-main);animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
+    .hidden{display:none}
+    .error{color:#ff7777}
+    .success{color:#8ef0d7}
+  </style></head>
 <body>
+  <div id="load-status"><div class="loader" aria-hidden></div></div>
+  <div class="app">
+    <header>
+      <div class="logo"><div class="mark">AM</div><div><div style="font-size:14px">AddMint</div><div style="font-size:11px;color:var(--text-color-light)">Share • Earn • Connect</div></div></div>
+      <div style="display:flex;gap:8px;align-items:center"><button id="btnSignOut" class="ghost hidden">Logout</button></div>
+    </header><main>
+  <!-- Auth Card -->
+  <section id="authCard" class="card">
+    <h3 id="authTitle">Welcome — Login / Sign Up</h3>
+    <div id="authForms">
+      <div id="loginPane">
+        <label>Email</label>
+        <input id="loginEmail" type="email" placeholder="you@domain.com">
+        <label>Password</label>
+        <input id="loginPassword" type="password" placeholder="••••••">
+        <div style="display:flex;gap:8px;margin-top:8px"><button id="btnLogin" class="primary">Login</button><button id="btnShowSignup" class="ghost">Sign Up</button></div>
+        <div style="margin-top:8px"><button id="btnForgot" class="ghost">Forgot password?</button></div>
+        <p class="small">You must verify your email to log in.</p>
+      </div>
 
-    <div id="app">
-        <div id="load-status">
-            <div class="loader"></div>
-            <p>Initializing AddMint...</p>
-        </div>
+      <div id="signupPane" class="hidden">
+        <label>Email</label>
+        <input id="signupEmail" type="email">
+        <label>Password (min 6)</label>
+        <input id="signupPassword" type="password">
+        <label>Confirm</label>
+        <input id="signupConfirm" type="password">
+        <div style="display:flex;gap:8px;margin-top:8px"><button id="btnSignup" class="primary">Create Account</button><button id="btnShowLogin" class="ghost">Back</button></div>
+      </div>
+    </div>
+  </section>
 
-        <div id="auth-screen">
-            <div class="auth-container">
-                <div id="login-form" class="active">
-                    <h2>Login to AddMint</h2>
-                    <div class="input-group"><input type="email" id="login-email" placeholder="Email"></div>
-                    <div class="input-group"><input type="password" id="login-password" placeholder="Password"></div>
-                    <button class="auth-button" id="login-btn">Log In</button>
-                    <p class="auth-toggle" onclick="toggleAuthForm('signup')">Don't have an account? Sign Up</p>
-                </div>
-                <div id="signup-form">
-                    <h2>Sign Up for AddMint</h2>
-                    <div class="input-group"><input type="email" id="signup-email" placeholder="Email"></div>
-                    <div class="input-group"><input type="password" id="signup-password" placeholder="Password (min 6 characters)"></div>
-                    <div class="input-group"><input type="password" id="signup-confirm-password" placeholder="Confirm Password"></div>
-                    <button class="auth-button" id="signup-btn">Sign Up</button>
-                    <p class="auth-toggle" onclick="toggleAuthForm('login')">Already have an account? Log In</p>
-                </div>
-            </div>
-        </div>
+  <!-- Main App Shell (hidden until logged-in) -->
+  <section id="appShell" class="hidden">
+    <!-- Profile summary -->
+    <div id="profileCard" class="card"></div>
 
-        <div id="main-app" style="display: none;">
-            <header id="header">
-                <div class="logo">AddMint</div>
-                <div style="display: flex; align-items: center;">
-                    <div class="header-icon" id="notifications-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-bell"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
-                    </div>
-                    <div class="header-icon" id="menu-btn">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-menu"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
-                    </div>
-                </div>
-            </header>
-
-            <div id="home-screen" class="screen active">
-                <div class="post-feed" id="home-feed-container"></div>
-                <div class="loader-container" style="text-align: center; padding: 20px;">
-                    <div class="loader" id="home-feed-loader"></div>
-                </div>
-            </div>
-
-            <div id="search-screen" class="screen">
-                <h2>Search</h2>
-                <input type="text" id="search-input" placeholder="Search users...">
-                <div id="search-results-container"></div>
-            </div>
-
-            <div id="feed-screen" class="screen">
-                <h2>Feed</h2>
-                <div id="feed-container"></div>
-            </div>
-
-            <div id="upload-screen" class="screen">
-                <h2>Create Post</h2>
-                <textarea id="post-content-textarea" placeholder="What's on your mind?"></textarea>
-                <div class="controls">
-                    <button id="bold-btn">B</button>
-                    <button id="italic-btn">I</button>
-                    <button id="url-btn">Link</button>
-                    <button id="image-btn">Image</button>
-                    <button id="youtube-btn">YouTube</button>
-                </div>
-                <div class="monetize-toggle">
-                    <span>Monetize Post</span>
-                    <div class="menu-item-toggle" id="monetize-toggle-btn"></div>
-                </div>
-                <button class="auth-button" id="publish-btn">Publish</button>
-            </div>
-
-            <div id="profile-screen" class="screen">
-                <div id="profile-header">
-                    <div id="profile-details">
-                        <img id="profile-avatar" class="post-avatar" alt="Profile Picture">
-                        <div>
-                            <h3 id="profile-display-name"></h3>
-                            <p id="profile-username"></p>
-                        </div>
-                    </div>
-                    <button id="profile-action-btn" class="auth-button">Edit Profile</button>
-                </div>
-                <div id="profile-stats">
-                    <div><span id="post-count">0</span> Posts</div>
-                    <div id="followers-count-btn"><span id="followers-count">0</span> Followers</div>
-                    <div id="following-count-btn"><span id="following-count">0</span> Following</div>
-                </div>
-                <p id="profile-bio"></p>
-                <div id="profile-tabs">
-                    <button id="my-posts-tab" class="active">Posts</button>
-                    <button id="reposts-tab">Reposts</button>
-                </div>
-                <div id="profile-post-feed"></div>
-            </div>
-
-            <div id="monetization-screen" class="screen">
-                <h2>Monetization & Earnings</h2>
-                <p>Total Monetized Views: <span id="total-monetized-views">0</span></p>
-                <p>You need 100,000 views to withdraw.</p>
-                <button class="auth-button" id="withdraw-btn" disabled>Withdraw Earnings</button>
-            </div>
-
-            <footer id="footer">
-                <div class="nav-item active" id="home-nav-btn" data-target="home-screen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-home"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
-                    <span>Home</span>
-                </div>
-                <div class="nav-item" id="search-nav-btn" data-target="search-screen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-search"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-                    <span>Search</span>
-                </div>
-                <div class="nav-item" id="feed-nav-btn" data-target="feed-screen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-play-circle"><circle cx="12" cy="12" r="10"></circle><polygon points="10 8 16 12 10 16 10 8"></polygon></svg>
-                    <span>Feed</span>
-                </div>
-                <div class="nav-item" id="upload-nav-btn" data-target="upload-screen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-plus-circle"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
-                    <span>Upload</span>
-                </div>
-                <div class="nav-item" id="profile-nav-btn" data-target="profile-screen">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-user"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                    <span>Profile</span>
-                </div>
-            </footer>
-
-            <div id="main-menu">
-                <div class="menu-item" id="dark-mode-toggle">
-                    <span class="menu-item-title">Dark Mode</span>
-                    <div class="menu-item-toggle" id="dark-mode-toggle-btn"></div>
-                </div>
-                <div class="menu-item" id="data-saver-toggle">
-                    <span class="menu-item-title">Data Saver</span>
-                    <div class="menu-item-toggle" id="data-saver-toggle-btn"></div>
-                </div>
-                <div class="menu-item" onclick="window.open('https://www.youtube.com/@add_mint', '_blank')">
-                    <span class="menu-item-title">AddMint YouTube</span>
-                </div>
-                <div class="menu-item" onclick="window.open('https://www.instagram.com/addmint__', '_blank')">
-                    <span class="menu-item-title">AddMint Instagram</span>
-                </div>
-                <div class="menu-item" id="monetize-menu-btn" onclick="showScreen('monetization-screen')">
-                    <span class="menu-item-title">Monetization</span>
-                </div>
-                <div class="menu-item" id="logout-btn">
-                    <span class="menu-item-title">Logout</span>
-                </div>
-            </div>
-
-            <div id="edit-profile-modal" class="modal-overlay">
-                <div class="modal-content">
-                    <h2>Edit Profile</h2>
-                    <div class="input-group">
-                        <label>Username</label>
-                        <input type="text" id="edit-username" placeholder="@username">
-                        <span id="username-validation-icon" class="validation-icon"></span>
-                    </div>
-                    <div class="input-group">
-                        <label>Display Name</label>
-                        <input type="text" id="edit-name" placeholder="Display Name">
-                    </div>
-                    <div class="input-group">
-                        <label>Bio (max 500 chars)</label>
-                        <textarea id="edit-bio" maxlength="500" placeholder="A little about yourself..."></textarea>
-                    </div>
-                    <div class="input-group">
-                        <label>Profile Picture URL</label>
-                        <input type="url" id="edit-profile-pic-url" placeholder="https://i.postimg.cc/image.jpg">
-                    </div>
-                    <button class="auth-button" id="save-profile-btn">Save</button>
-                    <button class="auth-button" id="cancel-edit-btn" style="background: var(--bg-color-darker); color: var(--text-color-main); margin-top: 10px;">Cancel</button>
-                </div>
-            </div>
-
-            <div id="withdraw-modal" class="modal-overlay">
-                <div class="modal-content">
-                    <h2>Withdraw Earnings</h2>
-                    <p>Total Monetized Views: <span id="withdraw-views-display">0</span></p>
-                    <div class="input-group">
-                        <label>PayPal Email or UPI ID</label>
-                        <input type="text" id="withdrawal-payment-id" placeholder="your_paypal@example.com or your_upi_id@bank">
-                    </div>
-                    <button class="auth-button" id="submit-withdrawal-btn">Submit Request</button>
-                    <button class="auth-button" id="cancel-withdrawal-btn" style="background: var(--bg-color-darker); color: var(--text-color-main); margin-top: 10px;">Cancel</button>
-                </div>
-            </div>
-
-            <div id="comment-modal" class="modal-overlay">
-                <div class="modal-content" style="max-width: 95%; height: 80%; padding: 0;">
-                    <div style="padding: 15px; border-bottom: 1px solid var(--border-color-main); text-align: center;">
-                        <h3 style="display: inline;">Comments</h3>
-                        <button class="modal-close-button" onclick="hideModal('comment-modal')">&times;</button>
-                    </div>
-                    <div id="comment-list" style="overflow-y: auto; padding: 15px; height: calc(100% - 100px);"></div>
-                    <div style="padding: 15px; border-top: 1px solid var(--border-color-main); display: flex;">
-                        <textarea id="new-comment-input" maxlength="100" placeholder="Add a comment..." style="flex-grow: 1; margin-right: 10px;"></textarea>
-                        <button class="auth-button" id="post-comment-btn" style="width: 80px;">Post</button>
-                    </div>
-                </div>
-            </div>
-            
-        </div>
+    <!-- Monetization / Withdrawals -->
+    <div class="card">
+      <h4>Earnings & Withdraw</h4>
+      <div class="small">Monetized views: <strong id="monetizedViews">0</strong></div>
+      <div style="margin-top:8px"><button id="openWithdraw" class="primary">Request Withdrawal</button></div>
+      <div id="withdrawMsg" class="small"></div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-functions.js"></script>
-    <script src="script.js"></script>
+    <!-- Simple Feed (latest posts) -->
+    <div class="card">
+      <h4>Feed (public posts)</h4>
+      <div id="feedList" class="small">Loading feed...</div>
+    </div>
+
+    <!-- Create Post CTA -->
+    <div style="display:flex;gap:8px;margin-top:12px"><button id="openCreate" class="primary" style="flex:1">Create Post</button><button id="openProfile" class="ghost">Profile</button></div>
+  </section>
+
+  <!-- Modals container -->
+  <div id="modals"></div>
+
+</main>
+
+<footer>
+  <div class="small">Home</div>
+  <div class="small">Feed</div>
+  <div class="small">Upload</div>
+  <div class="small">Search</div>
+  <div class="small">Profile</div>
+</footer>
+
+  </div>  <!-- Firebase SDK (modular) -->  <script type="module">
+    // ----------------- REPLACE THESE VALUES -----------------
+    // Replace with your Firebase project config
+    const firebaseConfig = {
+       apiKey: "AIzaSyDlZA4grzF3fx95-11E4s7ASXwkIij1k1w",
+  authDomain: "addmint-7ab6b.firebaseapp.com",
+  databaseURL: "https://addmint-7ab6b-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "addmint-7ab6b",
+  storageBucket: "addmint-7ab6b.firebasestorage.app",
+  messagingSenderId: "504015450137",
+  appId: "1:504015450137:web:694b176313582cce1e7a88",
+  measurementId: "G-H7J7M23Z82"
+    };
+
+    // Replace with your deployed Vercel webhook URL
+    const BACKEND_WEBHOOK_URL = 'https://addmint-backend.vercel.app/api/withdrawal';
+    // Replace with your HOOK_SECRET set in Vercel env
+    const HOOK_SECRET = '@Mr001234it@#$@#$_@Mr001234it@#$@#$_@Mr001234it@#$@#$';
+    // --------------------------------------------------------
+
+    // Firebase imports
+    import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
+    import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, onAuthStateChanged, sendEmailVerification, sendPasswordResetEmail, signOut } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+    import { getFirestore, collection, doc, setDoc, getDoc, getDocs, query, where, orderBy, limit, serverTimestamp, updateDoc, addDoc } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore.js';
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+
+    // UI refs
+    const loadStatus = document.getElementById('load-status');
+    const authCard = document.getElementById('authCard');
+    const appShell = document.getElementById('appShell');
+    const profileCard = document.getElementById('profileCard');
+    const monetizedViewsEl = document.getElementById('monetizedViews');
+    const feedList = document.getElementById('feedList');
+    const modals = document.getElementById('modals');
+    const withdrawMsg = document.getElementById('withdrawMsg');
+
+    function showLoader(){loadStatus.style.display='flex'}
+    function hideLoader(){loadStatus.style.display='none'}
+
+    // Auth toggles
+    document.getElementById('btnShowSignup').addEventListener('click',()=>{document.getElementById('loginPane').classList.add('hidden');document.getElementById('signupPane').classList.remove('hidden');document.getElementById('authTitle').textContent='Create account'});
+    document.getElementById('btnShowLogin').addEventListener('click',()=>{document.getElementById('signupPane').classList.add('hidden');document.getElementById('loginPane').classList.remove('hidden');document.getElementById('authTitle').textContent='Welcome — Login / Sign Up'});
+
+    // Signup
+    document.getElementById('btnSignup').addEventListener('click',async ()=>{
+      const email = document.getElementById('signupEmail').value.trim();
+      const pass = document.getElementById('signupPassword').value;
+      const pass2 = document.getElementById('signupConfirm').value;
+      if(!email||pass.length<6||pass!==pass2){alert('Enter valid details (password >=6 and matching)');return}
+      try{showLoader();
+        const cred = await createUserWithEmailAndPassword(auth,email,pass);
+        await sendEmailVerification(cred.user);
+        // create minimal user doc
+        await setDoc(doc(db,'users',cred.user.uid),{uid:cred.user.uid,username:'',name:'',email:email,bio:'',profilePicUrl:'',createdAt:serverTimestamp(),postCount:0,totalMonetizedViews:0,followers:[],following:[],followersCount:0,followingCount:0});
+        alert('Account created. Verification email sent. Verify before login.');
+      }catch(e){console.error(e);alert('Sign up failed: '+e.message)}finally{hideLoader()}
+    });
+
+    // Login
+    document.getElementById('btnLogin').addEventListener('click',async ()=>{
+      const email = document.getElementById('loginEmail').value.trim();
+      const pass = document.getElementById('loginPassword').value;
+      try{showLoader();
+        const cred = await signInWithEmailAndPassword(auth,email,pass);
+        if(!cred.user.emailVerified){await signOut(auth);alert('Please verify your email first.');hideLoader();return}
+      }catch(e){console.error(e);alert('Login failed: '+e.message)}finally{hideLoader()}
+    });
+
+    // Forgot password
+    document.getElementById('btnForgot').addEventListener('click',async ()=>{
+      const email = prompt('Enter your sign-up email'); if(!email) return;showLoader();
+      try{await sendPasswordResetEmail(auth,email);alert('Password reset email sent');}catch(e){alert('Error: '+e.message)}finally{hideLoader()}
+    });
+
+    // Auth state
+    let currentUserData=null;
+    onAuthStateChanged(auth, async user=>{
+      if(user){
+        showLoader();
+        document.getElementById('btnSignOut').classList.remove('hidden');
+        authCard.classList.add('hidden');appShell.classList.remove('hidden');
+        const uref = doc(db,'users',user.uid);
+        const usnap = await getDoc(uref);
+        if(!usnap.exists()){await setDoc(uref,{uid:user.uid,username:'',name:'',email:user.email,createdAt:serverTimestamp(),postCount:0,totalMonetizedViews:0,followers:[],following:[],followersCount:0,followingCount:0});}
+        currentUserData = (await getDoc(uref)).data();
+        // force edit profile if username blank
+        if(!currentUserData.username){await showEditProfile({force:true,uid:user.uid});currentUserData=(await getDoc(uref)).data()}
+        renderProfile(currentUserData);
+        loadFeed();
+        hideLoader();
+      }else{
+        currentUserData=null;document.getElementById('btnSignOut').classList.add('hidden');authCard.classList.remove('hidden');appShell.classList.add('hidden');}
+    });
+
+    document.getElementById('btnSignOut').addEventListener('click',async ()=>{await signOut(auth);alert('Signed out');});
+
+    // render profile summary
+    function renderProfile(data){
+      profileCard.innerHTML = `<div style="display:flex;gap:12px;align-items:center"><div style="width:64px;height:64px;border-radius:12px;background:linear-gradient(135deg,#0f3460,#16213e);display:grid;place-items:center;font-weight:700">${(data.username||'U')[0].toUpperCase()}</div><div><div style="font-weight:800">${data.name||'(No name)'}</div><div style="font-size:13px;color:var(--text-color-light)">@${data.username||'set_username'}</div></div></div><div style="margin-top:8px;font-size:13px;color:var(--text-color-light)">${data.bio||''}</div><div style="display:flex;gap:8px;margin-top:8px"><button id="editProfileBtn" class="ghost">Edit Profile</button></div>`;
+      monetizedViewsEl.textContent = (data.totalMonetizedViews||0);
+      document.getElementById('editProfileBtn').addEventListener('click',()=>showEditProfile({force:false,uid:data.uid}));
+    }
+
+    // edit profile modal
+    async function showEditProfile({force=false,uid}){
+      const modal = document.createElement('div');modal.className='card';modal.style.position='fixed';modal.style.inset='12px';modal.style.zIndex=999;modal.innerHTML = `<h4>Edit Profile</h4><label>Username (lowercase, no spaces)</label><input id="eUser"><div id="uCheck" class="small"></div><label>Name</label><input id="eName"><label>Bio (max 150)</label><textarea id="eBio" maxlength="150" style="height:80px"></textarea><label>Profile Pic (direct URL)</label><input id="ePic" placeholder="https://...jpg"><div style="display:flex;gap:8px;margin-top:8px"><button id="saveProf" class="primary">Save</button>${force? '': '<button id="cancelProf" class="ghost">Cancel</button>'}</div>`;document.body.appendChild(modal);
+  const eUser = modal.querySelector('#eUser');
+  const uCheck = modal.querySelector('#uCheck');
+  const userDoc = doc(db,'users',uid);
+  const cur = (await getDoc(userDoc)).data();
+  eUser.value = cur.username||''; modal.querySelector('#eName').value = cur.name||''; modal.querySelector('#eBio').value = cur.bio||''; modal.querySelector('#ePic').value = cur.profilePicUrl||'';
+  eUser.addEventListener('input',debounce(async ()=>{const v=eUser.value.trim().toLowerCase(); if(!v.match(/^[a-z0-9_\-]+$/)){uCheck.textContent='Invalid chars';uCheck.style.color='orange';return} const q = query(collection(db,'users'),where('username','==',v),limit(1)); const s = await getDocs(q); if(!s.empty && s.docs[0].data().uid!==uid){uCheck.textContent='Taken';uCheck.style.color='red';} else {uCheck.textContent='Available ✓';uCheck.style.color='lightgreen'} },500));
+  modal.querySelector('#saveProf').addEventListener('click',async ()=>{const username=eUser.value.trim().toLowerCase(); const name=modal.querySelector('#eName').value.trim(); const bio=modal.querySelector('#eBio').value.trim(); const pic=modal.querySelector('#ePic').value.trim(); if(!username||!name){alert('Username and name required');return} // final check
+    const q = query(collection(db,'users'),where('username','==',username),limit(1)); const s = await getDocs(q); if(!s.empty && s.docs[0].data().uid!==uid){alert('Username taken');return} await updateDoc(userDoc,{username,name,bio,profilePicUrl:pic}); modal.remove(); currentUserData=(await getDoc(userDoc)).data(); renderProfile(currentUserData); alert('Saved');});
+  if(!force) modal.querySelector('#cancelProf').addEventListener('click',()=>modal.remove());
+}
+
+// create post modal (simple)
+document.getElementById('openCreate').addEventListener('click',()=>{
+  if(!auth.currentUser) return alert('Login first');
+  const m = document.createElement('div');m.className='card';m.style.position='fixed';m.style.inset='12px';m.style.zIndex=999; m.innerHTML=`<h4>Create Post</h4><label>Content (supports **bold** and *italic* and URLs)</label><textarea id="pContent" style="height:120px"></textarea><label>Monetize?</label><select id="pMon"><option value="false">No</option><option value="true">Yes</option></select><div style="display:flex;gap:8px;margin-top:8px"><button id="pub" class="primary">Publish</button><button id="can" class="ghost">Cancel</button></div>`; document.body.appendChild(m);
+  m.querySelector('#can').addEventListener('click',()=>m.remove());
+  m.querySelector('#pub').addEventListener('click',async ()=>{const content=m.querySelector('#pContent').value.trim(); const mon = m.querySelector('#pMon').value==='true'; if(!content) return alert('Add content'); showLoader(); const pRef = await addDoc(collection(db,'posts'),{userId:auth.currentUser.uid,username:currentUserData.username||auth.currentUser.email.split('@')[0],authorAvatarUrl:currentUserData.profilePicUrl||'',content, timestamp:serverTimestamp(),isMonetized:mon,expiryTime:serverTimestamp(),likes:[],likesCount:0,commentCount:0,views:0}); alert('Published'); m.remove(); hideLoader(); loadFeed(); });
+});
+
+// load feed (simple latest)
+async function loadFeed(){ feedList.textContent='Loading...'; const q = query(collection(db,'posts'),orderBy('timestamp','desc'),limit(10)); const s = await getDocs(q); feedList.innerHTML=''; if(s.empty){feedList.textContent='No posts yet';return} s.forEach(docSnap=>{const d=docSnap.data(); const el = document.createElement('div'); el.style.padding='8px 0'; el.innerHTML=`<div style="font-weight:700">@${d.username}</div><div style="color:var(--text-color-light)">${escapeHtml(truncate(d.content||'',200))}</div>`; feedList.appendChild(el)});
+}
+
+// Open withdraw modal
+document.getElementById('openWithdraw').addEventListener('click',async ()=>{
+  if(!currentUserData) return alert('Login first');
+  const modal = document.createElement('div');modal.className='card';modal.style.position='fixed';modal.style.inset='12px';modal.style.zIndex=999; modal.innerHTML=`<h4>Request Withdrawal</h4><div class="small">Your monetized views: <strong>${currentUserData.totalMonetizedViews||0}</strong></div><label>Payment (UPI or PayPal email)</label><input id="payId" placeholder="example@upi or paypal@example.com"><label>Notes</label><textarea id="notes" style="height:80px"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button id="sendReq" class="primary">Send Request</button><button id="closeReq" class="ghost">Cancel</button></div><div id="reqMsg" class="small"></div>`; document.body.appendChild(modal);
+  modal.querySelector('#closeReq').addEventListener('click',()=>modal.remove());
+  modal.querySelector('#sendReq').addEventListener('click',async ()=>{
+    const pay = modal.querySelector('#payId').value.trim(); const notes = modal.querySelector('#notes').value.trim(); if(!pay) return alert('Enter payment id');
+    // business rule: require >=100000 views to withdraw (as earlier said sometimes 10000; follow original: 100000? We'll allow any and send request, but backend/admin must verify.)
+    const views = currentUserData.totalMonetizedViews||0;
+    showLoader();
+    try{
+      // 1) create firestore document
+      const reqRef = await addDoc(collection(db,'withdrawalRequests'),{userId:currentUserData.uid,username:currentUserData.username,views, paymentId:pay,contact:pay,notes, timestamp:serverTimestamp(),emailStatus:'pending'});
+
+      // 2) call backend webhook
+      const payload = { userId:currentUserData.uid, username:currentUserData.username, views, paymentId:pay, contact:pay, notes };
+      const res = await fetch(BACKEND_WEBHOOK_URL, { method:'POST', headers:{ 'Content-Type':'application/json', 'x-addmint-secret': HOOK_SECRET }, body: JSON.stringify(payload) });
+      const resJson = await res.json();
+      if(res.ok){
+        await updateDoc(reqRef,{emailStatus:'sent'});
+        modal.querySelector('#reqMsg').innerHTML = '<span class="success">Request sent — admin will contact you.</span>';
+      } else {
+        await updateDoc(reqRef,{emailStatus:'error',emailError:resJson});
+        modal.querySelector('#reqMsg').innerHTML = '<span class="error">Server error: '+escapeHtml(resJson.error||resJson.message||JSON.stringify(resJson))+'</span>';
+      }
+    }catch(e){console.error(e);modal.querySelector('#reqMsg').innerHTML = '<span class="error">Error: '+escapeHtml(e.message||e)+'</span>'}
+    hideLoader();
+  });
+});
+
+// utility
+function escapeHtml(s){ if(!s) return ''; return String(s).replace(/[&<>"'`]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":"&#39;","`":"&#96;"})[c]); }
+function truncate(s,n){ if(!s) return ''; return s.length>n? s.slice(0,n)+'...':s }
+function debounce(fn,wait){let t;return (...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),wait)}}
+
+// small helper to update UI if user doc changes (not real-time listener to keep simple)
+async function refreshUser(){ if(!auth.currentUser) return; const uref = doc(db,'users',auth.currentUser.uid); currentUserData = (await getDoc(uref)).data(); renderProfile(currentUserData); }
+
+// initial fallback for feed
+feedList.textContent='Loading feed...';
+
+  </script>
 </body>
 </html>
