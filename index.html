@@ -28,7 +28,7 @@
             --modal-bg-color: rgba(0, 0, 0, 0.7);
         }
 
-        /* Dark Mode Toggle - Future Feature */
+        /* Light Mode (Toggles off dark mode) */
         body.light-mode {
             --bg-color-main: #f0f2f5;
             --bg-color-lighter: #ffffff;
@@ -132,8 +132,44 @@
             transform: scale(1.1);
         }
 
-        /* CSS-only icons */
-        .icon-bell::before { content: '🔔'; font-size: 20px; } /* Using Unicode for simplicity in this comprehensive example */
+        /* Pure CSS Icons (No Emojis, No Images) */
+        /* Bell Icon */
+        .icon-bell {
+            position: relative;
+            width: 20px;
+            height: 20px;
+            display: inline-block;
+            vertical-align: middle;
+            background: var(--text-color-main);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            box-shadow: 0 2px 0 var(--text-color-main),
+                        inset 0 -2px 0 var(--text-color-main);
+            transform: translateY(2px);
+        }
+        .icon-bell::before {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 8px;
+            height: 8px;
+            background: var(--text-color-main);
+            border-radius: 0 0 50% 50%;
+            box-shadow: 0 2px 0 var(--text-color-main);
+        }
+        .icon-bell::after {
+            content: '';
+            position: absolute;
+            top: -2px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--text-color-main);
+            border-radius: 2px;
+        }
+
+        /* Hamburger Menu Icon */
         .icon-menu {
             width: 24px;
             height: 20px;
@@ -154,6 +190,34 @@
         .icon-menu.active span:nth-child(2) { opacity: 0; }
         .icon-menu.active span:nth-child(3) { transform: translateY(-9px) rotate(-45deg); }
 
+        /* Refresh Icon (for feed) */
+        .icon-refresh {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-top-color: transparent;
+            border-radius: 50%;
+            animation: spin 1s infinite linear;
+            position: relative;
+        }
+        .icon-refresh::before {
+            content: '';
+            position: absolute;
+            top: -4px;
+            right: 0px;
+            width: 0;
+            height: 0;
+            border-style: solid;
+            border-width: 0 4px 6px 4px;
+            border-color: transparent transparent currentColor transparent;
+            transform: rotate(-45deg);
+            transform-origin: 50% 100%;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
 
         main {
             flex-grow: 1;
@@ -194,12 +258,479 @@
             margin-bottom: 3px;
         }
 
-        /* CSS-only nav icons */
-        .icon-home::before { content: '🏠'; font-size: 20px; }
-        .icon-search::before { content: '🔍'; font-size: 20px; }
-        .icon-feed::before { content: '▶️'; font-size: 20px; } /* Play icon for feed/reels */
-        .icon-upload::before { content: '➕'; font-size: 20px; }
-        .icon-profile::before { content: '👤'; font-size: 20px; }
+        /* Pure CSS Nav Icons */
+        .icon-home {
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-radius: 2px;
+            position: relative;
+        }
+        .icon-home::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: -6px;
+            transform: translateX(-50%) rotate(45deg);
+            width: 14px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-bottom: none;
+            border-left: none;
+        }
+        .icon-home::after {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 8px;
+            background: currentColor;
+            left: 50%;
+            transform: translateX(-50%);
+            bottom: -2px; /* Adjust to sit on base line */
+        }
+
+
+        .icon-search {
+            width: 20px;
+            height: 20px;
+            position: relative;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+        }
+        .icon-search::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 2px;
+            background: currentColor;
+            top: 18px;
+            left: 16px;
+            transform: rotate(45deg);
+        }
+
+        .icon-feed { /* Play button for Reels/Shorts like feed */
+            width: 24px;
+            height: 24px;
+            position: relative;
+            border: 2px solid currentColor;
+            border-radius: 4px;
+        }
+        .icon-feed::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-40%, -50%); /* Adjust for triangle shape */
+            width: 0;
+            height: 0;
+            border-top: 6px solid transparent;
+            border-bottom: 6px solid transparent;
+            border-left: 10px solid currentColor;
+        }
+
+        .icon-upload { /* Plus sign */
+            width: 20px;
+            height: 20px;
+            position: relative;
+        }
+        .icon-upload::before, .icon-upload::after {
+            content: '';
+            position: absolute;
+            background: currentColor;
+        }
+        .icon-upload::before {
+            width: 100%;
+            height: 2px;
+            top: 50%;
+            left: 0;
+            transform: translateY(-50%);
+        }
+        .icon-upload::after {
+            width: 2px;
+            height: 100%;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        .icon-profile { /* Person icon */
+            width: 20px;
+            height: 20px;
+            position: relative;
+            border: 2px solid currentColor;
+            border-radius: 50% 50% 0 0;
+            border-bottom: none;
+            transform: scaleX(0.9); /* More oval head */
+        }
+        .icon-profile::before {
+            content: '';
+            position: absolute;
+            width: 12px;
+            height: 12px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            top: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+
+        /* Post Action Icons */
+        .icon-heart { /* Heart */
+            display: inline-block;
+            width: 18px;
+            height: 18px;
+            position: relative;
+            transform-origin: 50% 50%;
+            transition: transform 0.2s ease, color 0.2s ease;
+        }
+        .icon-heart::before, .icon-heart::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 9px;
+            width: 9px;
+            height: 14px;
+            background: currentColor;
+            border-radius: 9px 9px 0 0;
+            transform: rotate(-45deg);
+            transform-origin: 0 100%;
+        }
+        .icon-heart::after {
+            left: 0;
+            transform: rotate(45deg);
+            transform-origin: 100% 100%;
+        }
+        .icon-heart.liked { color: red; animation: bounceIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
+        @keyframes bounceIn {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.2); opacity: 1; }
+            100% { transform: scale(1); }
+        }
+
+        .icon-comment { /* Speech Bubble */
+            width: 22px;
+            height: 18px;
+            position: relative;
+            background: currentColor;
+            border-radius: 3px;
+            margin-right: 2px;
+        }
+        .icon-comment::before {
+            content: '';
+            position: absolute;
+            left: 5px;
+            bottom: -5px;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-top: 5px solid currentColor;
+        }
+
+        .icon-views { /* Eye */
+            width: 22px;
+            height: 14px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            position: relative;
+            display: inline-block;
+        }
+        .icon-views::before {
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: currentColor;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .icon-sound { /* Speaker */
+            width: 16px;
+            height: 18px;
+            background: currentColor;
+            position: relative;
+            border-radius: 2px;
+        }
+        .icon-sound::before {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 2px;
+            width: 0;
+            height: 0;
+            border-top: 7px solid transparent;
+            border-bottom: 7px solid transparent;
+            border-left: 8px solid currentColor;
+        }
+        .icon-sound::after {
+            content: '';
+            position: absolute;
+            left: 100%;
+            top: 4px;
+            width: 6px;
+            height: 10px;
+            border: 2px solid currentColor;
+            border-left: none;
+            border-radius: 0 6px 6px 0;
+            transform: scaleY(0.6);
+        }
+
+        .icon-translate { /* Globe */
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            position: relative;
+        }
+        .icon-translate::before, .icon-translate::after {
+            content: '';
+            position: absolute;
+            background: currentColor;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .icon-translate::before { /* Vertical line */
+            width: 2px;
+            height: 100%;
+            top: 0;
+        }
+        .icon-translate::after { /* Horizontal ellipse (simple) */
+            width: 16px;
+            height: 2px;
+            top: 50%;
+            transform: translateX(-50%) translateY(-1px) rotate(90deg);
+            border-radius: 50%;
+        }
+
+        .icon-repost { /* Two arrows for repost/cycle */
+            width: 22px;
+            height: 18px;
+            position: relative;
+            transform: scaleX(-1); /* Mirror for 'repost' feel */
+        }
+        .icon-repost::before, .icon-repost::after {
+            content: '';
+            position: absolute;
+            border-left: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            width: 10px;
+            height: 10px;
+        }
+        .icon-repost::before {
+            top: 0;
+            left: 0;
+            border-top-left-radius: 4px;
+            transform: rotate(45deg);
+        }
+        .icon-repost::after {
+            bottom: 0;
+            right: 0;
+            border-bottom-right-radius: 4px;
+            transform: rotate(-135deg);
+        }
+        /* Connection for repost icon */
+        .icon-repost::before {
+            border-left: 2px solid currentColor;
+            border-bottom: 2px solid currentColor;
+            width: 10px;
+            height: 10px;
+            top: 0;
+            left: 0;
+            border-radius: 0 0 0 4px;
+            transform: rotate(45deg);
+            transform-origin: 100% 100%;
+        }
+        .icon-repost::after {
+            border-top: 2px solid currentColor;
+            border-right: 2px solid currentColor;
+            width: 10px;
+            height: 10px;
+            bottom: 0;
+            right: 0;
+            border-radius: 4px 0 0 0;
+            transform: rotate(45deg);
+            transform-origin: 0% 0%;
+        }
+
+        /* Side Menu Icons */
+        .icon-dark-mode { /* Half-moon/Sun */
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: currentColor;
+            position: relative;
+            overflow: hidden;
+            box-shadow: inset 0 0 0 2px currentColor; /* Simulate border without affecting shape */
+        }
+        .icon-dark-mode::before {
+            content: '';
+            position: absolute;
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            background: var(--bg-color-darker); /* Opposite color for the "cut" */
+            top: -2px;
+            left: 8px;
+        }
+        /* Adjust for light mode to show sun */
+        body.light-mode .icon-dark-mode {
+            background: gold;
+            box-shadow: inset 0 0 0 2px orange;
+        }
+        body.light-mode .icon-dark-mode::before {
+            background: transparent; /* No cut for sun */
+        }
+        body.light-mode .icon-dark-mode::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 6px;
+            background: gold;
+            border-radius: 1px;
+            left: 50%;
+            top: -4px;
+            transform: translateX(-50%);
+            box-shadow: 0 24px gold, -10px 10px gold rotate(45deg), 10px 10px gold rotate(-45deg); /* Rays */
+        }
+
+
+        .icon-data-saver { /* Bar Chart */
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-around;
+        }
+        .icon-data-saver::before, .icon-data-saver::after {
+            content: '';
+            display: block;
+            width: 4px;
+            background: currentColor;
+            border-radius: 1px;
+        }
+        .icon-data-saver::before { height: 60%; }
+        .icon-data-saver::after { height: 90%; }
+        .icon-data-saver > *:first-child { /* Middle bar, using a child div for simplicity */
+            display: block;
+            width: 4px;
+            background: currentColor;
+            height: 30%;
+            border-radius: 1px;
+        }
+
+        .icon-youtube { /* YouTube Play Button */
+            width: 24px;
+            height: 16px;
+            background: red;
+            border-radius: 4px;
+            position: relative;
+        }
+        .icon-youtube::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-40%, -50%);
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid white;
+        }
+
+        .icon-instagram { /* Simple Camera Outline */
+            width: 22px;
+            height: 22px;
+            border: 2px solid currentColor;
+            border-radius: 5px;
+            position: relative;
+        }
+        .icon-instagram::before { /* Lens */
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+        .icon-instagram::after { /* Viewfinder dot */
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            top: 3px;
+            right: 3px;
+        }
+
+        .icon-monetize { /* Money Bag/Stack */
+            width: 20px;
+            height: 18px;
+            border: 2px solid currentColor;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            top: 1px;
+        }
+        .icon-monetize::before { /* Dollar sign (or currency symbol approximation) */
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 100%;
+            background: currentColor;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .icon-monetize::after { /* Money waves */
+            content: '';
+            position: absolute;
+            width: 24px;
+            height: 10px;
+            border: 2px solid currentColor;
+            border-top: none;
+            border-radius: 0 0 10px 10px;
+            bottom: -5px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-color-main); /* Cut out */
+        }
+
+
+        .icon-logout { /* Door */
+            width: 20px;
+            height: 20px;
+            border: 2px solid currentColor;
+            border-right: none;
+            position: relative;
+        }
+        .icon-logout::before { /* Door handle */
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            right: -6px;
+            top: 8px;
+        }
+        .icon-logout::after { /* Arrow out */
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid currentColor;
+            right: -10px;
+            top: 5px;
+        }
 
 
         /* General UI Elements */
@@ -654,22 +1185,6 @@
             font-size: 14px;
         }
 
-        /* CSS-only action icons */
-        .icon-heart { color: var(--text-color-light); transition: color 0.2s ease, transform 0.2s ease; }
-        .icon-heart.liked { color: red; animation: bounceIn 0.3s cubic-bezier(0.68, -0.55, 0.27, 1.55); }
-        .icon-heart::before { content: '❤️'; font-size: 20px; }
-        .icon-comment::before { content: '💬'; font-size: 20px; }
-        .icon-views::before { content: '👁️'; font-size: 20px; }
-        .icon-sound::before { content: '🔊'; font-size: 20px; }
-        .icon-translate::before { content: '🌐'; font-size: 20px; }
-        .icon-repost::before { content: '🔁'; font-size: 20px; }
-
-        @keyframes bounceIn {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.2); opacity: 1; }
-            100% { transform: scale(1); }
-        }
-
         /* Emoji Reactions */
         .emoji-reactions {
             display: flex;
@@ -677,6 +1192,8 @@
             margin-top: 5px;
             padding: 0 15px 10px;
             flex-wrap: wrap; /* Allow wrapping */
+            border-top: 1px solid var(--border-color-main);
+            padding-top: 10px;
         }
         .reaction-item {
             display: inline-flex;
@@ -795,6 +1312,153 @@
             padding: 5px 10px;
             font-size: 13px;
         }
+
+        /* Home Feed Mixed Content */
+        .horizontal-posts-section {
+            background-color: var(--bg-color-darker);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .horizontal-posts-section h3 {
+            color: var(--highlight-color-main);
+            margin-bottom: 10px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .horizontal-posts-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 5px; /* For scrollbar */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin; /* Firefox */
+            scrollbar-color: var(--highlight-color-main) var(--border-color-main); /* Firefox */
+        }
+        .horizontal-posts-carousel::-webkit-scrollbar {
+            height: 6px;
+        }
+        .horizontal-posts-carousel::-webkit-scrollbar-track {
+            background: var(--border-color-main);
+            border-radius: 3px;
+        }
+        .horizontal-posts-carousel::-webkit-scrollbar-thumb {
+            background-color: var(--highlight-color-main);
+            border-radius: 3px;
+        }
+        .horizontal-post-card {
+            flex-shrink: 0;
+            width: 150px; /* Fixed width for horizontal cards */
+            background-color: var(--bg-color-lighter);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px var(--shadow-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+        }
+        .horizontal-post-card:hover {
+            transform: translateY(-3px);
+        }
+        .horizontal-post-card img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 5px;
+            margin-bottom: 8px;
+            border: 1px solid var(--highlight-color-secondary);
+        }
+        .horizontal-post-card p {
+            font-size: 13px;
+            color: var(--text-color-main);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .suggested-users-section {
+            background-color: var(--bg-color-darker);
+            padding: 10px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .suggested-users-section h3 {
+            color: var(--highlight-color-main);
+            margin-bottom: 10px;
+            font-size: 18px;
+            text-align: center;
+        }
+        .suggested-users-carousel {
+            display: flex;
+            overflow-x: auto;
+            gap: 10px;
+            padding-bottom: 5px; /* For scrollbar */
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: var(--highlight-color-main) var(--border-color-main);
+        }
+        .suggested-users-carousel::-webkit-scrollbar {
+            height: 6px;
+        }
+        .suggested-users-carousel::-webkit-scrollbar-track {
+            background: var(--border-color-main);
+            border-radius: 3px;
+        }
+        .suggested-users-carousel::-webkit-scrollbar-thumb {
+            background-color: var(--highlight-color-main);
+            border-radius: 3px;
+        }
+        .suggested-user-card {
+            flex-shrink: 0;
+            width: 120px; /* Fixed width for user cards */
+            background-color: var(--bg-color-lighter);
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            box-shadow: 0 2px 5px var(--shadow-color);
+            cursor: pointer;
+            transition: transform 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .suggested-user-card:hover {
+            transform: translateY(-3px);
+        }
+        .suggested-user-card img {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-bottom: 8px;
+            border: 2px solid var(--highlight-color-main);
+        }
+        .suggested-user-card .username {
+            font-size: 13px;
+            color: var(--text-color-main);
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .suggested-user-card .name {
+            font-size: 11px;
+            color: var(--text-color-light);
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            width: 100%;
+        }
+        .suggested-user-card button {
+            margin-top: 10px;
+            padding: 5px 10px;
+            font-size: 12px;
+            width: 90%;
+        }
+
 
         /* Upload Screen */
         .upload-options {
@@ -1090,7 +1754,7 @@
             <!-- Sign Up Form -->
             <form id="signup-form" class="hidden">
                 <input type="email" id="signup-email" placeholder="Email" required>
-                <input type="password" id="signup-password" placeholder="Password (min 6 chars)" required>
+                <input type="password" id="signup-password" placeholder="Password (min 6 characters)" required>
                 <input type="password" id="signup-confirm-password" placeholder="Confirm Password" required>
                 <button type="submit">Sign Up</button>
                 <p class="toggle-auth">Already have an account? <a href="#" id="show-login">Login</a></p>
@@ -1102,7 +1766,7 @@
             <header>
                 <a href="#" class="app-logo" id="header-logo-link">AddMint</a>
                 <div class="header-icons">
-                    <button class="icon-button" id="refresh-feed-button" title="Refresh Feed"><span class="icon-refresh">&#x21BB;</span></button>
+                    <button class="icon-button" id="refresh-feed-button" title="Refresh Feed"><span class="icon-refresh"></span></button>
                     <button class="icon-button" id="notifications-button" title="Notifications"><span class="icon-bell"></span></button>
                     <button class="icon-button" id="menu-button" title="Menu"><span class="icon-menu"><span></span><span></span><span></span></span></button>
                 </div>
@@ -1112,7 +1776,7 @@
                 <!-- Home Screen -->
                 <section id="home-screen" class="app-screen">
                     <div id="posts-container">
-                        <!-- Posts will be dynamically loaded here -->
+                        <!-- Posts, horizontal carousels, and suggested users will be dynamically loaded here -->
                     </div>
                     <div class="text-center mt-15 mb-15">
                         <span id="feed-loader" class="loader hidden"></span>
@@ -1146,9 +1810,9 @@
                         <button id="bold-btn" title="Bold"><strong>B</strong></button>
                         <button id="italic-btn" title="Italic"><em>I</em></button>
                         <button id="link-btn" title="Insert Link">🔗</button>
-                        <button id="image-btn" title="Embed Image">🖼️</button>
-                        <button id="youtube-btn" title="Embed YouTube Video">▶️</button>
-                        <button id="color-btn" title="Text Color">🎨</button>
+                        <button id="image-btn" title="Embed Image"><span class="icon-image"></span></button>
+                        <button id="youtube-btn" title="Embed YouTube Video"><span class="icon-youtube-embed"></span></button>
+                        <button id="color-btn" title="Text Color"><span class="icon-color-palette"></span></button>
                     </div>
                     <div id="color-picker-container" class="color-picker-grid hidden"></div>
 
@@ -1205,7 +1869,8 @@
                 <section id="monetization-screen" class="app-screen hidden">
                     <h2>Monetization & Withdrawal</h2>
                     <p>Total Monetized Views: <strong id="total-monetized-views">0</strong></p>
-                    <p>Required for withdrawal: <strong>100,000 views</strong></p>
+                    <p>Total Unmonetized Views: <strong id="total-unmonetized-views">0</strong></p>
+                    <p>Required for withdrawal: <strong>100,000 monetized views</strong></p>
                     <button id="withdraw-button" disabled>Withdraw Earnings</button>
                     <p id="monetization-message" class="message hidden"></p>
                 </section>
@@ -1289,14 +1954,14 @@
                     <button id="bio-bold-btn" title="Bold"><strong>B</strong></button>
                     <button id="bio-italic-btn" title="Italic"><em>I</em></button>
                     <button id="bio-link-btn" title="Insert Link">🔗</button>
-                    <button id="bio-color-btn" title="Text Color">🎨</button>
+                    <button id="bio-color-btn" title="Text Color"><span class="icon-color-palette"></span></button>
                 </div>
                 <div id="bio-color-picker-container" class="color-picker-grid hidden"></div>
 
                 <label for="edit-profile-pic-url">Profile Picture URL</label>
                 <input type="url" id="edit-profile-pic-url" placeholder="Direct image URL (e.g., https://i.postimg.cc/image.jpg)">
                 <p style="font-size: 12px; color: var(--text-color-light);">
-                    Tip: Use direct image hosting services like Imgur, Postimages, etc.
+                    Tip: Use direct image hosting services like Imgur, Postimages, Cubeupload, etc.
                 </p>
                 <button id="save-profile-button">Save Profile</button>
             </div>
@@ -1336,7 +2001,24 @@
                 <input type="text" id="payment-id-input" placeholder="Enter PayPal Email or UPI ID" required>
                 <div class="button-group">
                     <button id="withdraw-cancel-button" class="secondary">Cancel</button>
-                    <button id="withdraw-submit-button">Submit Request</button>
+                    <button id="withdraw-check-button">Check Details</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Withdrawal Confirmation Modal -->
+        <div id="withdraw-confirm-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Confirm Withdrawal Details</h2>
+                    <button class="modal-close-button">&times;</button>
+                </div>
+                <p>Please review your withdrawal details:</p>
+                <p>Views to withdraw: <strong id="confirm-withdraw-views"></strong></p>
+                <p>Payment ID: <strong id="confirm-payment-id"></strong></p>
+                <div class="button-group">
+                    <button id="confirm-withdraw-edit-button" class="secondary">Edit</button>
+                    <button id="confirm-withdraw-send-button">Send Request</button>
                 </div>
             </div>
         </div>
@@ -1369,17 +2051,32 @@
             </div>
         </div>
 
+        <!-- Language Selection Modal (for translate) -->
+        <div id="language-modal" class="modal-overlay hidden">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2>Select Language</h2>
+                    <button class="modal-close-button">&times;</button>
+                </div>
+                <div id="language-list" style="max-height: 400px; overflow-y: auto;">
+                    <!-- Languages will be generated here -->
+                </div>
+            </div>
+        </div>
+
+
         <!-- Side Menu -->
         <div id="side-menu">
             <ul>
-                <li><button id="toggle-dark-mode-button"><span class="icon">🌓</span> Dark Mode <span id="dark-mode-status">On</span></button></li>
-                <li><button id="toggle-data-saver-button"><span class="icon">📊</span> Data Saver <span id="data-saver-status">Off</span></button></li>
-                <li><a href="https://www.youtube.com/@add_mint" target="_blank"><span class="icon">▶️</span> AddMint YouTube</a></li>
-                <li><a href="https://www.instagram.com/addmint__" target="_blank"><span class="icon">📸</span> AddMint Instagram</a></li>
-                <li><button id="show-monetization-from-menu"><span class="icon">💰</span> Monetization</button></li>
+                <li><button id="toggle-dark-mode-button"><span class="icon icon-dark-mode"></span> Dark Mode <span id="dark-mode-status">On</span></button></li>
+                <li><button id="toggle-data-saver-button"><span class="icon icon-data-saver"><div></div></span> Data Saver <span id="data-saver-status">Off</span></button></li>
+                <li><a href="https://www.youtube.com/@add_mint" target="_blank"><span class="icon icon-youtube"></span> AddMint YouTube</a></li>
+                <li><a href="https://www.instagram.com/addmint__" target="_blank"><span class="icon icon-instagram"></span> AddMint Instagram</a></li>
+                <li><button id="show-monetization-from-menu"><span class="icon icon-monetize"></span> Monetization</button></li>
+                <li><button id="earn-points-button"><span class="icon icon-dollar"></span> Earn Points (Coming Soon)</button></li>
                 <!-- Add more menu items here as needed -->
             </ul>
-            <button class="logout-button" id="logout-button"><span class="icon">🚪</span> Logout</button>
+            <button class="logout-button" id="logout-button"><span class="icon icon-logout"></span> Logout</button>
         </div>
 
     </div>
@@ -1414,6 +2111,11 @@
         const showSignupLink = document.getElementById('show-signup');
         const showLoginLink = document.getElementById('show-login');
         const forgotPasswordLink = document.getElementById('forgot-password-link');
+        const loginEmail = document.getElementById('login-email');
+        const loginPassword = document.getElementById('login-password');
+        const signupEmail = document.getElementById('signup-email');
+        const signupPassword = document.getElementById('signup-password');
+        const signupConfirmPassword = document.getElementById('signup-confirm-password');
 
         // Modals
         const editProfileModal = document.getElementById('edit-profile-modal');
@@ -1436,9 +2138,15 @@
         const withdrawViewsDisplay = document.getElementById('withdraw-views-display');
         const withdrawUsernameDisplay = document.getElementById('withdraw-username-display');
         const paymentIdInput = document.getElementById('payment-id-input');
-        const withdrawSubmitButton = document.getElementById('withdraw-submit-button');
+        const withdrawCheckButton = document.getElementById('withdraw-check-button');
         const withdrawCancelButton = document.getElementById('withdraw-cancel-button');
         const withdrawModalMessage = document.getElementById('withdraw-modal-message');
+
+        const withdrawConfirmModal = document.getElementById('withdraw-confirm-modal');
+        const confirmWithdrawViews = document.getElementById('confirm-withdraw-views');
+        const confirmPaymentId = document.getElementById('confirm-payment-id');
+        const confirmWithdrawEditButton = document.getElementById('confirm-withdraw-edit-button');
+        const confirmWithdrawSendButton = document.getElementById('confirm-withdraw-send-button');
 
         const notificationModal = document.getElementById('notification-modal');
         const notificationList = document.getElementById('notification-list');
@@ -1448,7 +2156,6 @@
         const userListModalTitle = document.getElementById('user-list-modal-title');
         const userListContainer = document.getElementById('user-list-container');
         const noUsersMessage = document.getElementById('no-users-message');
-
 
         const urlInputModal = document.getElementById('url-input-modal');
         const urlModalTitle = document.getElementById('url-modal-title');
@@ -1462,6 +2169,9 @@
         const confirmMessage = document.getElementById('confirm-message');
         const confirmOkButton = document.getElementById('confirm-ok-button');
         const confirmCancelButton = document.getElementById('confirm-cancel-button');
+
+        const languageModal = document.getElementById('language-modal');
+        const languageList = document.getElementById('language-list');
 
 
         // Navigation
@@ -1481,6 +2191,7 @@
         const toggleDataSaverButton = document.getElementById('toggle-data-saver-button');
         const dataSaverStatus = document.getElementById('data-saver-status');
         const showMonetizationFromMenu = document.getElementById('show-monetization-from-menu');
+        const earnPointsButton = document.getElementById('earn-points-button');
 
 
         // Home Screen
@@ -1527,6 +2238,7 @@
 
         // Monetization Screen
         const totalMonetizedViewsDisplay = document.getElementById('total-monetized-views');
+        const totalUnmonetizedViewsDisplay = document.getElementById('total-unmonetized-views');
         const withdrawButton = document.getElementById('withdraw-button');
         const monetizationMessage = document.getElementById('monetization-message');
 
@@ -1550,8 +2262,18 @@
         let currentEditingTextarea = null; // To track which textarea is being edited for rich text
         let isFirstTimeLogin = false; // Flag for first-time profile setup
         let debounceTimeout = null; // For username availability check
-        let dataSaverMode = false;
-        let darkMode = true;
+        let dataSaverMode = localStorage.getItem('dataSaverMode') === 'on';
+        let darkMode = localStorage.getItem('darkMode') !== 'off'; // Default to on if not set to off
+
+        // Initialize UI based on saved preferences
+        if (!darkMode) {
+            document.body.classList.add('light-mode');
+            darkModeStatus.textContent = 'Off';
+        } else {
+            darkModeStatus.textContent = 'On';
+        }
+        dataSaverStatus.textContent = dataSaverMode ? 'On' : 'Off';
+
 
         // Utility Functions
         function showLoader(message = 'Loading...') {
@@ -1567,14 +2289,16 @@
             element.textContent = msg;
             element.className = `message ${type}`;
             element.classList.remove('hidden');
-            setTimeout(() => {
-                element.classList.add('hidden');
-            }, duration);
+            if (duration > 0) {
+                setTimeout(() => {
+                    element.classList.add('hidden');
+                }, duration);
+            }
         }
 
-        function showModal(modalElement, closeBtnId = null) {
+        function showModal(modalElement, closeBtn = null) {
             modalElement.classList.add('visible');
-            const closeButton = closeBtnId ? document.getElementById(closeBtnId) : modalElement.querySelector('.modal-close-button');
+            const closeButton = closeBtn || modalElement.querySelector('.modal-close-button');
             if (closeButton) {
                 closeButton.onclick = () => hideModal(modalElement);
             }
@@ -1582,7 +2306,6 @@
 
         function hideModal(modalElement) {
             modalElement.classList.remove('visible');
-            // Remove click listener to prevent memory leaks or unintended behavior
             const closeButton = modalElement.querySelector('.modal-close-button');
             if (closeButton) {
                 closeButton.onclick = null;
@@ -1608,16 +2331,16 @@
             if (screenId === 'home-screen') {
                 if (postsContainer.innerHTML === '') fetchPosts(); // Load posts if not already loaded
             } else if (screenId === 'profile-screen') {
-                // If navigating to 'my profile' from nav, ensure current user's profile is shown
-                if (currentProfileUserId !== currentUser.uid) {
-                     displayProfile(currentUser.uid);
+                if (currentUser && currentProfileUserId !== currentUser.uid) {
+                     displayProfile(currentUser.uid); // Always show current user's profile if navigating to 'profile' tab
+                } else if (!currentUser) { // If somehow navigated to profile without being logged in
+                     switchScreen('home-screen'); // Redirect home
                 }
             } else if (screenId === 'search-screen') {
                 searchInput.value = '';
                 searchResults.innerHTML = '';
                 noSearchResults.classList.add('hidden');
             } else if (screenId === 'feed-screen') {
-                 // For the feed screen, ensure initial load or reset
                  if (document.getElementById('feed-carousel').innerHTML === '') fetchFeedPosts();
             }
             // Close side menu if open
@@ -1626,19 +2349,23 @@
         }
 
         function formatNumber(num) {
-            if (num >= 1000000000000) {
-                return (num / 1000000000000).toFixed(1).replace(/\.0$/, '') + 'T';
+            if (num === null || num === undefined) return '0';
+            num = Number(num); // Ensure it's a number
+            if (isNaN(num)) return '0';
+
+            const units = [
+                { value: 1000000000000, symbol: 'T' },
+                { value: 1000000000, symbol: 'B' },
+                { value: 1000000, symbol: 'M' },
+                { value: 1000, symbol: 'K' }
+            ];
+
+            for (let i = 0; i < units.length; i++) {
+                if (num >= units[i].value) {
+                    return (num / units[i].value).toFixed(1).replace(/\.0$/, '') + units[i].symbol;
+                }
             }
-            if (num >= 1000000000) {
-                return (num / 1000000000).toFixed(1).replace(/\.0$/, '') + 'B';
-            }
-            if (num >= 1000000) {
-                return (num / 1000000).toFixed(1).replace(/\.0$/, '') + 'M';
-            }
-            if (num >= 1000) {
-                return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'K';
-            }
-            return num;
+            return num.toString();
         }
 
         function timeSince(date) {
@@ -1676,12 +2403,12 @@
                             return;
                         }
 
-                        // Check for first-time login (empty username)
-                        if (!currentUser.username || currentUser.username === '') {
+                        // Check for first-time login (empty username or name)
+                        if (!currentUser.username || currentUser.username === '' || !currentUser.name || currentUser.name === '') {
                             isFirstTimeLogin = true;
                             showModal(editProfileModal, 'edit-profile-close-button');
                             editProfileCloseButton.classList.add('hidden'); // Hide cancel button
-                            showMessage(editProfileMessage, 'Welcome! Please complete your profile to use AddMint.', 'success', 0);
+                            showMessage(editProfileMessage, 'Welcome! Please complete your profile to use AddMint. You cannot cancel this step.', 'success', 0);
                         } else {
                             editProfileCloseButton.classList.remove('hidden');
                             hideModal(editProfileModal); // Ensure modal is hidden for existing users
@@ -1702,7 +2429,7 @@
                             profilePicUrl: 'https://via.placeholder.com/100', // Default avatar
                             postCount: 0,
                             totalMonetizedViews: 0,
-                            totalUnmonetizedViews: 0, // Added based on detailed prompt
+                            totalUnmonetizedViews: 0,
                             followers: [],
                             following: [],
                             followersCount: 0,
@@ -1712,7 +2439,7 @@
                         isFirstTimeLogin = true;
                         showModal(editProfileModal, 'edit-profile-close-button');
                         editProfileCloseButton.classList.add('hidden'); // Hide cancel button
-                        showMessage(editProfileMessage, 'Welcome! Please complete your profile to use AddMint.', 'success', 0);
+                        showMessage(editProfileMessage, 'Welcome! Please complete your profile to use AddMint. You cannot cancel this step.', 'success', 0);
                     }
                 } catch (error) {
                     console.error("Error fetching user data:", error);
@@ -2025,7 +2752,11 @@
 
         // Follow/Unfollow Logic
         followUnfollowButton.addEventListener('click', async () => {
-            if (!currentUser || !currentProfileUserId || currentUser.uid === currentProfileUserId) return;
+            if (!currentUser) {
+                alert('You must be logged in to follow users.');
+                return;
+            }
+            if (!currentProfileUserId) return; // Ensure a profile is being viewed
 
             showLoader();
             try {
@@ -2056,6 +2787,18 @@
                         // Follow
                         newFollowers.push(currentUser.uid);
                         newFollowing.push(currentProfileUserId);
+                        // Add notification for the followed user
+                        if (currentProfileUserId !== currentUser.uid) { // Don't notify self
+                            await db.collection('notifications').add({
+                                userId: currentProfileUserId,
+                                type: 'follow',
+                                fromUserId: currentUser.uid,
+                                fromUsername: currentUser.username,
+                                fromUserAvatar: currentUser.profilePicUrl,
+                                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                                read: false
+                            });
+                        }
                     }
 
                     transaction.update(profileRef, {
@@ -2067,25 +2810,11 @@
                         followingCount: newFollowing.length
                     });
 
-                    // Update UI counts immediately (optimistic update)
+                    // Update UI counts and button immediately (optimistic update)
                     profileFollowersCount.textContent = formatNumber(newFollowers.length);
                     currentUser.followingCount = newFollowing.length; // Update local user object
                     currentUser.following = newFollowing;
                     updateFollowButton(newFollowers); // Update button text
-
-                    // Add notification for the followed user
-                    if (!isFollowing) {
-                        await db.collection('notifications').add({
-                            userId: currentProfileUserId,
-                            type: 'follow',
-                            fromUserId: currentUser.uid,
-                            fromUsername: currentUser.username,
-                            fromUserAvatar: currentUser.profilePicUrl,
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            read: false
-                        });
-                    }
-
                 });
                 hideLoader();
             } catch (error) {
@@ -2114,6 +2843,8 @@
                 const snapshot = await query.get();
                 if (reset) {
                     postsContainer.innerHTML = '';
+                    horizontalPostCounter = 0; // Reset for horizontal posts
+                    suggestedUserCounter = 0; // Reset for suggested users
                 }
 
                 if (snapshot.empty && !reset && lastVisiblePost) {
@@ -2125,9 +2856,19 @@
                     return;
                 }
 
-                snapshot.docs.forEach(doc => {
+                snapshot.docs.forEach((doc, index) => {
                     const postData = doc.data();
                     postsContainer.appendChild(createPostCard(postData));
+
+                    // Interleave horizontal content
+                    if ((index + 1) % 5 === 0 && horizontalPostCounter < 2) { // Every 5th post, max 2 horizontal sections
+                        appendHorizontalPosts();
+                        horizontalPostCounter++;
+                    }
+                    if ((index + 1) % 3 === 0 && suggestedUserCounter < 2) { // Every 3rd post, max 2 suggested user sections
+                         appendSuggestedUsers();
+                         suggestedUserCounter++;
+                    }
                 });
 
                 lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
@@ -2139,6 +2880,103 @@
                 feedLoader.classList.add('hidden');
             }
         }
+
+        let horizontalPostCounter = 0;
+        let suggestedUserCounter = 0;
+
+        async function appendHorizontalPosts() {
+            const horizontalSection = document.createElement('div');
+            horizontalSection.className = 'horizontal-posts-section';
+            horizontalSection.innerHTML = `
+                <h3>Trending Now</h3>
+                <div class="horizontal-posts-carousel"></div>
+            `;
+            const carousel = horizontalSection.querySelector('.horizontal-posts-carousel');
+
+            try {
+                // Fetch random or trending posts for horizontal display
+                const trendingSnapshot = await db.collection('posts')
+                    .orderBy('views', 'desc') // Example: order by views for trending
+                    .limit(8) // Get 8 posts
+                    .get();
+
+                if (!trendingSnapshot.empty) {
+                    trendingSnapshot.docs.forEach(doc => {
+                        const post = doc.data();
+                        const card = document.createElement('div');
+                        card.className = 'horizontal-post-card';
+                        card.dataset.postId = post.postId;
+                        card.innerHTML = `
+                            <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/80'}" alt="Post Image">
+                            <p>${post.content.substring(0, 50)}...</p>
+                        `;
+                        card.addEventListener('click', () => {
+                            // Ideally, this would open a specific post modal or detailed view
+                            alert(`Clicked on horizontal post: ${post.postId}`);
+                        });
+                        carousel.appendChild(card);
+                    });
+                } else {
+                    carousel.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No trending posts available.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching horizontal posts:", error);
+            }
+            postsContainer.appendChild(horizontalSection);
+        }
+
+        async function appendSuggestedUsers() {
+            const suggestedSection = document.createElement('div');
+            suggestedSection.className = 'suggested-users-section';
+            suggestedSection.innerHTML = `
+                <h3>Suggested Users</h3>
+                <div class="suggested-users-carousel"></div>
+            `;
+            const carousel = suggestedSection.querySelector('.suggested-users-carousel');
+
+            try {
+                // Fetch some random users who are not already followed
+                const usersSnapshot = await db.collection('users')
+                    .limit(10) // Fetch a few users
+                    .get();
+
+                if (!usersSnapshot.empty) {
+                    usersSnapshot.docs.filter(doc => {
+                        const userData = doc.data();
+                        return currentUser && userData.uid !== currentUser.uid && !currentUser.following.includes(userData.uid);
+                    }).slice(0, 5).forEach(doc => { // Limit to 5 suggested users
+                        const user = doc.data();
+                        const card = document.createElement('div');
+                        card.className = 'suggested-user-card';
+                        card.dataset.userId = user.uid;
+                        card.innerHTML = `
+                            <img src="${user.profilePicUrl || 'https://via.placeholder.com/60'}" alt="User Avatar">
+                            <p class="username">@${user.username}</p>
+                            <p class="name">${user.name}</p>
+                            <button class="follow-btn">Follow</button>
+                        `;
+                        const followBtn = card.querySelector('.follow-btn');
+                        followBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handleFollowToggle(user.uid, followBtn);
+                            // After follow, remove the card or update its text to Following
+                            followBtn.textContent = 'Following';
+                            followBtn.disabled = true; // Disable if already following or just followed
+                            followBtn.style.backgroundColor = 'var(--border-color-main)';
+                            followBtn.style.color = 'var(--text-color-main)';
+                        });
+                        card.addEventListener('click', () => displayProfile(user.uid));
+                        carousel.appendChild(card);
+                    });
+                } else {
+                    carousel.innerHTML = '<p style="text-align: center; color: var(--text-color-light);">No users to suggest.</p>';
+                }
+            } catch (error) {
+                console.error("Error fetching suggested users:", error);
+            }
+            postsContainer.appendChild(suggestedSection);
+        }
+
 
         // Infinite scroll for home feed
         mainAppContent.querySelector('main').addEventListener('scroll', () => {
@@ -2191,18 +3029,25 @@
                 if (contentLength > 1500) adCount = 3;
                 if (contentLength > 2000) adCount = 4;
 
-                let contentParagraphs = postContent.innerHTML.split(/<br\s*\/?>|<\/p><p>/i); // Simple split by br or p tags
-                let adInsertedCount = 0;
+                // Simple content splitting for ad injection
+                let contentBlocks = post.content.split(/\r?\n\r?\n|\<br\s*?\/?\>/i); // Split by double newlines or <br> for 'paragraphs'
                 let newContentHtml = [];
+                let adInjectionInterval = Math.floor(contentBlocks.length / (adCount + 1)) || 1; // Distribute ads
+                let injectedAds = 0;
 
-                for (let i = 0; i < contentParagraphs.length; i++) {
-                    newContentHtml.push(contentParagraphs[i]);
-                    if (adInsertedCount < adCount && (i + 1) % Math.ceil(contentParagraphs.length / (adCount + 1)) === 0) {
-                         newContentHtml.push('<div class="adsense-ad">AdSense Ad Placeholder<br>(Integration with ads.html would use iframes or script injection)</div>');
-                         adInsertedCount++;
+                for (let i = 0; i < contentBlocks.length; i++) {
+                    newContentHtml.push(parseRichText(contentBlocks[i])); // Parse rich text for each block
+                    if (injectedAds < adCount && (i + 1) % adInjectionInterval === 0 && contentBlocks[i].length > 50) { // Only inject if block has some content
+                        newContentHtml.push(`
+                            <div class="adsense-ad">
+                                <iframe src="ads.html" frameborder="0" style="width:100%; height:120px; border:none;" scrolling="no"></iframe>
+                                <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Ad provided by AdSense. Recommended size: 320x100 or fluid.</p>
+                            </div>
+                        `);
+                        injectedAds++;
                     }
                 }
-                postContent.innerHTML = newContentHtml.join('<br>'); // Join back for display
+                postContent.innerHTML = newContentHtml.join('<br><br>'); // Join with line breaks to mimic paragraphs
             }
 
 
@@ -2234,12 +3079,22 @@
             const emojiReactionsContainer = document.createElement('div');
             emojiReactionsContainer.className = 'emoji-reactions';
             // Placeholder emojis - In a real app, these would come from post.reactions map
-            const emojis = ['👍', '😂', '😍', '🔥', '😢', '💯'];
-            emojis.forEach(emoji => {
+            const popularEmojis = ['👍', '😂', '😍', '🔥', '😢', '💯'];
+            // Simulate current post reactions (replace with actual Firestore data later)
+            const currentReactions = post.reactions || {}; // { '👍': 5, '😂': 2 }
+            const userReaction = currentUser ? (Object.keys(currentReactions).find(emoji => currentReactions[emoji].includes(currentUser.uid)) || null) : null;
+
+            popularEmojis.forEach(emoji => {
+                const count = (currentReactions[emoji] ? currentReactions[emoji].length : 0);
                 const reactionItem = document.createElement('span');
                 reactionItem.className = 'reaction-item';
-                reactionItem.innerHTML = `<span class="emoji">${emoji}</span><span class="count">0</span>`; // Counts would be dynamic
-                reactionItem.addEventListener('click', () => handleEmojiReaction(post.postId, emoji));
+                if (userReaction === emoji) {
+                     reactionItem.classList.add('user-reacted'); // Highlight if current user reacted with this emoji
+                     reactionItem.style.backgroundColor = 'var(--highlight-color-main)';
+                     reactionItem.style.color = 'var(--button-primary-text)';
+                }
+                reactionItem.innerHTML = `<span class="emoji">${emoji}</span><span class="count">${formatNumber(count)}</span>`;
+                reactionItem.addEventListener('click', () => handleEmojiReaction(post.postId, emoji, reactionItem));
                 emojiReactionsContainer.appendChild(reactionItem);
             });
 
@@ -2253,11 +3108,13 @@
             const likeButton = postCard.querySelector('.like-post-btn');
             likeButton.addEventListener('click', () => toggleLike(post.postId, likeButton));
 
+            // Double-click anywhere on the post card
             postCard.addEventListener('dblclick', () => toggleLike(post.postId, likeButton));
 
+            // Neon glow on any click on the post card
             postCard.addEventListener('click', (event) => {
-                // Ensure double-click doesn't trigger neon glow repeatedly
-                if (event.detail === 2) return;
+                // Ensure double-click doesn't trigger neon glow repeatedly or interfere with other elements
+                if (event.detail === 2 || event.target.closest('.post-options, .action-item')) return;
                 postCard.classList.add('neon-glow');
                 setTimeout(() => {
                     postCard.classList.remove('neon-glow');
@@ -2266,11 +3123,25 @@
 
             postCard.querySelector('.comment-post-btn').addEventListener('click', () => openCommentModal(post.postId, postCard));
 
-            // View count increment (client-side, ideally server-side via Cloud Function)
-            // This is a simplified client-side view count for demonstration.
-            // A robust solution needs a Cloud Function to prevent easy manipulation and track unique views.
-            postCard.querySelector('.views-post-btn').addEventListener('click', () => incrementView(post.postId, postCard));
+            // Views increment (client-side, ideally server-side via Cloud Function)
+            postCard.querySelector('.views-post-btn').addEventListener('click', () => incrementView(post.postId, postCard, post.isMonetized));
 
+            // Text-to-Speech
+            postCard.querySelector('.sound-post-btn').addEventListener('click', () => {
+                const textToSpeak = post.content.replace(/<[^>]*>/g, '').substring(0, 500); // Strip HTML, limit length
+                if ('speechSynthesis' in window) {
+                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                    utterance.lang = 'en-US'; // Default language, could be dynamic
+                    window.speechSynthesis.speak(utterance);
+                } else {
+                    alert('Text-to-speech not supported in this browser.');
+                }
+            });
+
+            // Translate (placeholder)
+            postCard.querySelector('.translate-post-btn').addEventListener('click', () => {
+                alert('Translate function. This feature would integrate with a translation API (like Google Cloud Translation) for real-time translation of post content. Clicking "Change Translate Language" in options would set preference.');
+            });
 
             // Post Options dropdown
             const optionsButton = postCard.querySelector('.post-options-button');
@@ -2292,7 +3163,8 @@
                     showLoader('Deleting post...');
                     try {
                         await db.collection('posts').doc(post.postId).delete();
-                        // Also delete comments subcollection (client-side is limited, Cloud Function recommended for recursive delete)
+                        // Deleting subcollections recursively requires a Cloud Function.
+                        // For client-side, we'll delete the comments directly but note the limitation.
                         const commentsSnapshot = await db.collection('posts').doc(post.postId).collection('comments').get();
                         const batch = db.batch();
                         commentsSnapshot.docs.forEach(doc => batch.delete(doc.ref));
@@ -2318,7 +3190,6 @@
             if (reportBtn) {
                 reportBtn.addEventListener('click', () => {
                     alert('Post reported. Thank you for your feedback! (Report will be saved to Firestore reports collection)');
-                    // In a real app: save to 'reports' collection
                     db.collection('reports').add({
                         postId: post.postId,
                         reportedBy: currentUser.uid,
@@ -2328,6 +3199,27 @@
                     optionsDropdown.classList.remove('visible');
                 });
             }
+
+            // Repost (placeholder)
+            const repostBtn = postCard.querySelector('.repost-post-btn');
+            if (repostBtn) {
+                repostBtn.addEventListener('click', () => {
+                    alert('Repost functionality will create a new post linking to this original post. (Coming Soon)');
+                    // This would involve creating a new post document with a 'repostId' field pointing to original.
+                    optionsDropdown.classList.remove('visible');
+                });
+            }
+
+            // Change Translate Language (placeholder)
+            const translateLangBtn = postCard.querySelector('.translate-language-btn');
+            if (translateLangBtn) {
+                translateLangBtn.addEventListener('click', () => {
+                    alert('Language selection for translation. This would store your preferred translation language. (Placeholder)');
+                    showLanguageSelectionModal();
+                    optionsDropdown.classList.remove('visible');
+                });
+            }
+
 
             // Profile Link clicks within post
             postCard.querySelectorAll('.post-author-avatar, .author-link').forEach(el => {
@@ -2343,13 +3235,38 @@
             return postCard;
         }
 
+        // Available languages for translation (placeholder)
+        const availableLanguages = [
+            { code: 'en', name: 'English' },
+            { code: 'hi', name: 'Hindi' },
+            { code: 'es', name: 'Spanish' },
+            { code: 'fr', name: 'French' },
+            { code: 'de', name: 'German' },
+            { code: 'ja', name: 'Japanese' },
+            { code: 'ko', name: 'Korean' },
+            { code: 'zh-CN', name: 'Chinese (Simplified)' }
+        ];
+
+        function showLanguageSelectionModal() {
+            languageList.innerHTML = '';
+            availableLanguages.forEach(lang => {
+                const button = document.createElement('button');
+                button.textContent = lang.name;
+                button.style.width = '100%';
+                button.style.marginBottom = '5px';
+                button.style.backgroundColor = 'var(--bg-color-darker)';
+                button.style.color = 'var(--text-color-main)';
+                button.addEventListener('click', () => {
+                    alert(`Language set to: ${lang.name}. (This would be saved as user preference)`);
+                    hideModal(languageModal);
+                });
+                languageList.appendChild(button);
+            });
+            showModal(languageModal);
+        }
+
         function parseRichText(text) {
             let parsedText = text;
-
-            // Simple URL parsing and linking (handles http/https)
-            // Regex to find URLs: (https?:\/\/[^\s<>"'()]+)
-            // Regex to find bold: \*\*(.*?)\*\*  (escaped for JS: \\*\\*(.*?)\\*\\*)
-            // Regex to find italic: \*(.*?)\* (escaped for JS: \\*(.*?)\\*)
 
             // Handle custom link format: [display text | url | #hexcolor]
             parsedText = parsedText.replace(/\[([^|]+)\|([^|]+)\|(#(?:[0-9a-fA-F]{3}){1,2})\]/g, (match, text, url, color) => {
@@ -2376,7 +3293,6 @@
                 // Otherwise, treat as a regular link
                 return `<a href="${url}" target="_blank">${url}</a>`;
             });
-
 
             // Bold: **text**
             parsedText = parsedText.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -2453,13 +3369,12 @@
             }
         }
 
-        async function incrementView(postId, postElement) {
+        async function incrementView(postId, postElement, isMonetized) {
             if (!currentUser) return; // Only count views for logged-in users
 
-            const viewKey = `viewed_${postId}`;
-            // Simple client-side check to prevent multiple views from same user/session
+            const viewKey = `viewed_${postId}_${currentUser.uid}`; // Unique key per user per post
             if (sessionStorage.getItem(viewKey) === 'true') {
-                return;
+                return; // Already counted this view for this user in this session
             }
 
             const postRef = db.collection('posts').doc(postId);
@@ -2475,10 +3390,13 @@
 
                     // Increment user's total monetized/unmonetized views
                     const userRef = db.collection('users').doc(postData.userId);
-                    if (postData.isMonetized) {
+                    if (isMonetized) {
                         transaction.update(userRef, { totalMonetizedViews: firebase.firestore.FieldValue.increment(1) });
+                        // Update local currentUser if it's their own post
+                        if (postData.userId === currentUser.uid) currentUser.totalMonetizedViews += 1;
                     } else {
                         transaction.update(userRef, { totalUnmonetizedViews: firebase.firestore.FieldValue.increment(1) });
+                        if (postData.userId === currentUser.uid) currentUser.totalUnmonetizedViews += 1;
                     }
 
                     // Optimistically update UI
@@ -2490,16 +3408,99 @@
             }
         }
 
-        async function handleEmojiReaction(postId, emoji) {
+        async function handleEmojiReaction(postId, emoji, reactionItemElement) {
             if (!currentUser) {
                 alert('You must be logged in to react to posts.');
                 return;
             }
-            alert(`You reacted with ${emoji} to post ${postId}! (Functionality for storing reactions in Firestore and showing counts will be built here)`);
-            // This would involve updating a `reactions` map on the post document in Firestore
-            // e.g., reactions: { '👍': ['userId1', 'userId2'], '😂': ['userId3'] }
-            // or reactions: { '👍': 5, '😂': 2 } with subcollections for users who reacted.
+
+            const postRef = db.collection('posts').doc(postId);
+            showLoader();
+            try {
+                await db.runTransaction(async (transaction) => {
+                    const postDoc = await transaction.get(postRef);
+                    if (!postDoc.exists) {
+                        throw "Post does not exist!";
+                    }
+
+                    const postData = postDoc.data();
+                    let reactions = postData.reactions || {}; // e.g., { '👍': ['uid1', 'uid2'], '😂': ['uid3'] }
+
+                    let currentUserReaction = null;
+                    // Find if the current user already reacted to this post with any emoji
+                    for (const key in reactions) {
+                        if (reactions[key].includes(currentUser.uid)) {
+                            currentUserReaction = key;
+                            break;
+                        }
+                    }
+
+                    // Update reactions
+                    if (currentUserReaction === emoji) {
+                        // User clicked on their own emoji again -> remove reaction
+                        reactions[emoji] = reactions[emoji].filter(id => id !== currentUser.uid);
+                        if (reactions[emoji].length === 0) delete reactions[emoji]; // Remove if empty
+                    } else {
+                        // User reacted with a new emoji OR changed their reaction
+                        if (currentUserReaction) {
+                            // Remove previous reaction
+                            reactions[currentUserReaction] = reactions[currentUserReaction].filter(id => id !== currentUser.uid);
+                            if (reactions[currentUserReaction].length === 0) delete reactions[currentUserReaction];
+                        }
+                        // Add new reaction
+                        if (!reactions[emoji]) {
+                            reactions[emoji] = [];
+                        }
+                        reactions[emoji].push(currentUser.uid);
+                    }
+
+                    transaction.update(postRef, { reactions: reactions });
+
+                    // Update UI for all reaction counts on the card
+                    const emojiContainer = reactionItemElement.closest('.emoji-reactions');
+                    if (emojiContainer) {
+                         emojiContainer.querySelectorAll('.reaction-item').forEach(item => {
+                            const itemEmoji = item.querySelector('.emoji').textContent;
+                            const countSpan = item.querySelector('.count');
+                            const currentEmojiUsers = reactions[itemEmoji] || [];
+                            countSpan.textContent = formatNumber(currentEmojiUsers.length);
+
+                            // Update styling for user's own reaction
+                            if (currentUser && currentEmojiUsers.includes(currentUser.uid)) {
+                                item.classList.add('user-reacted');
+                                item.style.backgroundColor = 'var(--highlight-color-main)';
+                                item.style.color = 'var(--button-primary-text)';
+                            } else {
+                                item.classList.remove('user-reacted');
+                                item.style.backgroundColor = '';
+                                item.style.color = '';
+                            }
+                         });
+                    }
+
+                    // Add notification for the post author (if reaction added/changed)
+                    if (postData.userId !== currentUser.uid && currentUserReaction !== emoji) {
+                        await db.collection('notifications').add({
+                            userId: postData.userId,
+                            type: 'reaction',
+                            postId: postId,
+                            fromUserId: currentUser.uid,
+                            fromUsername: currentUser.username,
+                            fromUserAvatar: currentUser.profilePicUrl,
+                            reactionEmoji: emoji,
+                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                            read: false
+                        });
+                    }
+                });
+                hideLoader();
+            } catch (error) {
+                console.error("Error handling emoji reaction:", error);
+                hideLoader();
+                alert('Failed to update reaction. Please try again.');
+            }
         }
+
 
         async function openCommentModal(postId, postElement) {
             showLoader('Loading comments...');
@@ -2606,17 +3607,9 @@
                 // Update comment count on the post card in the main feed (if visible)
                 if (currentPostElementForComments) {
                     const commentCountSpan = currentPostElementForComments.querySelector('.comment-post-btn .count');
-                    let currentCount = parseInt(commentCountSpan.dataset.countType === 'comments' ? commentCountSpan.textContent : '0'); // Get raw number or 0
-                    if (commentCountSpan.textContent.includes('K') || commentCountSpan.textContent.includes('M') || commentCountSpan.textContent.includes('B') || commentCountSpan.textContent.includes('T')) {
-                        // If it's formatted, we need to re-fetch the actual count or do more complex parsing
-                        // For simplicity here, let's just increment and re-format, assuming the base is accurate.
-                        // A more robust app would listen to Firestore changes or refetch the specific post.
-                        const postDocUpdated = await db.collection('posts').doc(currentPostIdForComments).get();
-                        if (postDocUpdated.exists) {
-                            commentCountSpan.textContent = formatNumber(postDocUpdated.data().commentCount);
-                        }
-                    } else {
-                        commentCountSpan.textContent = formatNumber(currentCount + 1);
+                    const postDocUpdated = await db.collection('posts').doc(currentPostIdForComments).get();
+                    if (postDocUpdated.exists) {
+                        commentCountSpan.textContent = formatNumber(postDocUpdated.data().commentCount);
                     }
                 }
 
@@ -2672,7 +3665,7 @@
             let selectedText = textarea.value.substring(start, end);
             let newText = textarea.value;
 
-            if (selectedText.length === 0) {
+            if (selectedText.length === 0 && (formatType === 'bold' || formatType === 'italic')) {
                 alert('Please select text to apply formatting.');
                 return;
             }
@@ -2686,6 +3679,7 @@
                 urlInput.value = '';
                 urlTextInput.value = selectedText; // Pre-fill with selected text
                 urlTextInput.classList.remove('hidden'); // Always show text input for links
+                urlTextColorInput.classList.add('hidden'); // Hide by default
 
                 if (formatType === 'link') {
                     urlModalTitle.textContent = 'Insert Link';
@@ -2695,12 +3689,10 @@
                     urlModalTitle.textContent = 'Embed Image';
                     urlModalInfo.textContent = 'Enter the direct image URL (e.g., https://example.com/image.jpg)';
                     urlTextInput.classList.add('hidden'); // Hide text input for images
-                    urlTextColorInput.classList.add('hidden');
                 } else if (formatType === 'youtube') {
                     urlModalTitle.textContent = 'Embed YouTube Video';
                     urlModalInfo.textContent = 'Enter the YouTube video URL.';
                     urlTextInput.classList.add('hidden'); // Hide text input for YouTube
-                    urlTextColorInput.classList.add('hidden');
                 }
                 showModal(urlInputModal);
                 return; // Don't update textarea yet, wait for modal submit
@@ -2752,24 +3744,24 @@
             const modalCurrentTitle = urlModalTitle.textContent;
 
             if (modalCurrentTitle === 'Insert Link') {
-                if (urlTextColorInput.classList.contains('hidden') || urlTextInput.classList.contains('hidden') || !text) {
-                     insertion = `[${text || url}|${url}]`; // Simple link if text not provided
+                if (urlTextColorInput.classList.contains('hidden') || !text) { // If text input is hidden or empty, use simple link
+                     insertion = `[${text || url}|${url}]`;
                 } else {
-                     insertion = `[${text}|${url}|${color}]`; // Link with custom text and color
+                     insertion = `[${text}|${url}|${color}]`;
                 }
             } else if (modalCurrentTitle === 'Embed Image') {
                 if (!/\.(jpeg|jpg|gif|png|webp)$/i.test(url)) {
                     alert('Invalid image URL. Must end with .jpg, .png, etc.');
                     return;
                 }
-                insertion = `${url}`; // Direct URL, parser handles as <img>
+                insertion = `${url}`;
             } else if (modalCurrentTitle === 'Embed YouTube Video') {
                 const youtubeMatch = url.match(/(?:https?:\/\/)?(?:www\.)?(?:m\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=|embed\/|v\/|)([\w-]{11})(?:\S+)?/);
                 if (!youtubeMatch || !youtubeMatch[1]) {
                     alert('Invalid YouTube URL. Please provide a valid YouTube video link.');
                     return;
                 }
-                insertion = `${url}`; // Direct URL, parser handles as <iframe>
+                insertion = `${url}`;
             }
 
             const newText = textarea.value.substring(0, start) + insertion + textarea.value.substring(end);
@@ -2808,7 +3800,8 @@
                     likes: [],
                     likesCount: 0,
                     commentCount: 0,
-                    views: 0
+                    views: 0,
+                    reactions: {} // Initialize reactions map
                 });
 
                 // Increment user's post count
@@ -2849,7 +3842,7 @@
 
                 // Search by display name (case-insensitive approximation)
                 const nameSnapshot = await db.collection('users')
-                    .where('name', '>=', queryText.charAt(0).toUpperCase() + queryText.slice(1)) // For case-insensitive startsWith
+                    .where('name', '>=', queryText.charAt(0).toUpperCase() + queryText.slice(1))
                     .where('name', '<=', queryText.charAt(0).toUpperCase() + queryText.slice(1) + '\uf8ff')
                     .limit(5)
                     .get();
@@ -2874,7 +3867,7 @@
                             <span class="name">${userData.name}</span>
                             <span class="username">@${userData.username}</span>
                         </div>
-                        <button class="follow-btn">${currentUser && currentUser.following && currentUser.following.includes(userData.uid) ? 'Following' : 'Follow'}</button>
+                        <button class="follow-btn"></button>
                     `;
                     userItem.addEventListener('click', (e) => {
                         if (!e.target.classList.contains('follow-btn')) {
@@ -3032,8 +4025,8 @@
                     // Create a shuffled array of post data for "never-ending" feel
                     let allPostsData = snapshot.docs.map(doc => doc.data());
                     let shuffledPosts = [];
-                    // Populate with a loop for never-ending effect
-                    for (let i = 0; i < 5; i++) { // Repeat posts a few times to simulate more content
+                    // Populate with a loop for never-ending effect. Adjust this multiplier for more "loop"
+                    for (let i = 0; i < 5; i++) { // Repeat posts 5 times and shuffle each iteration
                          shuffledPosts = shuffledPosts.concat(allPostsData.sort(() => 0.5 - Math.random()));
                     }
 
@@ -3047,7 +4040,7 @@
                         // Content structure similar to post-card but adapted for feed
                         feedItem.innerHTML = `
                             <div style="padding: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div>
+                                <div style="flex-grow: 1; overflow-y: auto;">
                                     <div class="post-content" style="height: auto; max-height: calc(100vh - 250px); overflow-y: auto;">
                                         ${parseRichText(postData.content)}
                                     </div>
@@ -3098,6 +4091,20 @@
                         likeButton.addEventListener('click', () => toggleLike(postData.postId, likeButton));
                         feedItem.addEventListener('dblclick', () => toggleLike(postData.postId, likeButton));
                         feedItem.querySelector('.comment-post-btn').addEventListener('click', () => openCommentModal(postData.postId, feedItem));
+                        feedItem.querySelector('.sound-post-btn').addEventListener('click', () => {
+                            const textToSpeak = postData.content.replace(/<[^>]*>/g, '').substring(0, 500);
+                            if ('speechSynthesis' in window) {
+                                const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                                utterance.lang = 'en-US';
+                                window.speechSynthesis.speak(utterance);
+                            } else {
+                                alert('Text-to-speech not supported in this browser.');
+                            }
+                        });
+                        feedItem.querySelector('.translate-post-btn').addEventListener('click', () => {
+                            alert('Translate function for feed posts (Placeholder).');
+                        });
+
 
                          // Attach click handler for author profile
                         feedItem.querySelectorAll('.post-author-avatar, .author-link').forEach(el => {
@@ -3153,13 +4160,14 @@
         async function updateMonetizationScreen() {
             if (!currentUser) return;
             totalMonetizedViewsDisplay.textContent = formatNumber(currentUser.totalMonetizedViews || 0);
+            totalUnmonetizedViewsDisplay.textContent = formatNumber(currentUser.totalUnmonetizedViews || 0);
 
             if ((currentUser.totalMonetizedViews || 0) >= 100000) {
                 withdrawButton.disabled = false;
                 withdrawButton.textContent = 'Withdraw Earnings';
             } else {
                 withdrawButton.disabled = true;
-                withdrawButton.textContent = `Need ${formatNumber(100000 - (currentUser.totalMonetizedViews || 0))} more views to withdraw`;
+                withdrawButton.textContent = `Need ${formatNumber(100000 - (currentUser.totalMonetizedViews || 0))} more monetized views to withdraw`;
             }
         }
 
@@ -3175,14 +4183,34 @@
             showModal(withdrawModal);
         });
 
-        withdrawSubmitButton.addEventListener('click', async () => {
+        withdrawCheckButton.addEventListener('click', () => {
             const paymentId = paymentIdInput.value.trim();
             if (!paymentId) {
                 showMessage(withdrawModalMessage, 'Please enter your PayPal Email or UPI ID.', 'error');
                 return;
             }
+            confirmWithdrawViews.textContent = formatNumber(currentUser.totalMonetizedViews);
+            confirmPaymentId.textContent = paymentId;
+            hideModal(withdrawModal);
+            showModal(withdrawConfirmModal);
+        });
 
-            confirmAction('Are you sure you want to submit this withdrawal request?', async () => {
+        confirmWithdrawEditButton.addEventListener('click', () => {
+            hideModal(withdrawConfirmModal);
+            showModal(withdrawModal);
+        });
+
+        confirmWithdrawSendButton.addEventListener('click', async () => {
+            const paymentId = paymentIdInput.value.trim(); // Get current value from original input
+            if (!paymentId) {
+                // This shouldn't happen if "Check" was pressed, but as a safeguard
+                showMessage(withdrawModalMessage, 'Payment ID is missing. Please re-enter.', 'error');
+                hideModal(withdrawConfirmModal);
+                showModal(withdrawModal);
+                return;
+            }
+
+            confirmAction('Confirm sending withdrawal request?', async () => {
                 showLoader('Submitting withdrawal request...');
                 try {
                     await db.collection('withdrawalRequests').add({
@@ -3203,16 +4231,17 @@
                     currentUser.totalMonetizedViews = 0;
                     await updateMonetizationScreen(); // Refresh monetization display
 
-                    showMessage(withdrawModalMessage, 'Withdrawal request submitted successfully! Your views have been reset.', 'success');
+                    showMessage(monetizationMessage, 'Withdrawal request submitted successfully! Your views have been reset.', 'success');
                     hideLoader();
-                    hideModal(withdrawModal);
+                    hideModal(withdrawConfirmModal);
                 } catch (error) {
                     console.error("Error submitting withdrawal:", error);
-                    showMessage(withdrawModalMessage, `Failed to submit withdrawal: ${error.message}`, 'error');
+                    showMessage(monetizationMessage, `Failed to submit withdrawal: ${error.message}`, 'error');
                     hideLoader();
                 }
             });
         });
+
 
         // Universal close for modals
         document.querySelectorAll('.modal-overlay .modal-close-button').forEach(button => {
@@ -3221,8 +4250,18 @@
             });
         });
 
+        // Close side menu when clicking outside
+        document.addEventListener('click', (e) => {
+            if (sideMenu.classList.contains('visible') && !sideMenu.contains(e.target) && !menuButton.contains(e.target)) {
+                sideMenu.classList.remove('visible');
+                menuButton.querySelector('.icon-menu').classList.remove('active');
+            }
+        });
+
+
         // --- Side Menu & Header Actions ---
-        menuButton.addEventListener('click', () => {
+        menuButton.addEventListener('click', (e) => {
+            e.stopPropagation(); // Prevent document click listener from immediately closing
             sideMenu.classList.toggle('visible');
             menuButton.querySelector('.icon-menu').classList.toggle('active');
         });
@@ -3254,8 +4293,10 @@
             noNotificationsMessage.classList.add('hidden');
 
             try {
+                const oneDayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000); // 24 hours ago
                 const notificationsSnapshot = await db.collection('notifications')
                     .where('userId', '==', currentUser.uid)
+                    .where('timestamp', '>', oneDayAgo) // Filter for last 24 hours
                     .orderBy('timestamp', 'desc')
                     .limit(20) // Fetch latest 20 notifications
                     .get();
@@ -3271,9 +4312,11 @@
                         if (notification.type === 'like') {
                             message = `<strong>@${notification.fromUsername}</strong> liked your post.`;
                         } else if (notification.type === 'comment') {
-                            message = `<strong>@${notification.fromUsername}</strong> commented on your post: "${notification.commentContent.substring(0, 50)}..."`;
+                            message = `<strong>@${notification.fromUsername}</strong> commented on your post: "${notification.commentContent.substring(0, Math.min(notification.commentContent.length, 50))}..."`;
                         } else if (notification.type === 'follow') {
                             message = `<strong>@${notification.fromUsername}</strong> started following you.`;
+                        } else if (notification.type === 'reaction') {
+                            message = `<strong>@${notification.fromUsername}</strong> reacted to your post with ${notification.reactionEmoji}.`;
                         }
                         notificationItem.innerHTML = `
                             ${message}
@@ -3282,8 +4325,8 @@
                         notificationItem.addEventListener('click', () => {
                             // Navigate to relevant post or profile
                             if (notification.postId) {
-                                // TODO: Load specific post directly
-                                alert(`Navigating to post ${notification.postId}`);
+                                // For a full app, you'd fetch the specific post and display it
+                                alert(`Navigating to post related to notification: ${notification.postId}`);
                             } else if (notification.fromUserId) {
                                 displayProfile(notification.fromUserId);
                             }
@@ -3309,32 +4352,28 @@
             darkModeStatus.textContent = darkMode ? 'On' : 'Off';
             localStorage.setItem('darkMode', darkMode ? 'on' : 'off');
         });
-        // Apply saved dark mode preference
-        if (localStorage.getItem('darkMode') === 'off') {
-            document.body.classList.add('light-mode');
-            darkMode = false;
-            darkModeStatus.textContent = 'Off';
-        }
 
         // Data Saver Toggle (Placeholder)
         toggleDataSaverButton.addEventListener('click', () => {
             dataSaverMode = !dataSaverMode;
             dataSaverStatus.textContent = dataSaverMode ? 'On' : 'Off';
-            alert(`Data Saver is now ${dataSaverMode ? 'On' : 'Off'}. (This is a placeholder. Actual implementation would reduce image quality, disable auto-play, etc.)`);
+            alert(`Data Saver is now ${dataSaverMode ? 'On' : 'Off'}. (This is a placeholder. Actual implementation would reduce image quality, disable auto-play, etc. You may need to refresh current feed to see effects)`);
             localStorage.setItem('dataSaverMode', dataSaverMode ? 'on' : 'off');
             // Re-fetch content if needed to apply data saver effects, e.g., low-res images
             if (currentScreen === 'home-screen') fetchPosts(true);
             if (currentScreen === 'feed-screen') fetchFeedPosts();
         });
-         if (localStorage.getItem('dataSaverMode') === 'on') {
-            dataSaverMode = true;
-            dataSaverStatus.textContent = 'On';
-        }
 
 
         showMonetizationFromMenu.addEventListener('click', () => {
             switchScreen('monetization-screen');
             updateMonetizationScreen();
+        });
+
+        earnPointsButton.addEventListener('click', () => {
+            alert('Earn Points Section: Here users would see opportunities to earn points (e.g., daily check-ins, achievements). (Coming Soon)');
+            sideMenu.classList.remove('visible');
+            menuButton.querySelector('.icon-menu').classList.remove('active');
         });
 
         // User list modal (Followers/Following)
@@ -3382,7 +4421,7 @@
                                 <span class="name">${user.name}</span>
                                 <span class="username">@${user.username}</span>
                             </div>
-                            <button class="action-button">${type === 'Followers' ? 'Remove' : (currentUser.following.includes(user.uid) ? 'Following' : 'Follow')}</button>
+                            <button class="action-button"></button>
                         `;
 
                         const actionButton = userItem.querySelector('.action-button');
@@ -3391,6 +4430,7 @@
                         } else {
                             if (type === 'Followers') {
                                 // For 'Remove' follower
+                                actionButton.textContent = 'Remove';
                                 actionButton.style.backgroundColor = 'var(--error-color)';
                                 actionButton.style.color = 'var(--button-primary-text)';
                                 actionButton.addEventListener('click', () => confirmAction(`Remove ${user.name} from your followers?`, () => removeFollower(user.uid, userItem)));
