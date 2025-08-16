@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -54,29 +53,34 @@
             -webkit-tap-highlight-color: transparent; /* Remove tap highlight on mobile */
         }
 
+        html, body {
+            height: 100%; /* Ensure html and body take full height */
+            overflow: hidden; /* Prevent body scroll, container manages it */
+        }
+
         body {
             background-color: var(--bg-color-main);
             color: var(--text-color-main);
             display: flex;
             flex-direction: column;
-            min-height: 100vh;
-            overflow-x: hidden; /* Prevent horizontal scroll */
             transition: background-color 0.3s ease, color 0.3s ease;
         }
 
-        /* Fixed-Header, Scrollable-Content, Fixed-Footer Layout */
+        /* App Container for Mobile Viewport */
         #app-container {
             display: flex;
             flex-direction: column;
+            width: 100%; /* Take full width of screen */
+            max-width: 420px; /* Max width for mobile optimization */
+            margin: 0 auto; /* Center on larger screens */
             height: 100vh; /* Full viewport height */
-            max-width: 420px; /* Mobile viewport optimization */
-            margin: 0 auto;
-            border: 1px solid var(--border-color-main); /* Optional: Visual border for mobile frame */
+            border: 1px solid var(--border-color-main); /* Visual border for mobile frame */
             box-shadow: 0 0 20px var(--shadow-color);
-            position: relative; /* For overlays */
-            overflow: hidden; /* Ensure only content scrolls */
+            position: relative;
+            overflow: hidden;
         }
 
+        /* Fixed Header */
         header {
             background-color: var(--bg-color-darker);
             padding: 15px;
@@ -85,8 +89,12 @@
             align-items: center;
             border-bottom: 1px solid var(--border-color-main);
             z-index: 100;
-            position: sticky;
+            position: fixed; /* Fixed position */
             top: 0;
+            width: 100%;
+            max-width: 420px; /* Match app container max-width */
+            left: 50%;
+            transform: translateX(-50%);
         }
 
         .app-logo {
@@ -140,10 +148,10 @@
             height: 20px;
             display: inline-block;
             vertical-align: middle;
-            background: var(--text-color-main);
+            background: currentColor; /* Use currentColor for dynamic color */
             border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-            box-shadow: 0 2px 0 var(--text-color-main),
-                        inset 0 -2px 0 var(--text-color-main);
+            box-shadow: 0 2px 0 currentColor,
+                        inset 0 -2px 0 currentColor;
             transform: translateY(2px);
         }
         .icon-bell::before {
@@ -154,9 +162,9 @@
             transform: translateX(-50%);
             width: 8px;
             height: 8px;
-            background: var(--text-color-main);
+            background: currentColor;
             border-radius: 0 0 50% 50%;
-            box-shadow: 0 2px 0 var(--text-color-main);
+            box-shadow: 0 2px 0 currentColor;
         }
         .icon-bell::after {
             content: '';
@@ -165,7 +173,7 @@
             left: 0;
             right: 0;
             height: 4px;
-            background: var(--text-color-main);
+            background: currentColor;
             border-radius: 2px;
         }
 
@@ -224,10 +232,13 @@
             overflow-y: auto; /* Make main content scrollable */
             padding: 15px;
             background-color: var(--bg-color-lighter);
+            margin-top: 60px; /* Height of header */
+            margin-bottom: 60px; /* Height of footer */
             position: relative;
             -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
 
+        /* Fixed Footer */
         footer {
             background-color: var(--bg-color-darker);
             padding: 10px 0;
@@ -236,8 +247,13 @@
             align-items: center;
             border-top: 1px solid var(--border-color-main);
             z-index: 100;
-            position: sticky;
+            position: fixed; /* Fixed position */
             bottom: 0;
+            width: 100%;
+            max-width: 420px; /* Match app container max-width */
+            left: 50%;
+            transform: translateX(-50%);
+            height: 60px; /* Explicit height for footer */
         }
 
         .nav-item {
@@ -265,6 +281,7 @@
             border: 2px solid currentColor;
             border-radius: 2px;
             position: relative;
+            margin-top: 5px; /* Adjust to align visually */
         }
         .icon-home::before {
             content: '';
@@ -484,6 +501,7 @@
             border: 2px solid currentColor;
             border-radius: 50%;
             position: relative;
+            overflow: hidden;
         }
         .icon-translate::before, .icon-translate::after {
             content: '';
@@ -501,7 +519,7 @@
             width: 16px;
             height: 2px;
             top: 50%;
-            transform: translateX(-50%) translateY(-1px) rotate(90deg);
+            transform: translateX(-50%) translateY(-1px) rotate(90deg); /* Rotate for horizontal look */
             border-radius: 50%;
         }
 
@@ -509,50 +527,124 @@
             width: 22px;
             height: 18px;
             position: relative;
-            transform: scaleX(-1); /* Mirror for 'repost' feel */
         }
         .icon-repost::before, .icon-repost::after {
             content: '';
             position: absolute;
-            border-left: 2px solid currentColor;
-            border-bottom: 2px solid currentColor;
             width: 10px;
             height: 10px;
+            border: 2px solid currentColor;
         }
         .icon-repost::before {
             top: 0;
             left: 0;
-            border-top-left-radius: 4px;
+            border-right: none;
+            border-bottom: none;
             transform: rotate(45deg);
+            transform-origin: 0 100%;
         }
         .icon-repost::after {
             bottom: 0;
             right: 0;
-            border-bottom-right-radius: 4px;
-            transform: rotate(-135deg);
-        }
-        /* Connection for repost icon */
-        .icon-repost::before {
-            border-left: 2px solid currentColor;
-            border-bottom: 2px solid currentColor;
-            width: 10px;
-            height: 10px;
-            top: 0;
-            left: 0;
-            border-radius: 0 0 0 4px;
+            border-left: none;
+            border-top: none;
             transform: rotate(45deg);
-            transform-origin: 100% 100%;
+            transform-origin: 100% 0;
         }
-        .icon-repost::after {
-            border-top: 2px solid currentColor;
-            border-right: 2px solid currentColor;
-            width: 10px;
-            height: 10px;
+
+
+        /* Rich Text Editor Icons */
+        .icon-image { /* Mountains icon for image */
+            width: 20px;
+            height: 16px;
+            border: 2px solid currentColor;
+            border-radius: 2px;
+            position: relative;
+            overflow: hidden;
+            display: inline-block; /* For vertical alignment */
+        }
+        .icon-image::before { /* Mountain 1 */
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 7px solid transparent;
+            border-right: 7px solid transparent;
+            border-bottom: 10px solid currentColor;
             bottom: 0;
-            right: 0;
-            border-radius: 4px 0 0 0;
-            transform: rotate(45deg);
-            transform-origin: 0% 0%;
+            left: 2px;
+        }
+        .icon-image::after { /* Mountain 2 */
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 0;
+            border-left: 5px solid transparent;
+            border-right: 5px solid transparent;
+            border-bottom: 8px solid currentColor;
+            bottom: 0;
+            right: 2px;
+        }
+        .icon-image .sun-dot { /* Sun dot */
+            width: 4px;
+            height: 4px;
+            background: currentColor;
+            border-radius: 50%;
+            position: absolute;
+            top: 2px;
+            right: 2px;
+        }
+
+        .icon-youtube-embed { /* Play button inside a square */
+            width: 20px;
+            height: 16px;
+            background: currentColor;
+            border-radius: 3px;
+            position: relative;
+            display: inline-block;
+        }
+        .icon-youtube-embed::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-40%, -50%);
+            width: 0;
+            height: 0;
+            border-top: 5px solid transparent;
+            border-bottom: 5px solid transparent;
+            border-left: 8px solid var(--bg-color-lighter); /* Contrast color */
+        }
+
+        .icon-color-palette { /* Basic palette shape */
+            width: 20px;
+            height: 20px;
+            background: currentColor;
+            border-radius: 50% / 60px 60px 0 0; /* Half circle top */
+            position: relative;
+            transform: rotate(15deg); /* Slight tilt */
+            display: inline-block;
+        }
+        .icon-color-palette::before { /* Thumb hole */
+            content: '';
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--bg-color-lighter); /* Hole color */
+            border-radius: 50%;
+            top: 10px;
+            left: 7px;
+        }
+        .icon-color-palette::after { /* Brush/dab indicators (simple dots) */
+            content: '';
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: var(--highlight-color-secondary);
+            border-radius: 50%;
+            top: 3px;
+            left: 5px;
+            box-shadow: 8px 0 var(--highlight-color-main), 4px 10px var(--text-color-light);
         }
 
         /* Side Menu Icons */
@@ -593,7 +685,7 @@
             left: 50%;
             top: -4px;
             transform: translateX(-50%);
-            box-shadow: 0 24px gold, -10px 10px gold rotate(45deg), 10px 10px gold rotate(-45deg); /* Rays */
+            box-shadow: 0 24px gold, -10px 10px gold, 10px 10px gold, -12px 0 gold, 12px 0 gold; /* Simple rays */
         }
 
 
@@ -604,7 +696,7 @@
             align-items: flex-end;
             justify-content: space-around;
         }
-        .icon-data-saver::before, .icon-data-saver::after {
+        .icon-data-saver::before, .icon-data-saver::after, .icon-data-saver > div { /* Use div for middle bar */
             content: '';
             display: block;
             width: 4px;
@@ -613,12 +705,8 @@
         }
         .icon-data-saver::before { height: 60%; }
         .icon-data-saver::after { height: 90%; }
-        .icon-data-saver > *:first-child { /* Middle bar, using a child div for simplicity */
-            display: block;
-            width: 4px;
-            background: currentColor;
+        .icon-data-saver > div { /* Middle bar */
             height: 30%;
-            border-radius: 1px;
         }
 
         .icon-youtube { /* YouTube Play Button */
@@ -700,6 +788,35 @@
             left: 50%;
             transform: translateX(-50%);
             background: var(--bg-color-main); /* Cut out */
+        }
+
+        .icon-dollar { /* Simple Dollar Sign for Earn Points */
+            width: 20px;
+            height: 20px;
+            position: relative;
+            border: 2px solid currentColor;
+            border-radius: 50%;
+            overflow: hidden;
+        }
+        .icon-dollar::before {
+            content: 'S'; /* Simple S-like shape for dollar */
+            position: absolute;
+            font-weight: bold;
+            font-size: 18px;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%) scaleX(0.8);
+            line-height: 1;
+        }
+        .icon-dollar::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            height: 80%;
+            background: currentColor;
+            top: 10%;
+            left: 50%;
+            transform: translateX(-50%);
         }
 
 
@@ -907,6 +1024,9 @@
             max-width: 400px;
             width: 90%;
             text-align: center;
+            position: relative; /* To be positioned correctly within app-container */
+            top: 50%;
+            transform: translateY(-50%);
         }
         #auth-screen h2 {
             color: var(--highlight-color-main);
@@ -1210,8 +1330,10 @@
         .reaction-item:hover {
             background-color: var(--bg-color-darker);
         }
-        .reaction-item .emoji {
-            margin-right: 3px;
+        .reaction-item.user-reacted {
+            background-color: var(--highlight-color-main);
+            color: var(--button-primary-text);
+            border-color: var(--highlight-color-main);
         }
 
         /* Comment Modal */
@@ -1314,20 +1436,20 @@
         }
 
         /* Home Feed Mixed Content */
-        .horizontal-posts-section {
+        .horizontal-posts-section, .suggested-users-section {
             background-color: var(--bg-color-darker);
             padding: 10px;
             margin-bottom: 20px;
             border-radius: 8px;
             box-shadow: 0 2px 10px var(--shadow-color);
         }
-        .horizontal-posts-section h3 {
+        .horizontal-posts-section h3, .suggested-users-section h3 {
             color: var(--highlight-color-main);
             margin-bottom: 10px;
             font-size: 18px;
             text-align: center;
         }
-        .horizontal-posts-carousel {
+        .horizontal-posts-carousel, .suggested-users-carousel {
             display: flex;
             overflow-x: auto;
             gap: 10px;
@@ -1336,14 +1458,14 @@
             scrollbar-width: thin; /* Firefox */
             scrollbar-color: var(--highlight-color-main) var(--border-color-main); /* Firefox */
         }
-        .horizontal-posts-carousel::-webkit-scrollbar {
+        .horizontal-posts-carousel::-webkit-scrollbar, .suggested-users-carousel::-webkit-scrollbar {
             height: 6px;
         }
-        .horizontal-posts-carousel::-webkit-scrollbar-track {
+        .horizontal-posts-carousel::-webkit-scrollbar-track, .suggested-users-carousel::-webkit-scrollbar-track {
             background: var(--border-color-main);
             border-radius: 3px;
         }
-        .horizontal-posts-carousel::-webkit-scrollbar-thumb {
+        .horizontal-posts-carousel::-webkit-scrollbar-thumb, .suggested-users-carousel::-webkit-scrollbar-thumb {
             background-color: var(--highlight-color-main);
             border-radius: 3px;
         }
@@ -1375,39 +1497,6 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-        }
-        .suggested-users-section {
-            background-color: var(--bg-color-darker);
-            padding: 10px;
-            margin-bottom: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px var(--shadow-color);
-        }
-        .suggested-users-section h3 {
-            color: var(--highlight-color-main);
-            margin-bottom: 10px;
-            font-size: 18px;
-            text-align: center;
-        }
-        .suggested-users-carousel {
-            display: flex;
-            overflow-x: auto;
-            gap: 10px;
-            padding-bottom: 5px; /* For scrollbar */
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: thin;
-            scrollbar-color: var(--highlight-color-main) var(--border-color-main);
-        }
-        .suggested-users-carousel::-webkit-scrollbar {
-            height: 6px;
-        }
-        .suggested-users-carousel::-webkit-scrollbar-track {
-            background: var(--border-color-main);
-            border-radius: 3px;
-        }
-        .suggested-users-carousel::-webkit-scrollbar-thumb {
-            background-color: var(--highlight-color-main);
-            border-radius: 3px;
         }
         .suggested-user-card {
             flex-shrink: 0;
@@ -1457,6 +1546,95 @@
             padding: 5px 10px;
             font-size: 12px;
             width: 90%;
+        }
+
+        /* Feed Screen (Reels/Shorts like) */
+        #feed-screen {
+            height: calc(100vh - 120px); /* Full height between header and footer */
+            position: absolute; /* Take full space within main */
+            top: 0;
+            left: 0;
+            width: 100%;
+        }
+        #feed-carousel {
+            height: 100%;
+            overflow-y: scroll;
+            scroll-snap-type: y mandatory;
+            -webkit-overflow-scrolling: touch;
+        }
+        .feed-item {
+            height: 100%; /* Each item takes full carousel height */
+            flex-shrink: 0;
+            scroll-snap-align: start;
+            padding: 15px; /* Padding for content inside */
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .feed-item .post-content {
+            flex-grow: 1;
+            overflow-y: auto; /* Allow post content to scroll if long */
+            max-height: calc(100% - 150px); /* Adjust max-height for content */
+        }
+        .feed-item .bottom-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-top: 15px;
+            flex-shrink: 0; /* Prevent from shrinking */
+        }
+        .feed-item .author-info-feed {
+            display: flex;
+            align-items: center;
+            max-width: 60%; /* Limit width to leave space for actions */
+        }
+        .feed-item .author-info-feed .post-author-avatar {
+            width: 50px;
+            height: 50px;
+            margin-right: 10px;
+        }
+        .feed-item .author-info-feed .details {
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+        .feed-item .author-info-feed .author-link {
+            font-weight: bold;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            font-size: 16px;
+        }
+        .feed-item .author-info-feed .follow-btn {
+            margin-top: 5px;
+            padding: 5px 10px;
+            font-size: 13px;
+            width: auto;
+        }
+
+        .feed-item .actions-sidebar {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .feed-item .actions-sidebar .action-item {
+            flex-direction: column; /* Stack icon and count */
+            font-size: 14px;
+        }
+        .feed-item .actions-sidebar .action-item .icon {
+            font-size: 28px; /* Larger icons for feed */
+            margin-bottom: 5px;
+            margin-right: 0;
+        }
+        .feed-item .actions-sidebar .post-options-button {
+            font-size: 28px;
+        }
+        .feed-item .actions-sidebar .options-dropdown {
+             top: auto;
+             bottom: 40px; /* Position above button */
+             right: 0;
         }
 
 
@@ -1612,6 +1790,7 @@
             padding-top: 60px; /* Space for header */
             display: flex;
             flex-direction: column;
+            overflow-y: auto; /* Allow menu content to scroll */
         }
         #side-menu.visible {
             right: 0;
@@ -1721,6 +1900,23 @@
             font-size: 13px;
         }
 
+        /* Language Modal */
+        #language-list button {
+            background-color: var(--bg-color-darker);
+            color: var(--text-color-main);
+            border: 1px solid var(--border-color-main);
+            padding: 10px 15px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            width: 100%;
+            text-align: left;
+            transition: background-color 0.2s ease;
+        }
+        #language-list button:hover {
+            background-color: var(--bg-color-lighter);
+        }
+
+
         /* Utility classes */
         .hidden { display: none !important; }
         .text-center { text-align: center; }
@@ -1794,9 +1990,13 @@
                 </section>
 
                 <!-- Feed (Reels/Shorts like) Screen -->
-                <section id="feed-screen" class="app-screen hidden" style="height: 100%; overflow: hidden;">
-                    <div id="feed-carousel" style="height: 100%; overflow-y: scroll; scroll-snap-type: y mandatory;">
+                <section id="feed-screen" class="app-screen hidden">
+                    <div id="feed-carousel">
                         <!-- Feed items will be dynamically loaded here, each with scroll-snap-align: start -->
+                    </div>
+                     <div class="text-center mt-15 mb-15">
+                        <span id="feed-screen-loader" class="loader hidden"></span>
+                        <p id="feed-screen-end-message" class="hidden">No more posts. Looping back...</p>
                     </div>
                 </section>
 
@@ -1810,7 +2010,7 @@
                         <button id="bold-btn" title="Bold"><strong>B</strong></button>
                         <button id="italic-btn" title="Italic"><em>I</em></button>
                         <button id="link-btn" title="Insert Link">🔗</button>
-                        <button id="image-btn" title="Embed Image"><span class="icon-image"></span></button>
+                        <button id="image-btn" title="Embed Image"><span class="icon-image"><div class="sun-dot"></div></span></button>
                         <button id="youtube-btn" title="Embed YouTube Video"><span class="icon-youtube-embed"></span></button>
                         <button id="color-btn" title="Text Color"><span class="icon-color-palette"></span></button>
                     </div>
@@ -2204,6 +2404,12 @@
         const searchResults = document.getElementById('search-results');
         const noSearchResults = document.getElementById('no-search-results');
 
+        // Feed Screen
+        const feedCarousel = document.getElementById('feed-carousel');
+        const feedScreenLoader = document.getElementById('feed-screen-loader');
+        const feedScreenEndMessage = document.getElementById('feed-screen-end-message');
+
+
         // Upload Screen
         const postContentTextarea = document.getElementById('post-content-textarea');
         const boldBtn = document.getElementById('bold-btn');
@@ -2253,7 +2459,8 @@
         // Global Variables
         let currentUser = null;
         let currentAuthUser = null; // Firebase Auth User
-        let lastVisiblePost = null;
+        let lastVisiblePost = null; // For home feed pagination
+        let lastVisibleFeedPost = null; // For feed screen pagination
         let fetchingPosts = false;
         let currentScreen = 'home-screen'; // Default screen
         let currentProfileUserId = null; // For viewing other users' profiles
@@ -2264,6 +2471,8 @@
         let debounceTimeout = null; // For username availability check
         let dataSaverMode = localStorage.getItem('dataSaverMode') === 'on';
         let darkMode = localStorage.getItem('darkMode') !== 'off'; // Default to on if not set to off
+
+        const viewedPosts = new Set(JSON.parse(sessionStorage.getItem('viewedPosts') || '[]')); // Track views per session
 
         // Initialize UI based on saved preferences
         if (!darkMode) {
@@ -2341,7 +2550,7 @@
                 searchResults.innerHTML = '';
                 noSearchResults.classList.add('hidden');
             } else if (screenId === 'feed-screen') {
-                 if (document.getElementById('feed-carousel').innerHTML === '') fetchFeedPosts();
+                 if (feedCarousel.innerHTML === '') fetchFeedPosts();
             }
             // Close side menu if open
             sideMenu.classList.remove('visible');
@@ -2843,46 +3052,56 @@
                 const snapshot = await query.get();
                 if (reset) {
                     postsContainer.innerHTML = '';
-                    horizontalPostCounter = 0; // Reset for horizontal posts
-                    suggestedUserCounter = 0; // Reset for suggested users
                 }
 
                 if (snapshot.empty && !reset && lastVisiblePost) {
                     // All posts fetched, loop back to beginning
                     lastVisiblePost = null;
                     feedEndMessage.classList.remove('hidden');
-                    console.log("No more new posts, resetting feed to beginning.");
+                    console.log("No more new posts, resetting home feed to beginning.");
                     await fetchPosts(true); // Fetch from start again
                     return;
                 }
+                if (snapshot.empty && reset && !lastVisiblePost) {
+                    postsContainer.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the home feed.</p>';
+                    return;
+                }
 
-                snapshot.docs.forEach((doc, index) => {
-                    const postData = doc.data();
-                    postsContainer.appendChild(createPostCard(postData));
 
-                    // Interleave horizontal content
-                    if ((index + 1) % 5 === 0 && horizontalPostCounter < 2) { // Every 5th post, max 2 horizontal sections
-                        appendHorizontalPosts();
-                        horizontalPostCounter++;
+                // Mix in horizontal content and suggested users
+                const allFetchedPosts = snapshot.docs.map(doc => doc.data());
+                let currentPostIndex = 0;
+                let horizontalSectionCounter = 0;
+                let suggestedUserSectionCounter = 0;
+
+                while (currentPostIndex < allFetchedPosts.length) {
+                    const postData = allFetchedPosts[currentPostIndex];
+                    postsContainer.appendChild(createPostCard(postData, 'home')); // Pass type for view observer
+                    currentPostIndex++;
+
+                    // Interleave horizontal content every 5 posts, max 2 sections initially
+                    if (currentPostIndex % 5 === 0 && horizontalSectionCounter < 2) {
+                        await appendHorizontalPosts();
+                        horizontalSectionCounter++;
                     }
-                    if ((index + 1) % 3 === 0 && suggestedUserCounter < 2) { // Every 3rd post, max 2 suggested user sections
-                         appendSuggestedUsers();
-                         suggestedUserCounter++;
+                    // Interleave suggested users every 3 posts (different from horizontal), max 2 sections initially
+                    if (currentPostIndex % 3 === 0 && suggestedUserSectionCounter < 2) {
+                         await appendSuggestedUsers();
+                         suggestedUserSectionCounter++;
                     }
-                });
+                }
 
                 lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
 
             } catch (error) {
                 console.error("Error fetching posts:", error);
+                postsContainer.innerHTML = '<p class="text-center message error mt-15">Error loading home feed posts.</p>';
             } finally {
                 fetchingPosts = false;
                 feedLoader.classList.add('hidden');
             }
         }
 
-        let horizontalPostCounter = 0;
-        let suggestedUserCounter = 0;
 
         async function appendHorizontalPosts() {
             const horizontalSection = document.createElement('div');
@@ -2908,11 +3127,11 @@
                         card.dataset.postId = post.postId;
                         card.innerHTML = `
                             <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/80'}" alt="Post Image">
-                            <p>${post.content.substring(0, 50)}...</p>
+                            <p>${post.content.substring(0, Math.min(post.content.length, 50))}...</p>
                         `;
                         card.addEventListener('click', () => {
                             // Ideally, this would open a specific post modal or detailed view
-                            alert(`Clicked on horizontal post: ${post.postId}`);
+                            alert(`Clicked on horizontal post: ${post.postId}. Full post view coming soon.`);
                         });
                         carousel.appendChild(card);
                     });
@@ -2953,18 +3172,18 @@
                             <img src="${user.profilePicUrl || 'https://via.placeholder.com/60'}" alt="User Avatar">
                             <p class="username">@${user.username}</p>
                             <p class="name">${user.name}</p>
-                            <button class="follow-btn">Follow</button>
+                            <button class="follow-btn"></button>
                         `;
                         const followBtn = card.querySelector('.follow-btn');
-                        followBtn.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            handleFollowToggle(user.uid, followBtn);
-                            // After follow, remove the card or update its text to Following
-                            followBtn.textContent = 'Following';
-                            followBtn.disabled = true; // Disable if already following or just followed
-                            followBtn.style.backgroundColor = 'var(--border-color-main)';
-                            followBtn.style.color = 'var(--text-color-main)';
-                        });
+                        if (user.uid === currentUser.uid) { // Hide follow button for self (though filtered above)
+                            followBtn.classList.add('hidden');
+                        } else {
+                            updateFollowButtonInSearch(followBtn, user.uid); // Update initial state
+                            followBtn.addEventListener('click', (e) => {
+                                e.stopPropagation();
+                                handleFollowToggle(user.uid, followBtn);
+                            });
+                        }
                         card.addEventListener('click', () => displayProfile(user.uid));
                         carousel.appendChild(card);
                     });
@@ -2977,10 +3196,50 @@
             postsContainer.appendChild(suggestedSection);
         }
 
+        // Intersection Observer for View Counts
+        const viewObserver = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const postCard = entry.target;
+                    const postId = postCard.dataset.postId;
+                    const isMonetized = postCard.dataset.isMonetized === 'true'; // Get monetization status
 
-        // Infinite scroll for home feed
+                    if (!viewedPosts.has(postId)) {
+                        // Start a timer. If still intersecting after 4-5 seconds, increment view.
+                        let timer = setTimeout(() => {
+                            if (entry.isIntersecting) { // Re-check if still in view
+                                incrementView(postId, postCard, isMonetized);
+                                viewedPosts.add(postId);
+                                sessionStorage.setItem('viewedPosts', JSON.stringify(Array.from(viewedPosts)));
+                                // Disconnect observer for this post once viewed
+                                viewObserver.unobserve(postCard);
+                            }
+                        }, 4000); // 4 seconds
+
+                        // If it scrolls out of view before 4 seconds, clear the timer
+                        const disconnectHandler = () => {
+                            clearTimeout(timer);
+                            postCard.removeEventListener('mouseout', disconnectHandler); // Only if you want to track mouseout
+                            postCard.removeEventListener('visibilitychange', disconnectHandler); // If page visibility changes
+                        };
+                        // For a real scroll, the IntersectionObserver re-entry is key.
+                        // You might also want to track when the tab is no longer active etc.
+                    }
+                }
+            });
+        }, { threshold: 0.7 }); // Trigger when 70% of the post is visible
+
+        // Attach observer to new post cards
+        function attachViewObserver(postCard) {
+            if (currentUser && !viewedPosts.has(postCard.dataset.postId)) {
+                viewObserver.observe(postCard);
+            }
+        }
+
+
         mainAppContent.querySelector('main').addEventListener('scroll', () => {
             const mainEl = mainAppContent.querySelector('main');
+            // 100px from bottom to trigger
             if (mainEl.scrollTop + mainEl.clientHeight >= mainEl.scrollHeight - 100 && currentScreen === 'home-screen') {
                 if (!fetchingPosts) {
                     fetchPosts();
@@ -2990,10 +3249,15 @@
 
         refreshFeedButton.addEventListener('click', () => fetchPosts(true));
 
-        function createPostCard(post) {
+        function createPostCard(post, type = 'home') {
             const postCard = document.createElement('div');
             postCard.className = 'post-card';
             postCard.dataset.postId = post.postId;
+            postCard.dataset.isMonetized = post.isMonetized; // Store for view tracking
+
+            if (type === 'feed') {
+                 postCard.classList.add('feed-item');
+            }
 
             const postHeader = document.createElement('div');
             postHeader.className = 'post-header';
@@ -3003,6 +3267,7 @@
                     <a href="#" class="author-link" data-user-id="${post.userId}">@${post.username}</a>
                     <span>${timeSince(post.timestamp.toDate())} ago</span>
                 </div>
+                ${type === 'home' ? `
                 <div class="post-options">
                     <button class="post-options-button">&#x22EE;</button>
                     <div class="options-dropdown">
@@ -3013,7 +3278,7 @@
                         <button class="repost-post-btn">Repost (Coming Soon)</button>
                         <button class="translate-language-btn">Change Translate Language (Placeholder)</button>
                     </div>
-                </div>
+                </div>` : ''}
             `;
 
             const postContent = document.createElement('div');
@@ -3032,12 +3297,11 @@
                 // Simple content splitting for ad injection
                 let contentBlocks = post.content.split(/\r?\n\r?\n|\<br\s*?\/?\>/i); // Split by double newlines or <br> for 'paragraphs'
                 let newContentHtml = [];
-                let adInjectionInterval = Math.floor(contentBlocks.length / (adCount + 1)) || 1; // Distribute ads
                 let injectedAds = 0;
 
                 for (let i = 0; i < contentBlocks.length; i++) {
                     newContentHtml.push(parseRichText(contentBlocks[i])); // Parse rich text for each block
-                    if (injectedAds < adCount && (i + 1) % adInjectionInterval === 0 && contentBlocks[i].length > 50) { // Only inject if block has some content
+                    if (injectedAds < adCount && (i + 1) % Math.ceil(contentBlocks.length / (adCount + 1)) === 0 && contentBlocks[i].length > 50) { // Only inject if block has some content
                         newContentHtml.push(`
                             <div class="adsense-ad">
                                 <iframe src="ads.html" frameborder="0" style="width:100%; height:120px; border:none;" scrolling="no"></iframe>
@@ -3050,21 +3314,23 @@
                 postContent.innerHTML = newContentHtml.join('<br><br>'); // Join with line breaks to mimic paragraphs
             }
 
+            const likeStatus = post.likes && currentUser && post.likes.includes(currentUser.uid) ? 'liked' : '';
+            const likesCount = formatNumber(post.likesCount || 0);
+            const commentCount = formatNumber(post.commentCount || 0);
+            const viewsCount = formatNumber(post.views || 0);
 
-            const postActions = document.createElement('div');
-            postActions.className = 'post-actions';
-            postActions.innerHTML = `
+            let postActionsHtml = `
                 <div class="action-item like-post-btn">
-                    <span class="icon icon-heart ${post.likes && post.likes.includes(currentUser.uid) ? 'liked' : ''}"></span>
-                    <span class="count" data-count-type="likes">${formatNumber(post.likesCount || 0)}</span>
+                    <span class="icon icon-heart ${likeStatus}"></span>
+                    <span class="count" data-count-type="likes">${likesCount}</span>
                 </div>
                 <div class="action-item comment-post-btn">
                     <span class="icon icon-comment"></span>
-                    <span class="count" data-count-type="comments">${formatNumber(post.commentCount || 0)}</span>
+                    <span class="count" data-count-type="comments">${commentCount}</span>
                 </div>
                 <div class="action-item views-post-btn">
                     <span class="icon icon-views"></span>
-                    <span class="count" data-count-type="views">${formatNumber(post.views || 0)}</span>
+                    <span class="count" data-count-type="views">${viewsCount}</span>
                 </div>
                 <div class="action-item sound-post-btn">
                     <span class="icon icon-sound"></span>
@@ -3076,85 +3342,146 @@
                 </div>
             `;
 
-            const emojiReactionsContainer = document.createElement('div');
-            emojiReactionsContainer.className = 'emoji-reactions';
-            // Placeholder emojis - In a real app, these would come from post.reactions map
+            let emojiReactionsHtml = '';
             const popularEmojis = ['👍', '😂', '😍', '🔥', '😢', '💯'];
-            // Simulate current post reactions (replace with actual Firestore data later)
-            const currentReactions = post.reactions || {}; // { '👍': 5, '😂': 2 }
-            const userReaction = currentUser ? (Object.keys(currentReactions).find(emoji => currentReactions[emoji].includes(currentUser.uid)) || null) : null;
-
+            const currentReactions = post.reactions || {};
             popularEmojis.forEach(emoji => {
                 const count = (currentReactions[emoji] ? currentReactions[emoji].length : 0);
-                const reactionItem = document.createElement('span');
-                reactionItem.className = 'reaction-item';
-                if (userReaction === emoji) {
-                     reactionItem.classList.add('user-reacted'); // Highlight if current user reacted with this emoji
-                     reactionItem.style.backgroundColor = 'var(--highlight-color-main)';
-                     reactionItem.style.color = 'var(--button-primary-text)';
-                }
-                reactionItem.innerHTML = `<span class="emoji">${emoji}</span><span class="count">${formatNumber(count)}</span>`;
-                reactionItem.addEventListener('click', () => handleEmojiReaction(post.postId, emoji, reactionItem));
-                emojiReactionsContainer.appendChild(reactionItem);
+                const userReactedClass = currentUser && currentReactions[emoji] && currentReactions[emoji].includes(currentUser.uid) ? 'user-reacted' : '';
+                emojiReactionsHtml += `
+                    <span class="reaction-item ${userReactedClass}" data-emoji="${emoji}">
+                        <span class="emoji">${emoji}</span><span class="count">${formatNumber(count)}</span>
+                    </span>`;
             });
 
+            if (type === 'home' || type === 'profile') {
+                const postActions = document.createElement('div');
+                postActions.className = 'post-actions';
+                postActions.innerHTML = postActionsHtml;
+                postCard.appendChild(postContent);
+                postCard.appendChild(postActions);
 
-            postCard.appendChild(postHeader);
-            postCard.appendChild(postContent);
-            postCard.appendChild(postActions);
-            postCard.appendChild(emojiReactionsContainer); // Add reactions
+                const emojiReactionsContainer = document.createElement('div');
+                emojiReactionsContainer.className = 'emoji-reactions';
+                emojiReactionsContainer.innerHTML = emojiReactionsHtml;
+                postCard.appendChild(emojiReactionsContainer);
 
-            // Event Listeners for post actions
+            } else if (type === 'feed') {
+                postCard.innerHTML = `
+                    <div style="padding: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="flex-grow: 1; overflow-y: auto;">
+                            <div class="post-content" style="height: auto; max-height: calc(100vh - 250px); overflow-y: auto;">
+                                ${parseRichText(post.content)}
+                            </div>
+                        </div>
+                        <div class="bottom-area">
+                            <div class="author-info-feed">
+                                <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${post.userId}">
+                                <div class="details">
+                                    <a href="#" class="author-link" data-user-id="${post.userId}">@${post.username}</a>
+                                    <button class="follow-btn"></button>
+                                </div>
+                            </div>
+                            <div class="actions-sidebar">
+                                <div class="action-item like-post-btn">
+                                    <span class="icon icon-heart ${likeStatus}" style="font-size: 28px;"></span>
+                                    <span class="count" data-count-type="likes" style="font-size: 14px;">${likesCount}</span>
+                                </div>
+                                <div class="action-item comment-post-btn">
+                                    <span class="icon icon-comment" style="font-size: 28px;"></span>
+                                    <span class="count" data-count-type="comments" style="font-size: 14px;">${commentCount}</span>
+                                </div>
+                                <div class="action-item translate-post-btn">
+                                    <span class="icon icon-translate" style="font-size: 28px;"></span>
+                                    <span style="font-size: 12px;">Translate</span>
+                                </div>
+                                <div class="action-item sound-post-btn">
+                                    <span class="icon icon-sound" style="font-size: 28px;"></span>
+                                    <span style="font-size: 12px;">Speak</span>
+                                </div>
+                                <div class="post-options">
+                                    <button class="post-options-button" style="font-size: 28px;">&#x22EE;</button>
+                                    <div class="options-dropdown" style="top: auto; bottom: 40px; right: 0;">
+                                        ${currentUser && currentUser.uid === post.userId ?
+                                            `<button class="delete-post-btn">Delete Post</button>` :
+                                            `<button class="report-post-btn">Report Post</button>`
+                                        }
+                                        <button class="repost-post-btn">Repost (Coming Soon)</button>
+                                        <button class="translate-language-btn">Change Translate Language (Placeholder)</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                         <div class="emoji-reactions" style="border-top: none; padding-top: 0; margin-top: 15px;">
+                            ${emojiReactionsHtml}
+                        </div>
+                    </div>
+                `;
+            }
+
+
+            // Attach event listeners for post actions
             const likeButton = postCard.querySelector('.like-post-btn');
-            likeButton.addEventListener('click', () => toggleLike(post.postId, likeButton));
+            if (likeButton) {
+                likeButton.addEventListener('click', () => toggleLike(post.postId, likeButton));
+            }
 
-            // Double-click anywhere on the post card
-            postCard.addEventListener('dblclick', () => toggleLike(post.postId, likeButton));
+            // Double-click anywhere on the post card (not on specific interactive elements)
+            postCard.addEventListener('dblclick', (event) => {
+                // Check if the double click was on an interactive element, if so, ignore.
+                if (!event.target.closest('.action-item, .post-options-button, .post-author-avatar, .author-link, .follow-btn, .reaction-item')) {
+                    if (likeButton) toggleLike(post.postId, likeButton);
+                }
+            });
 
             // Neon glow on any click on the post card
             postCard.addEventListener('click', (event) => {
-                // Ensure double-click doesn't trigger neon glow repeatedly or interfere with other elements
-                if (event.detail === 2 || event.target.closest('.post-options, .action-item')) return;
+                // Ensure click doesn't trigger neon glow repeatedly or interfere with other elements
+                if (event.target.closest('.action-item, .post-options-button, .post-author-avatar, .author-link, .follow-btn, .reaction-item, .options-dropdown')) return;
                 postCard.classList.add('neon-glow');
                 setTimeout(() => {
                     postCard.classList.remove('neon-glow');
                 }, 500);
             });
 
-            postCard.querySelector('.comment-post-btn').addEventListener('click', () => openCommentModal(post.postId, postCard));
 
-            // Views increment (client-side, ideally server-side via Cloud Function)
-            postCard.querySelector('.views-post-btn').addEventListener('click', () => incrementView(post.postId, postCard, post.isMonetized));
+            const commentButton = postCard.querySelector('.comment-post-btn');
+            if (commentButton) {
+                commentButton.addEventListener('click', () => openCommentModal(post.postId, postCard));
+            }
 
-            // Text-to-Speech
-            postCard.querySelector('.sound-post-btn').addEventListener('click', () => {
-                const textToSpeak = post.content.replace(/<[^>]*>/g, '').substring(0, 500); // Strip HTML, limit length
-                if ('speechSynthesis' in window) {
-                    const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                    utterance.lang = 'en-US'; // Default language, could be dynamic
-                    window.speechSynthesis.speak(utterance);
-                } else {
-                    alert('Text-to-speech not supported in this browser.');
-                }
-            });
+            const speakButton = postCard.querySelector('.sound-post-btn');
+            if (speakButton) {
+                speakButton.addEventListener('click', () => {
+                    const textToSpeak = post.content.replace(/<[^>]*>/g, '').substring(0, 500); // Strip HTML, limit length
+                    if ('speechSynthesis' in window) {
+                        const utterance = new SpeechSynthesisUtterance(textToSpeak);
+                        utterance.lang = 'en-US'; // Default language, could be dynamic
+                        window.speechSynthesis.speak(utterance);
+                    } else {
+                        alert('Text-to-speech not supported in this browser.');
+                    }
+                });
+            }
 
-            // Translate (placeholder)
-            postCard.querySelector('.translate-post-btn').addEventListener('click', () => {
-                alert('Translate function. This feature would integrate with a translation API (like Google Cloud Translation) for real-time translation of post content. Clicking "Change Translate Language" in options would set preference.');
-            });
+            const translateButton = postCard.querySelector('.translate-post-btn');
+            if (translateButton) {
+                translateButton.addEventListener('click', () => {
+                    alert('Translate function. This feature would integrate with a translation API (like Google Cloud Translation) for real-time translation of post content. Clicking "Change Translate Language" in options would set preference.');
+                });
+            }
+
 
             // Post Options dropdown
             const optionsButton = postCard.querySelector('.post-options-button');
             const optionsDropdown = postCard.querySelector('.options-dropdown');
-            optionsButton.addEventListener('click', (e) => {
-                e.stopPropagation(); // Prevent card click
-                optionsDropdown.classList.toggle('visible');
-            });
-            document.addEventListener('click', (e) => { // Close dropdown if clicked outside
-                if (!optionsDropdown.contains(e.target) && !optionsButton.contains(e.target)) {
-                    optionsDropdown.classList.remove('visible');
-                }
-            });
+            if (optionsButton && optionsDropdown) {
+                optionsButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // Prevent card click
+                    optionsDropdown.classList.toggle('visible');
+                });
+                // Close dropdown if clicked outside - this is handled by a global document listener
+            }
 
             // Delete Post
             const deleteBtn = postCard.querySelector('.delete-post-btn');
@@ -3196,7 +3523,7 @@
                         timestamp: firebase.firestore.FieldValue.serverTimestamp(),
                         reason: 'User reported via UI' // Would usually have a reason selection
                     }).catch(e => console.error("Error reporting post:", e));
-                    optionsDropdown.classList.remove('visible');
+                    if (optionsDropdown) optionsDropdown.classList.remove('visible');
                 });
             }
 
@@ -3205,8 +3532,7 @@
             if (repostBtn) {
                 repostBtn.addEventListener('click', () => {
                     alert('Repost functionality will create a new post linking to this original post. (Coming Soon)');
-                    // This would involve creating a new post document with a 'repostId' field pointing to original.
-                    optionsDropdown.classList.remove('visible');
+                    if (optionsDropdown) optionsDropdown.classList.remove('visible');
                 });
             }
 
@@ -3214,9 +3540,8 @@
             const translateLangBtn = postCard.querySelector('.translate-language-btn');
             if (translateLangBtn) {
                 translateLangBtn.addEventListener('click', () => {
-                    alert('Language selection for translation. This would store your preferred translation language. (Placeholder)');
                     showLanguageSelectionModal();
-                    optionsDropdown.classList.remove('visible');
+                    if (optionsDropdown) optionsDropdown.classList.remove('visible');
                 });
             }
 
@@ -3232,6 +3557,32 @@
                 });
             });
 
+            // Attach view observer for home/profile screens
+            if (type === 'home' || type === 'profile') {
+                attachViewObserver(postCard);
+            }
+
+            // Handle emoji reactions
+            postCard.querySelectorAll('.reaction-item').forEach(item => {
+                const emoji = item.dataset.emoji;
+                item.addEventListener('click', () => handleEmojiReaction(post.postId, emoji, item));
+            });
+
+            // For feed items, update follow button status and add listener
+            if (type === 'feed') {
+                const followBtn = postCard.querySelector('.follow-btn');
+                if (post.userId === currentUser.uid) {
+                    followBtn.classList.add('hidden'); // Hide follow button for own posts
+                } else {
+                    updateFollowButtonInSearch(followBtn, post.userId); // Update initial state
+                    followBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleFollowToggle(post.userId, followBtn);
+                    });
+                }
+            }
+
+
             return postCard;
         }
 
@@ -3244,7 +3595,14 @@
             { code: 'de', name: 'German' },
             { code: 'ja', name: 'Japanese' },
             { code: 'ko', name: 'Korean' },
-            { code: 'zh-CN', name: 'Chinese (Simplified)' }
+            { code: 'zh-CN', name: 'Chinese (Simplified)' },
+            { code: 'ar', name: 'Arabic' },
+            { code: 'pt', name: 'Portuguese' },
+            { code: 'ru', name: 'Russian' },
+            { code: 'it', name: 'Italian' },
+            { code: 'tr', name: 'Turkish' },
+            { code: 'sv', name: 'Swedish' },
+            { code: 'nl', name: 'Dutch' }
         ];
 
         function showLanguageSelectionModal() {
@@ -3257,7 +3615,8 @@
                 button.style.backgroundColor = 'var(--bg-color-darker)';
                 button.style.color = 'var(--text-color-main)';
                 button.addEventListener('click', () => {
-                    alert(`Language set to: ${lang.name}. (This would be saved as user preference)`);
+                    alert(`Language set to: ${lang.name}. (This would be saved as user preference for future translations)`);
+                    // In a real app, save to user preferences in Firestore
                     hideModal(languageModal);
                 });
                 languageList.appendChild(button);
@@ -3373,8 +3732,8 @@
             if (!currentUser) return; // Only count views for logged-in users
 
             const viewKey = `viewed_${postId}_${currentUser.uid}`; // Unique key per user per post
-            if (sessionStorage.getItem(viewKey) === 'true') {
-                return; // Already counted this view for this user in this session
+            if (viewedPosts.has(postId)) { // Check against the Set for this session
+                return;
             }
 
             const postRef = db.collection('posts').doc(postId);
@@ -3402,7 +3761,8 @@
                     // Optimistically update UI
                     postElement.querySelector('.views-post-btn .count').textContent = formatNumber(newViews);
                 });
-                sessionStorage.setItem(viewKey, 'true'); // Mark as viewed in session
+                viewedPosts.add(postId); // Add to the Set for this session
+                sessionStorage.setItem('viewedPosts', JSON.stringify(Array.from(viewedPosts))); // Persist in session storage
             } catch (error) {
                 console.error("Error incrementing view:", error);
             }
@@ -3429,7 +3789,7 @@
                     let currentUserReaction = null;
                     // Find if the current user already reacted to this post with any emoji
                     for (const key in reactions) {
-                        if (reactions[key].includes(currentUser.uid)) {
+                        if (reactions[key] && reactions[key].includes(currentUser.uid)) {
                             currentUserReaction = key;
                             break;
                         }
@@ -3460,7 +3820,7 @@
                     const emojiContainer = reactionItemElement.closest('.emoji-reactions');
                     if (emojiContainer) {
                          emojiContainer.querySelectorAll('.reaction-item').forEach(item => {
-                            const itemEmoji = item.querySelector('.emoji').textContent;
+                            const itemEmoji = item.dataset.emoji; // Get emoji from data-emoji attribute
                             const countSpan = item.querySelector('.count');
                             const currentEmojiUsers = reactions[itemEmoji] || [];
                             countSpan.textContent = formatNumber(currentEmojiUsers.length);
@@ -3468,18 +3828,14 @@
                             // Update styling for user's own reaction
                             if (currentUser && currentEmojiUsers.includes(currentUser.uid)) {
                                 item.classList.add('user-reacted');
-                                item.style.backgroundColor = 'var(--highlight-color-main)';
-                                item.style.color = 'var(--button-primary-text)';
                             } else {
                                 item.classList.remove('user-reacted');
-                                item.style.backgroundColor = '';
-                                item.style.color = '';
                             }
                          });
                     }
 
                     // Add notification for the post author (if reaction added/changed)
-                    if (postData.userId !== currentUser.uid && currentUserReaction !== emoji) {
+                    if (postData.userId !== currentUser.uid && currentUserReaction !== emoji) { // Only notify if a *new* reaction is added or changed
                         await db.collection('notifications').add({
                             userId: postData.userId,
                             type: 'reaction',
@@ -3981,7 +4337,7 @@
                     profileFeedEndMessage.classList.add('hidden');
                 } else {
                     postsSnapshot.docs.forEach(doc => {
-                        profilePostsContainer.appendChild(createPostCard(doc.data()));
+                        profilePostsContainer.appendChild(createPostCard(doc.data(), 'profile'));
                     });
                     // For a full infinite scroll on profile, you'd manage lastVisibleProfilePost here.
                 }
@@ -4008,152 +4364,56 @@
 
         // --- Feed (Reels/Shorts like) ---
         async function fetchFeedPosts() {
-            const feedCarousel = document.getElementById('feed-carousel');
             feedCarousel.innerHTML = ''; // Clear existing
-            showLoader('Loading feed...');
+            feedScreenLoader.classList.remove('hidden');
+            feedScreenEndMessage.classList.add('hidden');
+
+            let query = db.collection('posts')
+                .orderBy('timestamp', 'desc')
+                .limit(10); // Fetch 10 posts at a time for feed
+
+            if (lastVisibleFeedPost) {
+                query = query.startAfter(lastVisibleFeedPost);
+            }
 
             try {
-                // Fetch a larger batch for continuous scrolling in feed mode
-                const snapshot = await db.collection('posts')
-                    .orderBy('timestamp', 'desc')
-                    .limit(20) // Fetch more for smooth scroll
-                    .get();
+                const snapshot = await query.get();
 
-                if (snapshot.empty) {
-                    feedCarousel.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the feed.</p>';
-                } else {
-                    // Create a shuffled array of post data for "never-ending" feel
-                    let allPostsData = snapshot.docs.map(doc => doc.data());
-                    let shuffledPosts = [];
-                    // Populate with a loop for never-ending effect. Adjust this multiplier for more "loop"
-                    for (let i = 0; i < 5; i++) { // Repeat posts 5 times and shuffle each iteration
-                         shuffledPosts = shuffledPosts.concat(allPostsData.sort(() => 0.5 - Math.random()));
-                    }
-
-                    shuffledPosts.forEach(postData => {
-                        const feedItem = document.createElement('div');
-                        feedItem.className = 'post-card feed-item'; // Use post-card styling
-                        feedItem.style.height = '100%'; // Make it take full height of scroll container
-                        feedItem.style.scrollSnapAlign = 'start'; // Enable scroll snapping
-                        feedItem.dataset.postId = postData.postId;
-
-                        // Content structure similar to post-card but adapted for feed
-                        feedItem.innerHTML = `
-                            <div style="padding: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
-                                <div style="flex-grow: 1; overflow-y: auto;">
-                                    <div class="post-content" style="height: auto; max-height: calc(100vh - 250px); overflow-y: auto;">
-                                        ${parseRichText(postData.content)}
-                                    </div>
-                                </div>
-                                <div style="display: flex; justify-content: space-between; align-items: flex-end; margin-top: 15px;">
-                                    <div style="display: flex; align-items: center;">
-                                        <img src="${postData.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${postData.userId}" style="width: 50px; height: 50px;">
-                                        <div style="margin-left: 10px;">
-                                            <a href="#" class="author-link" data-user-id="${postData.userId}" style="font-weight: bold; color: var(--text-color-main); text-decoration: none;">@${postData.username}</a>
-                                            <button class="follow-btn" style="padding: 5px 10px; font-size: 13px; margin-left: 10px;"></button>
-                                        </div>
-                                    </div>
-                                    <div style="display: flex; flex-direction: column; gap: 15px; align-items: center;">
-                                        <div class="action-item like-post-btn" style="flex-direction: column;">
-                                            <span class="icon icon-heart ${postData.likes && postData.likes.includes(currentUser.uid) ? 'liked' : ''}" style="font-size: 28px;"></span>
-                                            <span class="count" data-count-type="likes" style="font-size: 14px;">${formatNumber(postData.likesCount || 0)}</span>
-                                        </div>
-                                        <div class="action-item comment-post-btn" style="flex-direction: column;">
-                                            <span class="icon icon-comment" style="font-size: 28px;"></span>
-                                            <span class="count" data-count-type="comments" style="font-size: 14px;">${formatNumber(postData.commentCount || 0)}</span>
-                                        </div>
-                                        <div class="action-item translate-post-btn" style="flex-direction: column;">
-                                            <span class="icon icon-translate" style="font-size: 28px;"></span>
-                                            <span style="font-size: 12px;">Translate</span>
-                                        </div>
-                                        <div class="action-item sound-post-btn" style="flex-direction: column;">
-                                            <span class="icon icon-sound" style="font-size: 28px;"></span>
-                                            <span style="font-size: 12px;">Speak</span>
-                                        </div>
-                                        <div class="post-options" style="flex-direction: column;">
-                                            <button class="post-options-button" style="font-size: 28px;">&#x22EE;</button>
-                                            <div class="options-dropdown" style="top: auto; bottom: 40px; right: 0;">
-                                                ${currentUser && currentUser.uid === postData.userId ?
-                                                    `<button class="delete-post-btn">Delete Post</button>` :
-                                                    `<button class="report-post-btn">Report Post</button>`
-                                                }
-                                                <button class="repost-post-btn">Repost (Coming Soon)</button>
-                                                <button class="translate-language-btn">Change Translate Language (Placeholder)</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        `;
-
-                        // Attach event listeners for feed items (similar to post-card)
-                        const likeButton = feedItem.querySelector('.like-post-btn');
-                        likeButton.addEventListener('click', () => toggleLike(postData.postId, likeButton));
-                        feedItem.addEventListener('dblclick', () => toggleLike(postData.postId, likeButton));
-                        feedItem.querySelector('.comment-post-btn').addEventListener('click', () => openCommentModal(postData.postId, feedItem));
-                        feedItem.querySelector('.sound-post-btn').addEventListener('click', () => {
-                            const textToSpeak = postData.content.replace(/<[^>]*>/g, '').substring(0, 500);
-                            if ('speechSynthesis' in window) {
-                                const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                                utterance.lang = 'en-US';
-                                window.speechSynthesis.speak(utterance);
-                            } else {
-                                alert('Text-to-speech not supported in this browser.');
-                            }
-                        });
-                        feedItem.querySelector('.translate-post-btn').addEventListener('click', () => {
-                            alert('Translate function for feed posts (Placeholder).');
-                        });
-
-
-                         // Attach click handler for author profile
-                        feedItem.querySelectorAll('.post-author-avatar, .author-link').forEach(el => {
-                            el.addEventListener('click', (e) => {
-                                e.preventDefault();
-                                const userId = e.currentTarget.dataset.userId;
-                                if (userId) {
-                                    displayProfile(userId);
-                                }
-                            });
-                        });
-
-                        // Follow button for feed items
-                        const followBtn = feedItem.querySelector('.follow-btn');
-                        if (postData.userId === currentUser.uid) {
-                            followBtn.classList.add('hidden'); // Hide follow button for own posts
-                        } else {
-                            followBtn.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                handleFollowToggle(postData.userId, followBtn);
-                            });
-                            // Update initial state of follow button for feed item
-                            updateFollowButtonInSearch(followBtn, postData.userId);
-                        }
-
-                        // Options dropdown
-                        const optionsButton = feedItem.querySelector('.post-options-button');
-                        const optionsDropdown = feedItem.querySelector('.options-dropdown');
-                        optionsButton.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            optionsDropdown.classList.toggle('visible');
-                        });
-                        feedItem.addEventListener('click', (e) => {
-                            if (!optionsDropdown.contains(e.target) && !optionsButton.contains(e.target)) {
-                                optionsDropdown.classList.remove('visible');
-                            }
-                        });
-
-
-                        feedCarousel.appendChild(feedItem);
-                    });
+                if (snapshot.empty && lastVisibleFeedPost) {
+                    // All posts fetched, loop back to beginning
+                    lastVisibleFeedPost = null;
+                    feedScreenEndMessage.classList.remove('hidden');
+                    console.log("No more new feed posts, resetting feed to beginning.");
+                    await fetchFeedPosts(); // Fetch from start again
+                    return;
                 }
+                if (snapshot.empty && !lastVisibleFeedPost) {
+                     feedCarousel.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the feed.</p>';
+                     return;
+                }
+
+                snapshot.docs.forEach(doc => {
+                    feedCarousel.appendChild(createPostCard(doc.data(), 'feed'));
+                });
+
+                lastVisibleFeedPost = snapshot.docs[snapshot.docs.length - 1];
+
             } catch (error) {
                 console.error("Error fetching feed posts:", error);
                 feedCarousel.innerHTML = '<p class="text-center message error mt-15">Error loading feed.</p>';
             } finally {
-                hideLoader();
+                feedScreenLoader.classList.add('hidden');
             }
         }
+
+        feedCarousel.addEventListener('scroll', () => {
+            // Check if user is near the end of the scrollable content
+            if (feedCarousel.scrollTop + feedCarousel.clientHeight >= feedCarousel.scrollHeight - 100) { // 100px buffer
+                if (!fetchingPosts && currentScreen === 'feed-screen') {
+                    fetchFeedPosts();
+                }
+            }
+        });
 
 
         // --- Monetization & Withdrawal ---
@@ -4273,6 +4533,8 @@
                 postsContainer.innerHTML = ''; // Clear feed
                 lastVisiblePost = null; // Reset for next login
                 currentProfileUserId = null; // Reset profile
+                viewedPosts.clear(); // Clear viewed posts for session
+                sessionStorage.removeItem('viewedPosts');
                 hideLoader();
                 switchScreen('home-screen'); // Revert to initial state
                 window.location.reload(); // Hard reload to ensure full reset
@@ -4378,14 +4640,18 @@
 
         // User list modal (Followers/Following)
         statFollowersCount.addEventListener('click', () => {
-            if (currentProfileUserId === currentUser.uid) { // Only allow viewing for own profile
+            if (currentUser && currentProfileUserId === currentUser.uid) { // Only allow viewing for own profile
                 showUserList('Followers', currentUser.followers);
+            } else if (!currentUser) {
+                alert('Please log in to see followers.');
             }
         });
 
         statFollowingCount.addEventListener('click', () => {
-            if (currentProfileUserId === currentUser.uid) { // Only allow viewing for own profile
+            if (currentUser && currentProfileUserId === currentUser.uid) { // Only allow viewing for own profile
                 showUserList('Following', currentUser.following);
+            } else if (!currentUser) {
+                alert('Please log in to see who you are following.');
             }
         });
 
@@ -4437,7 +4703,10 @@
                             } else {
                                 // For 'Follow'/'Following'
                                 updateFollowButtonInSearch(actionButton, user.uid); // Re-use search update logic
-                                actionButton.addEventListener('click', () => handleFollowToggle(user.uid, actionButton));
+                                actionButton.addEventListener('click', (e) => {
+                                    e.stopPropagation(); // Prevent opening profile when clicking button
+                                    handleFollowToggle(user.uid, actionButton);
+                                });
                             }
                         }
 
@@ -4554,6 +4823,19 @@
                 mainAppContent.classList.add('hidden');
             }
             // The onAuthStateChanged listener at the top handles subsequent logic for logged-in users.
+        });
+
+        // Close dropdown if clicked outside anywhere on document
+        document.addEventListener('click', (e) => {
+            document.querySelectorAll('.options-dropdown').forEach(dropdown => {
+                const button = dropdown.previousElementSibling; // Assuming button is right before dropdown
+                if (dropdown.classList.contains('visible') && !dropdown.contains(e.target) && !button.contains(e.target)) {
+                    dropdown.classList.remove('visible');
+                }
+            });
+             // Close color pickers if clicked outside
+            colorPickerContainer.classList.add('hidden');
+            bioColorPickerContainer.classList.add('hidden');
         });
 
     </script>
