@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>AdSense Ad Unit</title>
+    <title>Adsterra Ad Unit</title>
     <style>
         body {
             margin: 0;
@@ -15,37 +15,96 @@
             font-family: Arial, sans-serif;
             font-size: 14px;
             text-align: center;
+            overflow: hidden; /* Prevent iframe scrollbars */
         }
         .ad-container {
             border: 1px dashed #ff00ff; /* Matches the ad placeholder border */
-            padding: 15px;
-            width: 100%; /* Example width */
-            height: 100%; /* Example height */
+            padding: 5px; /* Reduced padding for ad content */
+            width: 100%;
+            height: 100%;
             display: flex;
             flex-direction: column;
             justify-content: center;
             align-items: center;
             box-sizing: border-box;
         }
+        /* Style for ads that are not just script tags, e.g. native or direct link */
+        #container-39628927897b21d6c45567203000ccc6 {
+            width: 100%;
+            height: 100%; /* Take up available space */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1a1a2e; /* Match main background */
+        }
     </style>
 </head>
 <body>
     <div class="ad-container">
-        
-        <script type="text/javascript">
-	atOptions = {
-		'key' : 'bc56d12282cadec7b8753ae823c22319',
-		'format' : 'iframe',
-		'height' : 300,
-		'width' : 160,
-		'params' : {}
-	};
-</script>
-<script type="text/javascript" src="//www.highperformanceformat.com/bc56d12282cadec7b8753ae823c22319/invoke.js"></script>
-        -->
-        <p>Your AdSense Ad will load here.</p>
-        <p>Replace this content with your actual AdSense ad code.</p>
-        <p style="font-size: 10px; margin-top: 10px;">Recommended mobile ad sizes: 320x100, 300x250 (medium rectangle), or fluid/responsive.</p>
+        <script>
+            // Get the 'ad' parameter from the URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const adType = urlParams.get('ad');
+
+            let adCode = '';
+
+            switch (adType) {
+                case 'banner1':
+                    adCode = `
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : 'bc56d12282cadec7b8753ae823c22319',
+                                'format' : 'iframe',
+                                'height' : 300,
+                                'width' : 160,
+                                'params' : {}
+                            };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/bc56d12282cadec7b8753ae823c22319/invoke.js"><\/script>`;
+                    break;
+                case 'banner2':
+                    adCode = `
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : '7281653bd62d5d460d6daa8793f19c5e',
+                                'format' : 'iframe',
+                                'height' : 60,
+                                'width' : 468,
+                                'params' : {}
+                            };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/7281653bd62d5d460d6daa8793f19c5e/invoke.js"><\/script>`;
+                    break;
+                case 'banner3':
+                    adCode = `
+                        <script type="text/javascript">
+                            atOptions = {
+                                'key' : 'f4fd46187fcf3a252df23d7277e02fd7',
+                                'format' : 'iframe',
+                                'height' : 50,
+                                'width' : 320,
+                                'params' : {}
+                            };
+                        <\/script>
+                        <script type="text/javascript" src="//www.highperformanceformat.com/f4fd46187fcf3a252df23d7277e02fd7/invoke.js"><\/script>`;
+                    break;
+                case 'native':
+                    adCode = `
+                        <script async="async" data-cfasync="false" src="//pl26835150.profitableratecpm.com/39628927897b21d6c45567203000ccc6/invoke.js"><\/script>
+                        <div id="container-39628927897b21d6c45567203000ccc6"><\/div>`;
+                    break;
+                // Direct link ad is handled in index.html as a direct clickable link, not embedded here.
+                // case 'directlink':
+                //     adCode = `<a href="https://www.profitableratecpm.com/ekqigjxxf?key=7cc9b0386975c414c8ab9629f405b0dc" target="_blank" style="color:white; text-decoration:underline;">Click Here for Special Offer!</a>`;
+                //     break;
+                default:
+                    adCode = `<p>Ad content would load here.</p><p>Pass ?ad=banner1, banner2, banner3, or native to load specific ad.</p>`;
+            }
+
+            // Write the ad code to the iframe's document
+            document.write(adCode);
+            document.close(); // Important for dynamically written content
+        </script>
     </div>
 </body>
 </html>
