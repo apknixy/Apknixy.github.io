@@ -71,14 +71,14 @@
         #app-container {
             display: flex;
             flex-direction: column;
-            width: 100%; /* Take full width of screen */
+            width: 100vw; /* Take full width of viewport */
             max-width: 420px; /* Max width for mobile optimization */
             margin: 0 auto; /* Center on larger screens */
             height: 100vh; /* Full viewport height */
             border: 1px solid var(--border-color-main); /* Visual border for mobile frame */
             box-shadow: 0 0 20px var(--shadow-color);
             position: relative;
-            overflow: hidden;
+            overflow: hidden; /* Ensure content within is scrolled, not the container itself */
         }
 
         /* Fixed Header */
@@ -90,13 +90,12 @@
             align-items: center;
             border-bottom: 1px solid var(--border-color-main);
             z-index: 100;
-            position: fixed; /* Fixed position */
+            position: fixed; /* Fixed position relative to viewport */
             top: 0;
             width: 100%;
             max-width: 420px; /* Match app container max-width */
             left: 50%;
             transform: translateX(-50%);
-            height: 60px; /* Explicit height for header */
         }
 
         .app-logo {
@@ -142,7 +141,7 @@
             transform: scale(1.1);
         }
 
-        /* Pure CSS Icons (No Emojis, No Images) */
+        /* Pure CSS Icons (No Emojis, No Images) - REFINED */
         /* Bell Icon */
         .icon-bell {
             position: relative;
@@ -150,10 +149,9 @@
             height: 20px;
             display: inline-block;
             vertical-align: middle;
-            background: currentColor; /* Use currentColor for dynamic color */
+            background: currentColor;
             border-radius: 50% 50% 0 0 / 100% 100% 0 0;
-            box-shadow: 0 2px 0 currentColor,
-                        inset 0 -2px 0 currentColor;
+            box-shadow: 0 2px 0 currentColor, inset 0 -2px 0 currentColor;
             transform: translateY(2px);
         }
         .icon-bell::before {
@@ -208,10 +206,8 @@
             border: 2px solid currentColor;
             border-top-color: transparent;
             border-radius: 50%;
+            animation: spin 1s infinite linear;
             position: relative;
-        }
-        .icon-refresh.spinning {
-            animation: spin 1s linear infinite;
         }
         .icon-refresh::before {
             content: '';
@@ -231,13 +227,14 @@
             100% { transform: rotate(360deg); }
         }
 
+        /* Main content area */
         main {
             flex-grow: 1;
             overflow-y: auto; /* Make main content scrollable */
             padding: 15px;
             background-color: var(--bg-color-lighter);
-            margin-top: 60px; /* Height of header */
-            margin-bottom: 60px; /* Height of footer */
+            margin-top: 60px; /* Offset for fixed header */
+            margin-bottom: 60px; /* Offset for fixed footer */
             position: relative;
             -webkit-overflow-scrolling: touch; /* Smooth scrolling on iOS */
         }
@@ -251,7 +248,7 @@
             align-items: center;
             border-top: 1px solid var(--border-color-main);
             z-index: 100;
-            position: fixed; /* Fixed position */
+            position: fixed; /* Fixed position relative to viewport */
             bottom: 0;
             width: 100%;
             max-width: 420px; /* Match app container max-width */
@@ -269,7 +266,6 @@
             cursor: pointer;
             transition: color 0.2s ease;
             text-decoration: none;
-            flex: 1; /* Distribute items evenly */
         }
         .nav-item:hover, .nav-item.active {
             color: var(--highlight-color-main);
@@ -279,7 +275,7 @@
             margin-bottom: 3px;
         }
 
-        /* Pure CSS Nav Icons */
+        /* Pure CSS Nav Icons - REFINED */
         .icon-home {
             width: 20px;
             height: 20px;
@@ -396,7 +392,7 @@
             transform: translateX(-50%);
         }
 
-        /* Post Action Icons */
+        /* Post Action Icons - REFINED */
         .icon-heart { /* Heart */
             display: inline-block;
             width: 18px;
@@ -567,6 +563,7 @@
             position: relative;
             overflow: hidden;
             display: inline-block; /* For vertical alignment */
+            vertical-align: middle;
         }
         .icon-image::before { /* Mountain 1 */
             content: '';
@@ -607,6 +604,7 @@
             border-radius: 3px;
             position: relative;
             display: inline-block;
+            vertical-align: middle;
         }
         .icon-youtube-embed::before {
             content: '';
@@ -629,6 +627,7 @@
             position: relative;
             transform: rotate(15deg); /* Slight tilt */
             display: inline-block;
+            vertical-align: middle;
         }
         .icon-color-palette::before { /* Thumb hole */
             content: '';
@@ -652,7 +651,7 @@
             box-shadow: 8px 0 var(--highlight-color-main), 4px 10px var(--text-color-light);
         }
 
-        /* Side Menu Icons */
+        /* Side Menu Icons - REFINED */
         .icon-dark-mode { /* Half-moon/Sun */
             width: 20px;
             height: 20px;
@@ -804,7 +803,7 @@
             overflow: hidden;
         }
         .icon-dollar::before {
-            content: 'S'; /* Simple S-like shape for dollar */
+            content: '$'; /* Simple S-like shape for dollar */
             position: absolute;
             font-weight: bold;
             font-size: 18px;
@@ -1025,11 +1024,14 @@
             padding: 20px;
             background-color: var(--bg-color-lighter);
             border-radius: 8px;
-            margin: auto; /* Centers the auth screen within app-container */
+            margin: 20px auto;
             max-width: 400px;
             width: 90%;
             text-align: center;
-            /* No need for position:relative or transforms here if margin:auto is used inside flex container */
+            position: absolute; /* Position within app-container */
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
         }
         #auth-screen h2 {
             color: var(--highlight-color-main);
@@ -1553,14 +1555,16 @@
 
         /* Feed Screen (Reels/Shorts like) */
         #feed-screen {
-            height: calc(100vh - 120px); /* Full height between header and footer */
-            position: absolute; /* Take full space within main */
+            height: 100%; /* Take full height of main */
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
+            display: flex; /* Use flex to push loader to bottom */
+            flex-direction: column;
         }
         #feed-carousel {
-            height: 100%;
+            flex-grow: 1; /* Take all available space */
             overflow-y: scroll;
             scroll-snap-type: y mandatory;
             -webkit-overflow-scrolling: touch;
@@ -1573,26 +1577,11 @@
             display: flex;
             flex-direction: column;
             justify-content: space-between;
-            position: relative; /* For the gradient overlay */
         }
-        .feed-item::before { /* Dark gradient overlay to improve text readability */
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 50%, rgba(0,0,0,0.2) 100%);
-            z-index: 1; /* Above content, below text/actions */
-            pointer-events: none; /* Allow clicks to pass through */
-        }
-
         .feed-item .post-content {
             flex-grow: 1;
             overflow-y: auto; /* Allow post content to scroll if long */
             max-height: calc(100% - 150px); /* Adjust max-height for content */
-            z-index: 2; /* Above gradient */
-            position: relative;
         }
         .feed-item .bottom-area {
             display: flex;
@@ -1600,20 +1589,16 @@
             align-items: flex-end;
             margin-top: 15px;
             flex-shrink: 0; /* Prevent from shrinking */
-            z-index: 2; /* Above gradient */
-            position: relative;
         }
         .feed-item .author-info-feed {
             display: flex;
-            flex-direction: column; /* Stack avatar and text */
-            align-items: flex-start; /* Align to left */
+            align-items: center;
             max-width: 60%; /* Limit width to leave space for actions */
         }
         .feed-item .author-info-feed .post-author-avatar {
             width: 50px;
             height: 50px;
-            margin-right: 0; /* No right margin */
-            margin-bottom: 5px; /* Space below avatar */
+            margin-right: 10px;
         }
         .feed-item .author-info-feed .details {
             display: flex;
@@ -1626,7 +1611,6 @@
             overflow: hidden;
             text-overflow: ellipsis;
             font-size: 16px;
-            color: var(--text-color-main); /* Ensure visibility over dark background */
         }
         .feed-item .author-info-feed .follow-btn {
             margin-top: 5px;
@@ -1641,33 +1625,23 @@
             gap: 15px;
             align-items: center;
             flex-shrink: 0;
-            color: var(--text-color-main); /* Ensure icons are visible */
         }
         .feed-item .actions-sidebar .action-item {
             flex-direction: column; /* Stack icon and count */
             font-size: 14px;
-            color: inherit; /* Inherit color from parent */
         }
         .feed-item .actions-sidebar .action-item .icon {
             font-size: 28px; /* Larger icons for feed */
             margin-bottom: 5px;
             margin-right: 0;
-            color: inherit;
         }
         .feed-item .actions-sidebar .post-options-button {
             font-size: 28px;
-            color: inherit;
         }
         .feed-item .actions-sidebar .options-dropdown {
              top: auto;
              bottom: 40px; /* Position above button */
              right: 0;
-        }
-        .feed-item .emoji-reactions { /* Move emoji reactions here for feed style */
-            border-top: none;
-            padding-top: 0;
-            margin-top: 15px;
-            justify-content: center; /* Center align emoji reactions in feed */
         }
 
 
@@ -1949,23 +1923,6 @@
             background-color: var(--bg-color-lighter);
         }
 
-        /* Earn Points Modal */
-        #earn-points-modal .earn-points-info {
-            background-color: var(--bg-color-darker);
-            padding: 15px;
-            border-radius: 8px;
-            margin-bottom: 20px;
-            text-align: left;
-        }
-        #earn-points-modal .earn-points-info h3 {
-            color: var(--highlight-color-main);
-            margin-bottom: 10px;
-        }
-        #earn-points-modal .earn-points-info p {
-            margin-bottom: 8px;
-            line-height: 1.5;
-        }
-
 
         /* Utility classes */
         .hidden { display: none !important; }
@@ -2104,10 +2061,10 @@
                     </div>
                     <div class="profile-posts-toggle">
                         <button id="my-posts-tab" class="active">My Posts</button>
-                        <button id="reposts-tab">Reposts</button>
+                        <button id="reposts-tab">Reposts (Coming Soon)</button>
                     </div>
                     <div id="profile-posts-container">
-                        <!-- User's posts/reposts will be loaded here -->
+                        <!-- User's posts will be loaded here -->
                     </div>
                      <div class="text-center mt-15 mb-15">
                         <span id="profile-feed-loader" class="loader hidden"></span>
@@ -2314,29 +2271,6 @@
             </div>
         </div>
 
-        <!-- Earn Points Information Modal -->
-        <div id="earn-points-modal" class="modal-overlay hidden">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h2>Earn Points</h2>
-                    <button class="modal-close-button">&times;</button>
-                </div>
-                <div class="earn-points-info">
-                    <h3>How to Earn Points on AddMint:</h3>
-                    <p>Points can be earned through various activities within the app. These points can then be converted into rewards or used for exclusive features.</p>
-                    <p><strong>Ways to Earn Points (Planned):</strong></p>
-                    <ul>
-                        <li><strong>Daily Check-in:</strong> Log in every day to earn bonus points.</li>
-                        <li><strong>Engagement:</strong> Earn points for likes, comments, and shares on your posts.</li>
-                        <li><strong>Content Creation:</strong> High-quality, engaging posts can earn you extra points.</li>
-                        <li><strong>Achievements:</strong> Complete specific in-app challenges or milestones.</li>
-                        <li><strong>Referrals:</strong> Invite friends to AddMint and earn points when they join.</li>
-                    </ul>
-                    <p>This feature is currently under development to ensure a fair and rewarding experience for all users!</p>
-                </div>
-            </div>
-        </div>
-
 
         <!-- Side Menu -->
         <div id="side-menu">
@@ -2346,7 +2280,8 @@
                 <li><a href="https://www.youtube.com/@add_mint" target="_blank"><span class="icon icon-youtube"></span> AddMint YouTube</a></li>
                 <li><a href="https://www.instagram.com/addmint__" target="_blank"><span class="icon icon-instagram"></span> AddMint Instagram</a></li>
                 <li><button id="show-monetization-from-menu"><span class="icon icon-monetize"></span> Monetization</button></li>
-                <li><button id="earn-points-button-menu"><span class="icon icon-dollar"></span> Earn Points</button></li>
+                <li><button id="earn-points-button"><span class="icon icon-dollar"></span> Earn Points (Coming Soon)</button></li>
+                <!-- Add more menu items here as needed -->
             </ul>
             <button class="logout-button" id="logout-button"><span class="icon icon-logout"></span> Logout</button>
         </div>
@@ -2445,12 +2380,10 @@
         const languageModal = document.getElementById('language-modal');
         const languageList = document.getElementById('language-list');
 
-        const earnPointsModal = document.getElementById('earn-points-modal');
-
 
         // Navigation
         const navItems = document.querySelectorAll('.nav-item');
-        const screens = document.querySelectorAll('.app-screen');
+        const appScreens = document.querySelectorAll('.app-screen'); // Renamed to avoid conflict with `screens` variable
 
         // Header
         const menuButton = document.getElementById('menu-button');
@@ -2465,7 +2398,7 @@
         const toggleDataSaverButton = document.getElementById('toggle-data-saver-button');
         const dataSaverStatus = document.getElementById('data-saver-status');
         const showMonetizationFromMenu = document.getElementById('show-monetization-from-menu');
-        const earnPointsButtonMenu = document.getElementById('earn-points-button-menu');
+        const earnPointsButton = document.getElementById('earn-points-button');
 
 
         // Home Screen
@@ -2546,10 +2479,8 @@
         let dataSaverMode = localStorage.getItem('dataSaverMode') === 'on';
         let darkMode = localStorage.getItem('darkMode') !== 'off'; // Default to on if not set to off
 
-        // Keep track of viewed posts in the current session to ensure unique view counts
+        // This Set will store post IDs that have already been counted for a view in the current session
         const viewedPosts = new Set(JSON.parse(sessionStorage.getItem('viewedPosts') || '[]'));
-        // Keep track of view timers for Intersection Observer
-        const viewTimers = new Map();
 
 
         // Initialize UI based on saved preferences
@@ -2585,6 +2516,8 @@
 
         function showModal(modalElement, closeBtn = null) {
             modalElement.classList.add('visible');
+            // Ensure modal is centered even if its content size changes
+            modalElement.style.display = 'flex'; // Or block if already flex-parent
             const closeButton = closeBtn || modalElement.querySelector('.modal-close-button');
             if (closeButton) {
                 closeButton.onclick = () => hideModal(modalElement);
@@ -2593,6 +2526,7 @@
 
         function hideModal(modalElement) {
             modalElement.classList.remove('visible');
+            modalElement.style.display = 'none'; // Hide completely
             const closeButton = modalElement.querySelector('.modal-close-button');
             if (closeButton) {
                 closeButton.onclick = null;
@@ -2600,7 +2534,7 @@
         }
 
         function switchScreen(screenId) {
-            screens.forEach(screen => {
+            appScreens.forEach(screen => { // Using appScreens
                 screen.classList.add('hidden');
             });
             document.getElementById(screenId).classList.remove('hidden');
@@ -2616,13 +2550,11 @@
 
             // Specific actions for screens
             if (screenId === 'home-screen') {
-                if (postsContainer.innerHTML === '' || !lastVisiblePost) { // Auto-load if empty or reset state
-                    fetchPosts(true); // Fetch from start
-                }
+                if (postsContainer.innerHTML === '') fetchPosts(true); // Always refresh home on switch
             } else if (screenId === 'profile-screen') {
-                if (currentUser && currentProfileUserId !== currentUser.uid) {
+                if (currentUser) {
                      displayProfile(currentUser.uid); // Always show current user's profile if navigating to 'profile' tab
-                } else if (!currentUser) { // If somehow navigated to profile without being logged in
+                } else { // If somehow navigated to profile without being logged in
                      switchScreen('home-screen'); // Redirect home
                 }
             } else if (screenId === 'search-screen') {
@@ -2630,9 +2562,7 @@
                 searchResults.innerHTML = '';
                 noSearchResults.classList.add('hidden');
             } else if (screenId === 'feed-screen') {
-                 if (feedCarousel.innerHTML === '' || !lastVisibleFeedPost) {
-                     fetchFeedPosts();
-                 }
+                 fetchFeedPosts(true); // Always refresh feed on switch
             }
             // Close side menu if open
             sideMenu.classList.remove('visible');
@@ -2710,12 +2640,14 @@
                         }
                     } else {
                         // New user, create document in Firestore
+                        // IMPORTANT: The rules now require `username` and `name` to be empty on creation.
+                        // Client-side must set them empty initially.
                         await userDocRef.set({
                             uid: user.uid,
                             email: user.email,
                             createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-                            username: '', // Will be set in edit profile
-                            name: '', // Will be set in edit profile
+                            username: '', // Must be empty as per security rules
+                            name: '', // Must be empty as per security rules
                             bio: '',
                             profilePicUrl: 'https://via.placeholder.com/100', // Default avatar
                             postCount: 0,
@@ -2773,8 +2705,12 @@
             showLoader('Logging in...');
             try {
                 const userCredential = await auth.signInWithEmailAndPassword(email, password);
-                // The onAuthStateChanged listener handles the email verification check.
-                // If the userCredential is valid, onAuthStateChanged will be triggered.
+                if (!userCredential.user.emailVerified) {
+                    showMessage(authMessage, 'Please verify your email before logging in.', 'error');
+                    auth.signOut(); // Immediately sign out unverified user
+                } else {
+                    showMessage(authMessage, 'Logged in successfully!', 'success');
+                }
             } catch (error) {
                 console.error("Login error:", error);
                 let msg = 'Login failed. Invalid credentials.';
@@ -2834,8 +2770,7 @@
             try {
                 await auth.sendPasswordResetEmail(email);
                 showMessage(authMessage, 'Password reset email sent! Check your inbox.', 'success', 5000);
-            }
-            catch (error) {
+            } catch (error) {
                 console.error("Password reset error:", error);
                 let msg = 'Failed to send password reset email.';
                 if (error.code === 'auth/user-not-found') msg = 'No user found with this email.';
@@ -2882,10 +2817,7 @@
                     updateFollowButton(profileData.followers);
                 }
 
-                // Default to 'My Posts' tab when visiting a profile
-                myPostsTab.classList.add('active');
-                repostsTab.classList.remove('active');
-                await fetchProfilePosts(userId, 'myPosts'); // Fetch current user's posts or other user's posts
+                await fetchProfilePosts(userId); // Fetch posts for the current profile
                 switchScreen('profile-screen');
 
             } catch (error) {
@@ -2911,8 +2843,13 @@
             }
         }
 
+        // Fix for Edit Profile button not responding
         editProfileButton.addEventListener('click', () => {
             // Populate modal with current user data
+            if (!currentUser) {
+                alert('User data not loaded. Please try again or log in.');
+                return;
+            }
             editUsernameInput.value = currentUser.username;
             editDisplayNameInput.value = currentUser.name;
             editBioTextarea.value = currentUser.bio;
@@ -3115,23 +3052,16 @@
             }
         });
 
-        // --- Home Feed Logic ---
-        let currentHomePostBatch = []; // To store all posts fetched so far for the home loop
-        let homeLoopIndex = 0; // Current index in the shuffled loop for home feed
-
+        // --- Post Handling & Display ---
         async function fetchPosts(reset = false) {
-            if (fetchingPosts && !reset) return; // Prevent re-fetch unless explicitly reset
+            if (fetchingPosts) return;
             fetchingPosts = true;
             feedLoader.classList.remove('hidden');
             feedEndMessage.classList.add('hidden');
 
-            const now = new Date(); // Current time for expiry check
-
             let query = db.collection('posts')
-                .where('expiryTime', '>', now) // Filter out expired posts
-                .orderBy('expiryTime', 'asc') // Order by expiry to prioritize non-expired
-                .orderBy('timestamp', 'desc') // Then by timestamp for recency
-                .limit(10);
+                .orderBy('timestamp', 'desc')
+                .limit(10); // Fetch 10 posts at a time
 
             if (lastVisiblePost && !reset) {
                 query = query.startAfter(lastVisiblePost);
@@ -3139,106 +3069,55 @@
 
             try {
                 const snapshot = await query.get();
-
                 if (reset) {
                     postsContainer.innerHTML = '';
-                    currentHomePostBatch = [];
-                    lastVisiblePost = null;
-                    homeLoopIndex = 0;
                 }
 
-                if (snapshot.empty && !lastVisiblePost) {
-                    // No posts at all, or all posts have been fetched and no new ones.
-                    // If no posts at all, show message. If already looped, will restart.
-                    if (currentHomePostBatch.length === 0) {
-                        postsContainer.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the home feed. Be the first to post!</p>';
-                    }
-                    feedLoader.classList.add('hidden');
+                if (snapshot.empty && !reset && lastVisiblePost) {
+                    // All posts fetched, loop back to beginning
+                    lastVisiblePost = null;
+                    feedEndMessage.classList.remove('hidden');
+                    console.log("No more new posts, resetting home feed to beginning.");
+                    await fetchPosts(true); // Fetch from start again
+                    return;
+                }
+                if (snapshot.empty && reset && !lastVisiblePost) {
+                    postsContainer.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the home feed.</p>';
                     return;
                 }
 
-                if (snapshot.empty && lastVisiblePost) {
-                    // All available posts fetched, loop back to the beginning if there are posts in currentHomePostBatch
-                    if (currentHomePostBatch.length > 0) {
-                        feedEndMessage.classList.remove('hidden');
-                        console.log("No more new posts, looping home feed to beginning.");
-                        await populateHomeFeedFromLoop();
-                        return;
+
+                // Mix in horizontal content and suggested users
+                const allFetchedPosts = snapshot.docs.map(doc => doc.data());
+                let currentPostIndex = 0;
+                let horizontalSectionCount = 0;
+                let suggestedUserSectionCount = 0;
+
+                while (currentPostIndex < allFetchedPosts.length) {
+                    const postData = allFetchedPosts[currentPostIndex];
+                    postsContainer.appendChild(createPostCard(postData, 'home')); // Pass type for view observer
+                    currentPostIndex++;
+
+                    // Interleave horizontal content every 5 posts, max 2 sections initially
+                    if (currentPostIndex % 5 === 0 && horizontalSectionCount < 2) {
+                        await appendHorizontalPosts();
+                        horizontalSectionCount++;
+                    }
+                    // Interleave suggested users every 3 posts (different from horizontal), max 2 sections initially
+                    if (currentPostIndex % 3 === 0 && suggestedUserSectionCount < 2) {
+                         await appendSuggestedUsers();
+                         suggestedUserSectionCount++;
                     }
                 }
-
-                // Add newly fetched posts to currentHomePostBatch
-                snapshot.docs.forEach(doc => {
-                    const postData = doc.data();
-                    currentHomePostBatch.push(postData);
-                });
 
                 lastVisiblePost = snapshot.docs[snapshot.docs.length - 1];
 
-                // Populate the feed from the combined batch, ensuring mix-ins
-                await populateHomeFeedFromBatch();
-
             } catch (error) {
-                console.error("Error fetching home posts:", error);
-                postsContainer.innerHTML = '<p class="text-center message error mt-15">Error loading home feed posts.</p>';
+                console.error("Error fetching posts:", error);
+                showMessage(feedEndMessage, 'Error loading home feed posts.', 'error', 0); // Show persistent error
             } finally {
                 fetchingPosts = false;
                 feedLoader.classList.add('hidden');
-            }
-        }
-
-        let homeHorizontalSectionCount = 0;
-        let homeSuggestedUserSectionCount = 0;
-
-        async function populateHomeFeedFromBatch() {
-            if (currentHomePostBatch.length === 0) return;
-
-            // Use a temporary shuffled array for current display to ensure variety in loop
-            let tempShuffledBatch = [...currentHomePostBatch].sort(() => 0.5 - Math.random());
-
-            for (let i = 0; i < tempShuffledBatch.length; i++) {
-                const postData = tempShuffledBatch[i];
-                postsContainer.appendChild(createPostCard(postData, 'home'));
-
-                // Interleave horizontal content every 5th post
-                if (i > 0 && (i + 1) % 5 === 0 && homeHorizontalSectionCount < 2) {
-                    await appendHorizontalPosts();
-                    homeHorizontalSectionCount++;
-                }
-                // Interleave suggested users every 3rd post (different from horizontal)
-                if (i > 0 && (i + 1) % 3 === 0 && homeSuggestedUserSectionCount < 2) {
-                    await appendSuggestedUsers();
-                    homeSuggestedUserSectionCount++;
-                }
-            }
-        }
-
-        async function populateHomeFeedFromLoop() {
-            // This is called when the end of fetched posts is reached.
-            // It uses the already loaded `currentHomePostBatch` and shuffles/loops it.
-            if (currentHomePostBatch.length === 0) {
-                 // No posts at all, reset and try to fetch.
-                 fetchPosts(true);
-                 return;
-            }
-
-            let loopCount = 0;
-            const maxLoopIterations = 3; // To prevent infinite loops in display if no new posts
-            while (loopCount < maxLoopIterations) {
-                let shuffledSubset = [...currentHomePostBatch].sort(() => 0.5 - Math.random());
-                for (let i = 0; i < shuffledSubset.length; i++) {
-                    const postData = shuffledSubset[i];
-                    postsContainer.appendChild(createPostCard(postData, 'home'));
-
-                    // Re-add horizontal/suggested sections in loop
-                    if (i > 0 && (i + 1) % 5 === 0) {
-                        await appendHorizontalPosts();
-                    }
-                    if (i > 0 && (i + 1) % 3 === 0) {
-                        await appendSuggestedUsers();
-                    }
-                }
-                loopCount++;
             }
         }
 
@@ -3253,12 +3132,10 @@
             const carousel = horizontalSection.querySelector('.horizontal-posts-carousel');
 
             try {
-                // Fetch random or trending posts for horizontal display (filter expired)
-                const now = new Date();
+                // Fetch random or trending posts for horizontal display
                 const trendingSnapshot = await db.collection('posts')
-                    .where('expiryTime', '>', now)
-                    .orderBy('views', 'desc')
-                    .limit(8)
+                    .orderBy('views', 'desc') // Example: order by views for trending
+                    .limit(8) // Get 8 posts
                     .get();
 
                 if (!trendingSnapshot.empty) {
@@ -3344,32 +3221,35 @@
                 const postId = postCard.dataset.postId;
                 const isMonetized = postCard.dataset.isMonetized === 'true';
 
-                if (entry.isIntersecting) {
-                    if (!viewedPosts.has(postId) && !viewTimers.has(postId)) {
-                        // Start a timer. If still intersecting after 4 seconds, increment view.
-                        const timer = setTimeout(() => {
-                            if (viewTimers.has(postId) && viewTimers.get(postId) === timer) { // Check if timer is still valid
+                // Store timers
+                if (!postCard.__viewTimer) postCard.__viewTimer = null;
+
+                if (entry.isIntersecting && !viewedPosts.has(postId)) {
+                    // Start timer if not already running
+                    if (!postCard.__viewTimer) {
+                        postCard.__viewTimer = setTimeout(() => {
+                            // Check again if still intersecting before incrementing
+                            if (viewObserver.root.contains(postCard) && entry.intersectionRatio >= 0.7) { // 70% visible
                                 incrementView(postId, postCard, isMonetized);
                                 viewedPosts.add(postId);
                                 sessionStorage.setItem('viewedPosts', JSON.stringify(Array.from(viewedPosts)));
-                                viewTimers.delete(postId); // Clean up timer reference
-                                // No need to unobserve if we only count once per session
+                                viewObserver.unobserve(postCard); // Stop observing once counted
+                                postCard.__viewTimer = null; // Clear timer reference
                             }
                         }, 4000); // 4 seconds
-                        viewTimers.set(postId, timer);
                     }
-                } else {
-                    // Post is no longer intersecting, clear any pending timer
-                    if (viewTimers.has(postId)) {
-                        clearTimeout(viewTimers.get(postId));
-                        viewTimers.delete(postId);
+                } else if (!entry.isIntersecting) {
+                    // If not intersecting, clear any active timer
+                    if (postCard.__viewTimer) {
+                        clearTimeout(postCard.__viewTimer);
+                        postCard.__viewTimer = null;
                     }
                 }
             });
         }, { threshold: 0.7 }); // Trigger when 70% of the post is visible
 
         // Attach observer to new post cards
-        function attachViewObserverToPost(postCard) {
+        function attachViewObserver(postCard) {
             if (currentUser && !viewedPosts.has(postCard.dataset.postId)) {
                 viewObserver.observe(postCard);
             }
@@ -3386,14 +3266,7 @@
             }
         });
 
-        refreshFeedButton.addEventListener('click', () => {
-            refreshFeedButton.querySelector('.icon-refresh').classList.add('spinning');
-            setTimeout(() => {
-                refreshFeedButton.querySelector('.icon-refresh').classList.remove('spinning');
-            }, 2000); // Spin for 2 seconds
-
-            fetchPosts(true); // Clear and re-fetch home feed
-        });
+        refreshFeedButton.addEventListener('click', () => fetchPosts(true));
 
         function createPostCard(post, type = 'home') {
             const postCard = document.createElement('div');
@@ -3405,12 +3278,89 @@
                  postCard.classList.add('feed-item');
             }
 
+            const postHeader = document.createElement('div');
+            postHeader.className = 'post-header';
+            postHeader.innerHTML = `
+                <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${post.userId}">
+                <div class="post-author-info">
+                    <a href="#" class="author-link" data-user-id="${post.userId}">@${post.username}</a>
+                    <span>${timeSince(post.timestamp.toDate())} ago</span>
+                </div>
+                ${type === 'home' || type === 'profile' ? `
+                <div class="post-options">
+                    <button class="post-options-button">&#x22EE;</button>
+                    <div class="options-dropdown">
+                        ${currentUser && currentUser.uid === post.userId ?
+                            `<button class="delete-post-btn">Delete Post</button>` :
+                            `<button class="report-post-btn">Report Post</button>`
+                        }
+                        <button class="repost-post-btn">Repost (Coming Soon)</button>
+                        <button class="translate-language-btn">Change Translate Language (Placeholder)</button>
+                    </div>
+                </div>` : ''}
+            `;
+
+            const postContent = document.createElement('div');
+            postContent.className = 'post-content';
+            postContent.innerHTML = parseRichText(post.content); // Render rich text content
+
+            // Inject AdSense placeholder if monetized
+            if (post.isMonetized && !dataSaverMode) {
+                const contentLength = post.content.length;
+                let adCount = 0;
+                if (contentLength > 500) adCount = 1;
+                if (contentLength > 1000) adCount = 2;
+                if (contentLength > 1500) adCount = 3;
+                if (contentLength > 2000) adCount = 4;
+
+                // Simple content splitting for ad injection
+                let contentBlocks = post.content.split(/\r?\n\r?\n|\<br\s*?\/?\>/i); // Split by double newlines or <br> for 'paragraphs'
+                let newContentHtml = [];
+                let injectedAds = 0;
+
+                for (let i = 0; i < contentBlocks.length; i++) {
+                    newContentHtml.push(parseRichText(contentBlocks[i])); // Parse rich text for each block
+                    if (injectedAds < adCount && (i + 1) % Math.ceil(contentBlocks.length / (adCount + 1)) === 0 && contentBlocks[i].length > 50) { // Only inject if block has some content
+                        newContentHtml.push(`
+                            <div class="adsense-ad">
+                                <iframe src="ads.html" frameborder="0" style="width:100%; height:120px; border:none;" scrolling="no"></iframe>
+                                <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Ad provided by AdSense. Recommended size: 320x100 or fluid.</p>
+                            </div>
+                        `);
+                        injectedAds++;
+                    }
+                }
+                postContent.innerHTML = newContentHtml.join('<br><br>'); // Join with line breaks to mimic paragraphs
+            }
+
             const likeStatus = post.likes && currentUser && post.likes.includes(currentUser.uid) ? 'liked' : '';
             const likesCount = formatNumber(post.likesCount || 0);
             const commentCount = formatNumber(post.commentCount || 0);
             const viewsCount = formatNumber(post.views || 0);
 
-            // Generate emoji reactions HTML
+            let postActionsHtml = `
+                <div class="action-item like-post-btn">
+                    <span class="icon icon-heart ${likeStatus}"></span>
+                    <span class="count" data-count-type="likes">${likesCount}</span>
+                </div>
+                <div class="action-item comment-post-btn">
+                    <span class="icon icon-comment"></span>
+                    <span class="count" data-count-type="comments">${commentCount}</span>
+                </div>
+                <div class="action-item views-post-btn">
+                    <span class="icon icon-views"></span>
+                    <span class="count" data-count-type="views">${viewsCount}</span>
+                </div>
+                <div class="action-item sound-post-btn">
+                    <span class="icon icon-sound"></span>
+                    <span>Speak</span>
+                </div>
+                <div class="action-item translate-post-btn">
+                    <span class="icon icon-translate"></span>
+                    <span>Translate</span>
+                </div>
+            `;
+
             let emojiReactionsHtml = '';
             const popularEmojis = ['👍', '😂', '😍', '🔥', '😢', '💯'];
             const currentReactions = post.reactions || {};
@@ -3423,66 +3373,29 @@
                     </span>`;
             });
 
-            // Common header for both home/profile and feed
-            const commonHeaderHtml = `
-                <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${post.userId}">
-                <div class="post-author-info">
-                    <a href="#" class="author-link" data-user-id="${post.userId}">@${post.username}</a>
-                    <span>${timeSince(post.timestamp.toDate())} ago</span>
-                </div>
-            `;
-
-            // Conditional HTML structure based on 'type'
             if (type === 'home' || type === 'profile') {
-                postCard.innerHTML = `
-                    <div class="post-header">
-                        ${commonHeaderHtml}
-                        <div class="post-options">
-                            <button class="post-options-button">&#x22EE;</button>
-                            <div class="options-dropdown">
-                                ${currentUser && currentUser.uid === post.userId ?
-                                    `<button class="delete-post-btn">Delete Post</button>` :
-                                    `<button class="report-post-btn">Report Post</button>`
-                                }
-                                <button class="repost-post-btn">Repost</button>
-                                <button class="translate-language-btn">Change Translate Language</button>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="post-content"></div>
-                    <div class="post-actions">
-                        <div class="action-item like-post-btn">
-                            <span class="icon icon-heart ${likeStatus}"></span>
-                            <span class="count" data-count-type="likes">${likesCount}</span>
-                        </div>
-                        <div class="action-item comment-post-btn">
-                            <span class="icon icon-comment"></span>
-                            <span class="count" data-count-type="comments">${commentCount}</span>
-                        </div>
-                        <div class="action-item views-post-btn">
-                            <span class="icon icon-views"></span>
-                            <span class="count" data-count-type="views">${viewsCount}</span>
-                        </div>
-                        <div class="action-item sound-post-btn">
-                            <span class="icon icon-sound"></span>
-                            <span>Speak</span>
-                        </div>
-                        <div class="action-item translate-post-btn">
-                            <span class="icon icon-translate"></span>
-                            <span>Translate</span>
-                        </div>
-                    </div>
-                    <div class="emoji-reactions">
-                        ${emojiReactionsHtml}
-                    </div>
-                `;
+                const postActions = document.createElement('div');
+                postActions.className = 'post-actions';
+                postActions.innerHTML = postActionsHtml;
+                postCard.appendChild(postContent);
+                postCard.appendChild(postActions);
+
+                const emojiReactionsContainer = document.createElement('div');
+                emojiReactionsContainer.className = 'emoji-reactions';
+                emojiReactionsContainer.innerHTML = emojiReactionsHtml;
+                postCard.appendChild(emojiReactionsContainer);
+
             } else if (type === 'feed') {
                 postCard.innerHTML = `
-                    <div style="padding: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-between; position: relative; z-index: 2;">
-                        <div class="post-content" style="flex-grow: 1; overflow-y: auto; max-height: calc(100% - 150px);"></div>
+                    <div style="padding: 15px; height: 100%; display: flex; flex-direction: column; justify-content: space-between;">
+                        <div style="flex-grow: 1; overflow-y: auto;">
+                            <div class="post-content" style="height: auto; max-height: calc(100vh - 250px); overflow-y: auto;">
+                                ${parseRichText(post.content)}
+                            </div>
+                        </div>
                         <div class="bottom-area">
                             <div class="author-info-feed">
-                                <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${post.userId}">
+                                <img src="${post.authorAvatarUrl || 'https://via.placeholder.com/40'}" alt="Author Avatar" class="post-author-avatar" data-user-id="${post.userId}" style="width: 50px; height: 50px;">
                                 <div class="details">
                                     <a href="#" class="author-link" data-user-id="${post.userId}">@${post.username}</a>
                                     <button class="follow-btn"></button>
@@ -3512,95 +3425,17 @@
                                             `<button class="delete-post-btn">Delete Post</button>` :
                                             `<button class="report-post-btn">Report Post</button>`
                                         }
-                                        <button class="repost-post-btn">Repost</button>
-                                        <button class="translate-language-btn">Change Translate Language</button>
+                                        <button class="repost-post-btn">Repost (Coming Soon)</button>
+                                        <button class="translate-language-btn">Change Translate Language (Placeholder)</button>
                                     </div>
                                 </div>
                             </div>
                         </div>
-                         <div class="emoji-reactions" style="border-top: none; padding-top: 0; margin-top: 15px; z-index: 2;">
+                         <div class="emoji-reactions" style="border-top: none; padding-top: 0; margin-top: 15px;">
                             ${emojiReactionsHtml}
                         </div>
                     </div>
                 `;
-            }
-
-            const postContentElement = postCard.querySelector('.post-content');
-            if (postContentElement) {
-                postContentElement.innerHTML = parseRichText(post.content);
-            }
-
-
-            // Inject Adsterra Ads if monetized and not in data saver mode
-            if (post.isMonetized && !dataSaverMode && postContentElement) {
-                const contentLength = post.content.length;
-                let adCount = 0;
-                if (contentLength > 200) adCount = 1; // More likely to show at least one
-                if (contentLength > 500) adCount = 2;
-                if (contentLength > 1000) adCount = 3;
-                if (adCount > 0) { // Only attempt if at least one ad
-                    const originalContentHTML = postContentElement.innerHTML;
-                    const contentParagraphs = originalContentHTML.split(/<br\s*\/?>|<p>|<\/p>/i).filter(p => p.trim() !== ''); // Simple split by line breaks or paragraphs
-                    let newContentParts = [];
-                    let adsInserted = 0;
-
-                    // Available Adsterra codes to cycle through (excluding direct link for embedding)
-                    const adTemplates = [
-                        `<!-- Adsterra Ad Code 1 (Banner 160x300) -->
-                        <div class="adsense-ad" style="height:300px; width:160px; margin: 15px auto;">
-                           <iframe src="ads.html?ad=banner1" frameborder="0" scrolling="no" style="width:100%; height:100%; border:none; display:block;"></iframe>
-                           <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Sponsored Ad</p>
-                        </div>`,
-                        `<!-- Adsterra Ad Code 2 (Banner 468x60) -->
-                        <div class="adsense-ad" style="height:60px; width:100%; max-width:468px; margin: 15px auto;">
-                           <iframe src="ads.html?ad=banner2" frameborder="0" scrolling="no" style="width:100%; height:100%; border:none; display:block;"></iframe>
-                           <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Sponsored Ad</p>
-                        </div>`,
-                        `<!-- Adsterra Ad Code 3 (Banner 320x50) -->
-                        <div class="adsense-ad" style="height:50px; width:100%; max-width:320px; margin: 15px auto;">
-                           <iframe src="ads.html?ad=banner3" frameborder="0" scrolling="no" style="width:100%; height:100%; border:none; display:block;"></iframe>
-                           <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Sponsored Ad</p>
-                        </div>`,
-                         `<!-- Adsterra Ad Code 4 (Native Ad Container) -->
-                        <div class="adsense-ad" style="width:100%; min-height:100px; margin: 15px auto; border:1px dashed var(--highlight-color-secondary);">
-                           <iframe src="ads.html?ad=native" frameborder="0" scrolling="no" style="width:100%; height:100%; border:none; display:block;"></iframe>
-                           <p style="font-size:10px; color:var(--text-color-light); margin-top:5px;">Sponsored Content</p>
-                        </div>`
-                    ];
-                    // The direct link ad is separate, usually triggered by a click
-                    const directLinkAdHtml = `
-                        <p class="adsense-ad" style="margin: 15px 0; padding:10px; border:1px dashed var(--highlight-color-main); cursor:pointer;">
-                            <a href="https://www.profitableratecpm.com/ekqigjxxf?key=7cc9b0386975c414c8ab9629f405b0dc" target="_blank" style="color:var(--highlight-color-main); text-decoration:none;">
-                                Click for a Sponsored Offer!
-                            </a>
-                        </p>`;
-
-
-                    const adInsertionPoints = [];
-                    // Simple logic for insertion points
-                    if (contentParagraphs.length >= 1) adInsertionPoints.push(1);
-                    if (contentParagraphs.length >= 3 && adCount >= 2) adInsertionPoints.push(3);
-                    if (contentParagraphs.length >= 5 && adCount >= 3) adInsertionPoints.push(5);
-                    if (contentParagraphs.length >= 7 && adCount >= 4) adInsertionPoints.push(7);
-                    // Add direct link ad at a consistent point if needed
-                    if (adInsertionPoints.length > 0) adInsertionPoints.push(contentParagraphs.length + 1); // For direct link at the end
-
-
-                    let currentAdTemplateIndex = 0;
-                    for (let i = 0; i < contentParagraphs.length; i++) {
-                        newContentParts.push(contentParagraphs[i]);
-                        if (adInsertionPoints.includes(i + 1) && adsInserted < adCount) {
-                            if (i + 1 === contentParagraphs.length + 1) { // This is the direct link ad spot
-                                newContentParts.push(directLinkAdHtml);
-                            } else {
-                                newContentParts.push(adTemplates[currentAdTemplateIndex % adTemplates.length]);
-                                currentAdTemplateIndex++;
-                            }
-                            adsInserted++;
-                        }
-                    }
-                    postContentElement.innerHTML = newContentParts.join('<br><br>'); // Re-join with proper spacing
-                }
             }
 
 
@@ -3621,7 +3456,7 @@
             // Neon glow on any click on the post card
             postCard.addEventListener('click', (event) => {
                 // Ensure click doesn't trigger neon glow repeatedly or interfere with other elements
-                if (event.target.closest('.action-item, .post-options-button, .post-author-avatar, .author-link, .follow-btn, .reaction-item, .options-dropdown, .adsense-ad a')) return;
+                if (event.target.closest('.action-item, .post-options-button, .post-author-avatar, .author-link, .follow-btn, .reaction-item, .options-dropdown')) return;
                 postCard.classList.add('neon-glow');
                 setTimeout(() => {
                     postCard.classList.remove('neon-glow');
@@ -3640,7 +3475,7 @@
                     const textToSpeak = post.content.replace(/<[^>]*>/g, '').substring(0, 500); // Strip HTML, limit length
                     if ('speechSynthesis' in window) {
                         const utterance = new SpeechSynthesisUtterance(textToSpeak);
-                        utterance.lang = 'en-US'; // Default language, could be dynamic based on user preference
+                        utterance.lang = 'en-US'; // Default language, could be dynamic
                         window.speechSynthesis.speak(utterance);
                     } else {
                         alert('Text-to-speech not supported in this browser.');
@@ -3651,7 +3486,7 @@
             const translateButton = postCard.querySelector('.translate-post-btn');
             if (translateButton) {
                 translateButton.addEventListener('click', () => {
-                    alert('Translate function: This would typically call a translation API (like Google Cloud Translation) to translate the post content into your selected language.');
+                    alert('Translate function. This feature would integrate with a translation API (like Google Cloud Translation) for real-time translation of post content. Clicking "Change Translate Language" in options would set preference.');
                 });
             }
 
@@ -3711,51 +3546,12 @@
                 });
             }
 
-            // Repost
+            // Repost (placeholder)
             const repostBtn = postCard.querySelector('.repost-post-btn');
             if (repostBtn) {
-                repostBtn.addEventListener('click', async () => {
-                    if (!currentUser) {
-                        alert('You must be logged in to repost.');
-                        return;
-                    }
-                    showLoader('Reposting...');
-                    try {
-                        const repostRef = db.collection('posts').doc(); // Create new post document
-                        await repostRef.set({
-                            postId: repostRef.id,
-                            userId: currentUser.uid,
-                            username: currentUser.username,
-                            authorAvatarUrl: currentUser.profilePicUrl,
-                            content: `(Repost from @${post.username})\n\n${post.content}`, // Indicate it's a repost
-                            timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                            isMonetized: post.isMonetized, // Inherit monetization from original
-                            expiryTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // New 24-hour expiry
-                            likes: [],
-                            likesCount: 0,
-                            commentCount: 0,
-                            views: 0,
-                            reactions: {},
-                            repostedFromPostId: post.postId, // Link to original post
-                            originalAuthorId: post.userId,
-                            originalUsername: post.username
-                        });
-                        // Increment user's post count for the new repost
-                        await db.collection('users').doc(currentUser.uid).update({
-                            postCount: firebase.firestore.FieldValue.increment(1)
-                        });
-                        showMessage(uploadMessage, 'Post reposted successfully!', 'success');
-                        hideLoader();
-                        if (optionsDropdown) optionsDropdown.classList.remove('visible');
-                        switchScreen('profile-screen'); // Navigate to profile to see reposts
-                        myPostsTab.classList.remove('active');
-                        repostsTab.classList.add('active');
-                        fetchProfilePosts(currentUser.uid, 'reposts'); // Load reposts
-                    } catch (error) {
-                        console.error("Error reposting:", error);
-                        showMessage(uploadMessage, `Failed to repost: ${error.message}`, 'error');
-                        hideLoader();
-                    }
+                repostBtn.addEventListener('click', () => {
+                    alert('Repost functionality will create a new post linking to this original post. (Coming Soon)');
+                    if (optionsDropdown) optionsDropdown.classList.remove('visible');
                 });
             }
 
@@ -3780,9 +3576,9 @@
                 });
             });
 
-            // Attach view observer for home/profile screens (if not already viewed in session)
+            // Attach view observer for home/profile screens
             if (type === 'home' || type === 'profile') {
-                attachViewObserverToPost(postCard);
+                attachViewObserver(postCard);
             }
 
             // Handle emoji reactions
@@ -3790,6 +3586,23 @@
                 const emoji = item.dataset.emoji;
                 item.addEventListener('click', () => handleEmojiReaction(post.postId, emoji, item));
             });
+
+            // For feed items, update follow button status and add listener
+            if (type === 'feed') {
+                const followBtn = postCard.querySelector('.follow-btn');
+                if (followBtn) { // Check if button exists
+                    if (post.userId === currentUser.uid) {
+                        followBtn.classList.add('hidden'); // Hide follow button for own posts
+                    } else {
+                        updateFollowButtonInSearch(followBtn, post.userId); // Update initial state
+                        followBtn.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            handleFollowToggle(post.userId, followBtn);
+                        });
+                    }
+                }
+            }
+
 
             return postCard;
         }
@@ -3823,9 +3636,8 @@
                 button.style.backgroundColor = 'var(--bg-color-darker)';
                 button.style.color = 'var(--text-color-main)';
                 button.addEventListener('click', () => {
-                    alert(`Language set to: ${lang.name}. (This would save your preference to your profile for future translations)`);
-                    // In a real app, save to user preferences in Firestore:
-                    // db.collection('users').doc(currentUser.uid).update({ preferredTranslateLanguage: lang.code });
+                    alert(`Language set to: ${lang.name}. (This would be saved as user preference for future translations)`);
+                    // In a real app, save to user preferences in Firestore
                     hideModal(languageModal);
                 });
                 languageList.appendChild(button);
@@ -3838,15 +3650,19 @@
 
             // Handle custom link format: [display text | url | #hexcolor]
             parsedText = parsedText.replace(/\[([^|]+)\|([^|]+)\|(#(?:[0-9a-fA-F]{3}){1,2})\]/g, (match, text, url, color) => {
-                return `<a href="${url}" target="_blank" style="color: ${color}; text-decoration: underline;">${text}</a>`;
+                // Ensure URL starts with http/https
+                const safeUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+                return `<a href="${safeUrl}" target="_blank" style="color: ${color}; text-decoration: underline;">${text}</a>`;
             });
             // Handle simple links: [display text | url]
             parsedText = parsedText.replace(/\[([^|]+)\|([^|]+)\]/g, (match, text, url) => {
-                return `<a href="${url}" target="_blank">${text}</a>`;
+                const safeUrl = url.startsWith('http://') || url.startsWith('https://') ? url : `https://${url}`;
+                return `<a href="${safeUrl}" target="_blank">${text}</a>`;
             });
 
             // Convert raw URLs to clickable links if not already handled
-            parsedText = parsedText.replace(/(?<!["'])(https?:\/\/[^\s<>"'()]+)/g, (url) => {
+            // Use a negative lookbehind assertion to avoid matching already processed links
+            parsedText = parsedText.replace(/(?<!href=["'])(https?:\/\/[^\s<>"'()]+)/g, (url) => {
                 // Check if it's an image
                 if (/\.(jpeg|jpg|gif|png|webp)$/i.test(url)) {
                     return `<img src="${url}" alt="Embedded Image">`;
@@ -3940,8 +3756,10 @@
         async function incrementView(postId, postElement, isMonetized) {
             if (!currentUser) return; // Only count views for logged-in users
 
-            // This function is now only called after the 4-second visibility check
-            // and if the post hasn't been viewed in this session.
+            const viewKey = `viewed_${postId}_${currentUser.uid}`; // Unique key per user per post
+            if (viewedPosts.has(postId)) { // Check against the Set for this session
+                return;
+            }
 
             const postRef = db.collection('posts').doc(postId);
             try {
@@ -3968,7 +3786,8 @@
                     // Optimistically update UI
                     postElement.querySelector('.views-post-btn .count').textContent = formatNumber(newViews);
                 });
-                // No need to set sessionStorage or remove from observer here, already handled by calling function
+                viewedPosts.add(postId); // Add to the Set for this session
+                sessionStorage.setItem('viewedPosts', JSON.stringify(Array.from(viewedPosts))); // Persist in session storage
             } catch (error) {
                 console.error("Error incrementing view:", error);
             }
@@ -4065,6 +3884,10 @@
 
 
         async function openCommentModal(postId, postElement) {
+            if (!currentUser) {
+                alert('You must be logged in to view or post comments.');
+                return;
+            }
             showLoader('Loading comments...');
             currentPostIdForComments = postId;
             currentPostElementForComments = postElement;
@@ -4188,7 +4011,8 @@
         // --- Rich Text Editing for Post Content & Bio ---
         const colors = [
             '#00ffff', '#ff00ff', '#ffffff', '#e0e0e0', '#bbb', '#888', '#555', '#333', '#1a1a2e',
-            '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ffa500', '#800080', '#ffc0cb', '#87ceeb', '#90ee90', '#f5deb3'
+            '#ff0000', '#00ff00', '#0000ff', '#ffff00', '#ffa500', '#800080', '#ffc0cb', '#87ceeb', '#90ee90', '#f5deb3',
+            '#c0c0c0', '#d8bfd8', '#f0e68c', '#add8e6', '#ffe4e1', '#b0e0e6', '#ffb6c1', '#f08080', '#20b2aa', '#7b68ee'
         ];
 
         function createColorPicker(container, targetTextarea) {
@@ -4208,6 +4032,8 @@
                                         targetTextarea.value.substring(end);
                         targetTextarea.value = newText;
                         targetTextarea.focus();
+                    } else {
+                        alert('Please select text to apply color.');
                     }
                     container.classList.add('hidden'); // Hide after selection
                 });
@@ -4215,7 +4041,7 @@
             });
         }
 
-        // Initialize color pickers
+        // Initialize color pickers on page load
         createColorPicker(colorPickerContainer, postContentTextarea);
         createColorPicker(bioColorPickerContainer, editBioTextarea);
 
@@ -4306,8 +4132,8 @@
             const modalCurrentTitle = urlModalTitle.textContent;
 
             if (modalCurrentTitle === 'Insert Link') {
-                if (urlTextColorInput.classList.contains('hidden') || !text) { // If text input is hidden or empty, use simple link
-                     insertion = `[${text || url}|${url}]`;
+                if (urlTextInput.classList.contains('hidden') || !text) { // If text input is hidden or empty, use simple link
+                     insertion = `[${url}|${url}]`; // Use URL as text if text not provided
                 } else {
                      insertion = `[${text}|${url}|${color}]`;
                 }
@@ -4375,10 +4201,15 @@
                 postContentTextarea.value = '';
                 monetizePostSwitch.checked = false;
                 switchScreen('home-screen'); // Navigate to home after post
-                fetchPosts(true); // Refresh feed to show new post
+                fetchPosts(true); // Refresh feed
             } catch (error) {
                 console.error("Error publishing post:", error);
-                showMessage(uploadMessage, `Error publishing post: ${error.message}`, 'error');
+                // Display specific Firebase error if available
+                if (error.code && error.message) {
+                    showMessage(uploadMessage, `Error publishing post: ${error.message}`, 'error');
+                } else {
+                    showMessage(uploadMessage, `Error publishing post: ${error}`, 'error');
+                }
             } finally {
                 hideLoader();
             }
@@ -4445,7 +4276,7 @@
                             e.stopPropagation(); // Prevent opening profile
                             handleFollowToggle(userData.uid, followBtn);
                         });
-                        updateFollowButtonInSearch(followBtn, userData.uid);
+                        if (currentUser) updateFollowButtonInSearch(followBtn, userData.uid);
                     }
                     searchResults.appendChild(userItem);
                 });
@@ -4489,7 +4320,7 @@
                     } else {
                         // Follow
                         newTargetFollowers.push(currentUser.uid);
-                        newCurrentUserFollowing.push(targetUserId);
+                        newFollowing.push(targetUserId);
                     }
 
                     transaction.update(targetUserRef, {
@@ -4526,46 +4357,20 @@
         }
 
         // --- Profile Posts (My Posts / Reposts) ---
-        async function fetchProfilePosts(userId, type = 'myPosts') {
+        async function fetchProfilePosts(userId) {
             profileFeedLoader.classList.remove('hidden');
             profilePostsContainer.innerHTML = '';
             profileFeedEndMessage.classList.add('hidden');
 
-            let query;
-            const now = new Date();
-
             try {
-                if (type === 'myPosts') {
-                    query = db.collection('posts')
-                        .where('userId', '==', userId)
-                        .where('expiryTime', '>', now) // Only show non-expired posts
-                        .orderBy('expiryTime', 'asc') // Prioritize non-expired
-                        .orderBy('timestamp', 'desc')
-                        .limit(10);
-                } else if (type === 'reposts') {
-                    // For simplicity, we'll query posts that this user has reposted
-                    // A proper repost system might use a separate 'reposts' collection
-                    // or a complex query that fetches posts by originalAuthorId where repostedByUserId is current user.
-                    // Here, we'll query posts where currentUser is the 'userId' AND it has 'repostedFromPostId'
-                    if (currentUser && currentUser.uid === userId) { // Only fetch user's own reposts
-                        query = db.collection('posts')
-                            .where('userId', '==', userId)
-                            .where('repostedFromPostId', '!=', null) // Check if it's a repost
-                            .where('expiryTime', '>', now)
-                            .orderBy('expiryTime', 'asc')
-                            .orderBy('timestamp', 'desc')
-                            .limit(10);
-                    } else {
-                        profilePostsContainer.innerHTML = '<p class="text-center text-color-light mt-15">This section is for your own reposts.</p>';
-                        profileFeedLoader.classList.add('hidden');
-                        return;
-                    }
-                }
-
-                const postsSnapshot = await query.get();
+                const postsSnapshot = await db.collection('posts')
+                    .where('userId', '==', userId)
+                    .orderBy('timestamp', 'desc')
+                    .limit(10) // Limit for initial load
+                    .get();
 
                 if (postsSnapshot.empty) {
-                    profilePostsContainer.innerHTML = '<p class="text-center text-color-light mt-15">No posts yet in this category.</p>';
+                    profilePostsContainer.innerHTML = '<p class="text-center text-color-light mt-15">No posts yet.</p>';
                     profileFeedEndMessage.classList.add('hidden');
                 } else {
                     postsSnapshot.docs.forEach(doc => {
@@ -4575,7 +4380,7 @@
                 }
             } catch (error) {
                 console.error("Error fetching profile posts:", error);
-                profilePostsContainer.innerHTML = '<p class="text-center message error mt-15">Error loading posts.</p>';
+                showMessage(profileFeedEndMessage, 'Error loading posts.', 'error', 0); // Show persistent error
             } finally {
                 profileFeedLoader.classList.add('hidden');
             }
@@ -4584,123 +4389,71 @@
         myPostsTab.addEventListener('click', () => {
             myPostsTab.classList.add('active');
             repostsTab.classList.remove('active');
-            fetchProfilePosts(currentProfileUserId, 'myPosts'); // Reload my posts
+            fetchProfilePosts(currentProfileUserId); // Reload my posts
         });
 
         repostsTab.addEventListener('click', () => {
             repostsTab.classList.add('active');
             myPostsTab.classList.remove('active');
-            fetchProfilePosts(currentProfileUserId, 'reposts'); // Load reposts
+            profilePostsContainer.innerHTML = '<p class="text-center text-color-light mt-15">Reposts functionality coming soon!</p>';
+            profileFeedEndMessage.classList.add('hidden');
         });
 
         // --- Feed (Reels/Shorts like) ---
-        let allFeedPosts = []; // Store all posts for continuous feed loop
-        let feedLoopCurrentIndex = 0;
-
-        async function fetchFeedPosts() {
-            if (fetchingPosts) return;
+        async function fetchFeedPosts(reset = false) {
+            if (fetchingPosts) return; // Prevent multiple simultaneous fetches
             fetchingPosts = true;
             feedScreenLoader.classList.remove('hidden');
             feedScreenEndMessage.classList.add('hidden');
 
-            const now = new Date();
-
             let query = db.collection('posts')
-                .where('expiryTime', '>', now) // Filter out expired posts
-                .orderBy('expiryTime', 'asc') // Prioritize non-expired
                 .orderBy('timestamp', 'desc')
-                .limit(10); // Fetch in smaller batches
+                .limit(5); // Fetch fewer posts for the feed to make snap scrolling noticeable
 
-            if (lastVisibleFeedPost) {
+            if (lastVisibleFeedPost && !reset) {
                 query = query.startAfter(lastVisibleFeedPost);
             }
 
             try {
                 const snapshot = await query.get();
 
-                if (snapshot.empty && !lastVisibleFeedPost) {
-                    // No posts at all. Show message.
-                    if (allFeedPosts.length === 0) {
-                        feedCarousel.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the feed. Start by creating one!</p>';
-                    }
-                    feedScreenLoader.classList.add('hidden');
+                if (reset) {
+                    feedCarousel.innerHTML = '';
+                }
+
+                if (snapshot.empty && lastVisibleFeedPost && !reset) {
+                    // All posts fetched, loop back to beginning
+                    lastVisibleFeedPost = null;
+                    feedScreenEndMessage.classList.remove('hidden');
+                    console.log("No more new feed posts, looping back to beginning.");
+                    await fetchFeedPosts(true); // Fetch from start again
                     return;
                 }
-
-                if (snapshot.empty && lastVisibleFeedPost) {
-                    // All available posts fetched, loop back to the beginning if there are posts in allFeedPosts
-                    if (allFeedPosts.length > 0) {
-                        feedScreenEndMessage.classList.remove('hidden');
-                        console.log("No more new feed posts, looping feed to beginning.");
-                        feedLoopCurrentIndex = 0; // Reset loop index
-                        await populateFeedCarouselFromLoop();
-                        return;
-                    }
+                if (snapshot.empty && !lastVisibleFeedPost && reset) {
+                     feedCarousel.innerHTML = '<p class="text-center text-color-light mt-15">No posts available in the feed.</p>';
+                     return;
                 }
 
-                // Add newly fetched posts to allFeedPosts
                 snapshot.docs.forEach(doc => {
-                    const postData = doc.data();
-                    allFeedPosts.push(postData);
+                    feedCarousel.appendChild(createPostCard(doc.data(), 'feed'));
                 });
 
                 lastVisibleFeedPost = snapshot.docs[snapshot.docs.length - 1];
 
-                // Populate the carousel from the combined batch
-                await populateFeedCarouselFromBatch();
-
-
             } catch (error) {
                 console.error("Error fetching feed posts:", error);
-                feedCarousel.innerHTML = '<p class="text-center message error mt-15">Error loading feed.</p>';
+                showMessage(feedScreenEndMessage, 'Error loading feed.', 'error', 0); // Show persistent error
             } finally {
                 fetchingPosts = false;
                 feedScreenLoader.classList.add('hidden');
             }
         }
 
-        async function populateFeedCarouselFromBatch() {
-            if (allFeedPosts.length === 0) return;
-
-            // Remove any old "loading" state if present before adding posts
-            feedCarousel.innerHTML = '';
-
-            // Add all available posts to the carousel for smooth scrolling
-            allFeedPosts.forEach(postData => {
-                 feedCarousel.appendChild(createPostCard(postData, 'feed'));
-            });
-            // Immediately start observing new elements for view counting
-            feedCarousel.querySelectorAll('.feed-item').forEach(attachViewObserverToPost);
-        }
-
-        async function populateFeedCarouselFromLoop() {
-            if (allFeedPosts.length === 0) return;
-
-            // Clear previous content to simulate loop/reset
-            feedCarousel.innerHTML = '';
-            feedLoopCurrentIndex = 0;
-
-            // Create a shuffled copy for the loop
-            let shuffledLoopPosts = [...allFeedPosts].sort(() => 0.5 - Math.random());
-
-            for (let i = 0; i < shuffledLoopPosts.length; i++) {
-                feedCarousel.appendChild(createPostCard(shuffledLoopPosts[i], 'feed'));
-            }
-            // Add a few more shuffled copies to extend the "endless" feeling
-            for (let i = 0; i < 2; i++) { // Add 2 more full rotations
-                let furtherShuffled = [...allFeedPosts].sort(() => 0.5 - Math.random());
-                furtherShuffled.forEach(postData => {
-                    feedCarousel.appendChild(createPostCard(postData, 'feed'));
-                });
-            }
-            // Immediately start observing new elements for view counting
-            feedCarousel.querySelectorAll('.feed-item').forEach(attachViewObserverToPost);
-        }
-
         feedCarousel.addEventListener('scroll', () => {
-            if (feedCarousel.scrollTop + feedCarousel.clientHeight >= feedCarousel.scrollHeight - 100) {
+            // Check if user is near the end of the scrollable content
+            if (feedCarousel.scrollTop + feedCarousel.clientHeight >= feedCarousel.scrollHeight - 100) { // 100px buffer
                 if (!fetchingPosts && currentScreen === 'feed-screen') {
-                    fetchFeedPosts(); // Trigger next batch or loop
+                    fetchFeedPosts();
                 }
             }
         });
@@ -4722,7 +4475,11 @@
         }
 
         withdrawButton.addEventListener('click', () => {
-            if (!currentUser || (currentUser.totalMonetizedViews || 0) < 100000) {
+            if (!currentUser) {
+                alert('Please log in to check monetization.');
+                return;
+            }
+            if ((currentUser.totalMonetizedViews || 0) < 100000) {
                 alert('You need at least 100,000 monetized views to withdraw.');
                 return;
             }
@@ -4820,17 +4577,17 @@
             showLoader('Logging out...');
             try {
                 await auth.signOut();
-                postsContainer.innerHTML = ''; // Clear home feed
-                feedCarousel.innerHTML = ''; // Clear feed screen
-                lastVisiblePost = null; // Reset for next login
+                // Clear all app state
+                postsContainer.innerHTML = '';
+                feedCarousel.innerHTML = '';
+                profilePostsContainer.innerHTML = '';
+                lastVisiblePost = null;
                 lastVisibleFeedPost = null;
-                currentProfileUserId = null; // Reset profile
+                currentProfileUserId = null;
                 viewedPosts.clear(); // Clear viewed posts for session
-                sessionStorage.removeItem('viewedPosts'); // Persist clearing
-                viewTimers.forEach(clearTimeout); // Clear any pending view timers
-                viewTimers.clear();
+                sessionStorage.removeItem('viewedPosts');
                 hideLoader();
-                // Instead of full reload, reset UI and switch to auth screen, but reload is more robust for single HTML file
+                switchScreen('home-screen'); // Revert to initial state
                 window.location.reload(); // Hard reload to ensure full reset
             } catch (error) {
                 console.error("Logout error:", error);
@@ -4894,7 +4651,7 @@
                 showModal(notificationModal);
             } catch (error) {
                 console.error("Error fetching notifications:", error);
-                alert('Failed to load notifications.');
+                alert('Failed to load notifications. Please check your internet connection and permissions.');
             } finally {
                 hideLoader();
             }
@@ -4917,7 +4674,7 @@
             localStorage.setItem('dataSaverMode', dataSaverMode ? 'on' : 'off');
             // Re-fetch content if needed to apply data saver effects, e.g., low-res images
             if (currentScreen === 'home-screen') fetchPosts(true);
-            if (currentScreen === 'feed-screen') fetchFeedPosts();
+            if (currentScreen === 'feed-screen') fetchFeedPosts(true);
         });
 
 
@@ -4926,8 +4683,8 @@
             updateMonetizationScreen();
         });
 
-        earnPointsButtonMenu.addEventListener('click', () => {
-            showModal(earnPointsModal);
+        earnPointsButton.addEventListener('click', () => {
+            alert('Earn Points Section: Here users would see opportunities to earn points (e.g., daily check-ins, achievements). (Coming Soon)');
             sideMenu.classList.remove('visible');
             menuButton.querySelector('.icon-menu').classList.remove('active');
         });
@@ -4985,18 +4742,15 @@
                         `;
 
                         const actionButton = userItem.querySelector('.action-button');
-                        if (currentUser && user.uid === currentUser.uid) { // Hide button for current user itself
-                            actionButton.classList.add('hidden');
+                        if (user.uid === currentUser.uid) {
+                            actionButton.classList.add('hidden'); // Hide button for current user itself
                         } else {
                             if (type === 'Followers') {
                                 // For 'Remove' follower
                                 actionButton.textContent = 'Remove';
                                 actionButton.style.backgroundColor = 'var(--error-color)';
                                 actionButton.style.color = 'var(--button-primary-text)';
-                                actionButton.addEventListener('click', (e) => {
-                                    e.stopPropagation(); // Prevent opening profile
-                                    confirmAction(`Remove ${user.name} from your followers?`, () => removeFollower(user.uid, userItem));
-                                });
+                                actionButton.addEventListener('click', () => confirmAction(`Remove ${user.name} from your followers?`, () => removeFollower(user.uid, userItem)));
                             } else {
                                 // For 'Follow'/'Following'
                                 updateFollowButtonInSearch(actionButton, user.uid); // Re-use search update logic
@@ -5018,8 +4772,7 @@
                 }
             } catch (error) {
                 console.error("Error fetching user list:", error);
-                noUsersMessage.textContent = `Error loading ${type.toLowerCase()}.`;
-                noUsersMessage.classList.remove('hidden');
+                showMessage(noUsersMessage, `Error loading ${type.toLowerCase()}.`, 'error', 0); // Show persistent error
             } finally {
                 hideLoader();
                 showModal(userListModal);
@@ -5122,7 +4875,7 @@
             // The onAuthStateChanged listener at the top handles subsequent logic for logged-in users.
         });
 
-        // Close dropdown if clicked outside anywhere on document
+        // Close dropdown / color pickers if clicked outside anywhere on document
         document.addEventListener('click', (e) => {
             document.querySelectorAll('.options-dropdown').forEach(dropdown => {
                 const button = dropdown.previousElementSibling; // Assuming button is right before dropdown
@@ -5131,11 +4884,16 @@
                 }
             });
              // Close color pickers if clicked outside
-            colorPickerContainer.classList.add('hidden');
-            bioColorPickerContainer.classList.add('hidden');
+            if (!colorPickerContainer.contains(e.target) && e.target !== colorBtn) {
+                colorPickerContainer.classList.add('hidden');
+            }
+            if (!bioColorPickerContainer.contains(e.target) && e.target !== bioColorBtn) {
+                bioColorPickerContainer.classList.add('hidden');
+            }
         });
 
     </script>
 </body>
 </html>
 
+    
